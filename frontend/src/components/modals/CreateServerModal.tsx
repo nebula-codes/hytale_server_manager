@@ -103,14 +103,10 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
     setFormData(prev => {
       const updated = { ...prev, [field]: value };
 
-      // Auto-generate serverPath when name changes
+      // Auto-generate serverPath when name changes (just the folder name, backend adds base path)
       if (field === 'name' && typeof value === 'string') {
         const slugifiedName = value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-        if (slugifiedName) {
-          updated.serverPath = `servers/${slugifiedName}`;
-        } else {
-          updated.serverPath = '';
-        }
+        updated.serverPath = slugifiedName || '';
       }
 
       return updated;

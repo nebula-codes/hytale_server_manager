@@ -5,7 +5,7 @@ import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
 import { PrismaClient } from '@prisma/client';
 import unzipper from 'unzipper';
-import { getBasePath_ } from '../config';
+import config, { getBasePath_ } from '../config';
 import logger from '../utils/logger';
 
 const prisma = new PrismaClient();
@@ -984,9 +984,10 @@ class HytaleDownloaderService extends EventEmitter {
     // If destinationPath is a directory, append the default filename
     let downloadPath = options.destinationPath;
 
-    // Ensure the path is absolute (the binary runs from a different cwd)
+    // Ensure the path is absolute - use serversBasePath for relative paths
+    // This ensures consistency with ServerService which also uses serversBasePath
     if (!path.isAbsolute(downloadPath)) {
-      downloadPath = path.resolve(downloadPath);
+      downloadPath = path.join(config.serversBasePath, path.basename(downloadPath));
     }
 
     // Check if it's a directory (or looks like one - no extension)
