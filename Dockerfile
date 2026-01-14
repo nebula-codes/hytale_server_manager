@@ -55,7 +55,8 @@ FROM node:20-alpine AS runtime
 # - tini: Proper init process for containers
 # - openjdk21: Required for running Hytale/Java game servers
 # - unzip: Required for extracting server files
-RUN apk add --no-cache openssl tini openjdk21-jre unzip
+# - gcompat: glibc compatibility for native libraries (netty_quiche)
+RUN apk add --no-cache openssl tini openjdk21-jre unzip gcompat
 
 # Create default user (can be overridden with PUID/PGID env vars at runtime)
 RUN addgroup -g 1001 -S hytale && \
@@ -102,8 +103,8 @@ ENV NODE_ENV=production \
 
 # Expose ports
 # 3001 - Web UI and API
-# 5520 - Default Hytale game server port
-EXPOSE 3001 5520
+# 5520 - Default Hytale game server port (TCP + UDP for QUIC)
+EXPOSE 3001 5520 5520/udp
 
 # Volume for persistent data
 VOLUME ["/app/data"]

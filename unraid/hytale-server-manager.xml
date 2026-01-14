@@ -28,7 +28,8 @@
   <DonateLink/>
   <Requires/>
   <Config Name="Web UI Port" Target="3001" Default="3001" Mode="tcp" Description="Port for the web interface and API (HTTPS)" Type="Port" Display="always" Required="true" Mask="false">3001</Config>
-  <Config Name="Game Server Port" Target="5520" Default="5520" Mode="tcp" Description="Default Hytale game server port for players to connect" Type="Port" Display="always" Required="true" Mask="false">5520</Config>
+  <Config Name="Game Server Port (TCP)" Target="5520" Default="5520" Mode="tcp" Description="Hytale game server port (TCP)" Type="Port" Display="always" Required="true" Mask="false">5520</Config>
+  <Config Name="Game Server Port (UDP)" Target="5520" Default="5520" Mode="udp" Description="Hytale game server port (UDP/QUIC - required for game connections)" Type="Port" Display="always" Required="true" Mask="false">5520</Config>
   <Config Name="Data Path" Target="/app/data" Default="/mnt/user/appdata/hytale-server-manager" Mode="rw" Description="Path for persistent data (database, logs, servers, backups)" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/hytale-server-manager</Config>
   <Config Name="JWT Secret" Target="JWT_SECRET" Default="" Mode="" Description="Secret key for JWT authentication. Leave empty to auto-generate (sessions will reset on container restart)." Type="Variable" Display="advanced" Required="false" Mask="true"/>
   <Config Name="JWT Refresh Secret" Target="JWT_REFRESH_SECRET" Default="" Mode="" Description="Secret key for JWT refresh tokens. Leave empty to auto-generate." Type="Variable" Display="advanced" Required="false" Mask="true"/>

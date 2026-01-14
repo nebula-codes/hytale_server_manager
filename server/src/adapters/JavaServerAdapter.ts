@@ -359,6 +359,12 @@ export class JavaServerAdapter implements IServerAdapter {
     if (config.maxPlayers) {
       this.status.maxPlayers = config.maxPlayers;
     }
+    // Update serverArgs if address or port changed (takes effect on next start)
+    if (config.address !== undefined || config.port !== undefined) {
+      const bindAddress = `${this.config.address || '0.0.0.0'}:${this.config.port}`;
+      this.serverArgs = ['--assets', this.assetsPath, '--bind', bindAddress];
+      logger.info(`[JavaAdapter] Updated bind address to: ${bindAddress}`);
+    }
   }
 
   // ============================================

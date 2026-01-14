@@ -50,12 +50,19 @@ export class ConsoleEvents {
       try {
         const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
 
+        // DEBUG: Log received token
+        logger.info(`[ConsoleEvents DEBUG] Token received: ${token ? token.substring(0, 50) + '...' : 'NONE'}`);
+
         if (!token) {
           logger.warn(`WebSocket connection rejected: No token provided (${socket.id})`);
           return next(new Error('Authentication required'));
         }
 
         const jwtSecret = getJwtSecret();
+
+        // DEBUG: Log secret info
+        logger.info(`[ConsoleEvents DEBUG] Secret first 10 chars: ${jwtSecret?.substring(0, 10)}`);
+
         if (!jwtSecret) {
           logger.error('JWT_SECRET not configured for WebSocket authentication');
           return next(new Error('Server configuration error'));
