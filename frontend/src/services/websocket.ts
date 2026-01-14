@@ -1,6 +1,8 @@
 import { io, Socket } from 'socket.io-client';
 
-const WS_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// Use window.location.origin in production, localhost in development
+const WS_BASE_URL = import.meta.env.VITE_API_URL ||
+  (import.meta.env.MODE === 'development' ? 'http://localhost:3001' : window.location.origin);
 
 class WebSocketService {
   private baseUrl: string;
