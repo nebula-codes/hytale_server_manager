@@ -413,7 +413,7 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
           <HytaleServerDownloadSection
             serverPath={formData.serverPath}
             onVersionSet={useCallback((version: string) => updateField('version', version), [updateField])}
-            onSkipDownload={useCallback(skipped) => setSkippedDownload(skipped), [setSkippedDownload])}
+            onSkipDownload={useCallback((skipped: boolean) => setSkippedDownload(skipped), [setSkippedDownload])}
           />
           {errors.version && (
             <p className="text-danger text-sm mt-1">{errors.version}</p>
