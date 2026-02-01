@@ -16,6 +16,15 @@ Before installing Hytale Server Manager, ensure your system meets these requirem
 
 ## Quick Installation
 
+## Quick start
+
+Use the `docker-compose.yml` file provided to set up your docker container instance.
+
+> [!NOTE]
+> UnRAID users can use the UnRAID app store.
+
+## Manual Installation
+
 ### Windows
 
 1. Download the latest release from [GitHub Releases](https://github.com/nebula-codes/hytale_server_manager/releases)

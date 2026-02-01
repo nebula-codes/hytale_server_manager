@@ -10,6 +10,8 @@ services:
       # User/Group ID for file permissions (use `id` command to find yours)
       - PUID=1000
       - PGID=1000
+      # Set container timezone in TZ format. Using UTC as default.
+      - TZ=Etc/UTC 
       - NODE_ENV=production
       - NODE_OPTIONS=--max-old-space-size=1536
       - PORT=3001
@@ -28,7 +30,7 @@ services:
       - RATE_LIMIT_MAX=1000         # Max requests per window
       # File upload limit
       - MAX_FILE_UPLOAD_SIZE=52428800  # 50MB in bytes (default)
-      # Optional: Discord notifications
+      # Optional: Discord notifications (can be configured in settings)
       # - DISCORD_ENABLED=true
       # - DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
     volumes:

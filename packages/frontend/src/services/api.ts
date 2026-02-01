@@ -692,6 +692,12 @@ class ApiService {
     return this.request<ServerUpdateHistory[]>(`/api/server-updates/${serverId}/history?limit=${limit}`);
   }
 
+  async forceResetServerUpdate(serverId: string) {
+    return this.request<{ success: boolean; message: string }>(`/api/server-updates/${serverId}/force-reset`, {
+      method: 'POST',
+    });
+  }
+
   // ============================================
   // File Management
   // ============================================

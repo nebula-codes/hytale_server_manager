@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 import { HytaleOAuthModal } from '../modals/HytaleOAuthModal';
 import { HytaleDownloadProgress } from './HytaleDownloadProgress';
 import {
@@ -14,18 +15,23 @@ import {
   CheckCircle,
   AlertCircle,
   RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  FolderOpen,
 } from 'lucide-react';
 
 interface HytaleServerDownloadSectionProps {
   serverPath: string;
   onVersionSet?: (version: string) => void;
   onDownloadComplete?: () => void;
+  onSkipDownload?: (skipped: boolean) => void;
 }
 
 export const HytaleServerDownloadSection = ({
   serverPath,
   onVersionSet,
   onDownloadComplete,
+  onSkipDownload,
 }: HytaleServerDownloadSectionProps) => {
   const {
     fetchStatus,
@@ -46,6 +52,8 @@ export const HytaleServerDownloadSection = ({
   const [isInstalling, setIsInstalling] = useState(false);
   const [selectedPatchline, setSelectedPatchline] = useState('release');
   const [localError, setLocalError] = useState<string | null>(null);
+  const [showSkipSection, setShowSkipSection] = useState(false);
+  const [manualVersion, setManualVersion] = useState('');
 
   // Fetch status on mount
   useEffect(() => {
@@ -320,6 +328,58 @@ export const HytaleServerDownloadSection = ({
           Enter a server directory path above to enable downloading.
         </p>
       )}
+
+      {/* Skip Download Section */}
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+        <button
+          type="button"
+          onClick={() => {
+            setShowSkipSection(!showSkipSection);
+            if (showSkipSection) {
+              // Collapsing - clear manual version and notify parent
+              setManualVersion('');
+              onSkipDownload?.(false);
+              onVersionSet?.('');
+            }
+          }}
+          className="flex items-center gap-2 text-sm text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary transition-colors"
+        >
+          {showSkipSection ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          <FolderOpen size={16} />
+          <span>Use Existing Server Files (Skip Download)</span>
+        </button>
+
+        {showSkipSection && (
+          <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg space-y-3">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-text-light-muted dark:text-text-muted">
+                Only use this option if you already have server files in the specified directory.
+                This is intended for migrating existing servers to the manager.
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
+                Server Version *
+              </label>
+              <Input
+                type="text"
+                placeholder="e.g., 0.1.2.3"
+                value={manualVersion}
+                onChange={(e) => {
+                  const version = e.target.value;
+                  setManualVersion(version);
+                  onVersionSet?.(version);
+                  onSkipDownload?.(version.trim().length > 0);
+                }}
+              />
+              <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
+                Enter the version of your existing server files
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

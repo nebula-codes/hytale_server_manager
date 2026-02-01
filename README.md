@@ -1,3 +1,19 @@
+<div align="center">
+
+[![Build and Release](https://github.com/nebula-codes/hytale_server_manager/workflows/Build%20and%20Release/badge.svg)](https://github.com/nebula-codes/hytale_server_manager/actions?query=workflow:"Build+and+Release")
+[![GitHub tag](https://img.shields.io/github/tag/nebula-codes/hytale_server_manager?include_prereleases=&sort=semver&color=blue)](https://github.com/nebula-codes/hytale_server_manager/releases/)
+[![License](https://img.shields.io/badge/License-MIT-blue)](https://github.com/nebula-codes/hytale_server_manager/blob/main/LICENSE)
+[![issues - hytale_server_manager](https://img.shields.io/github/issues/nebula-codes/hytale_server_manager)](https://github.com/nebula-codes/hytale_server_manager/issues)
+
+[![View site - GH Pages](https://img.shields.io/badge/View_site-GH_Pages-2ea44f?style=for-the-badge)](https://nebula-codes.github.io/hytale_server_manager/)
+[![view - Documentation](https://img.shields.io/badge/view-Documentation-blue?style=for-the-badge)](https://nebula-codes.github.io/hytale_server_manager/docs/)
+
+[![Discord](https://discord.com/api/guilds/1463336126805709005/widget.png?style=shield)](https://discord.gg/uANHaJbeBF)
+<!-- Enable server widget in your server settings to enable the Discord shield-->
+<!-- Alt banners: https://github.com/dgibbs64/discord-banners/blob/master/README.md -->
+ 
+</div>
+
 # Hytale Server Manager
 
 A web-based management dashboard for Hytale game servers. Built with React, TypeScript, and Node.js.
@@ -23,6 +39,7 @@ A web-based management dashboard for Hytale game servers. Built with React, Type
 ## Tech Stack
 
 **Frontend:** React 18, TypeScript, Tailwind CSS, Zustand, Vite
+
 **Backend:** Node.js, Express, Prisma, SQLite, Socket.IO
 
 ## Prerequisites
@@ -32,7 +49,14 @@ A web-based management dashboard for Hytale game servers. Built with React, Type
 - Git
 - Java 25+ (required to run Hytale server processes) - https://adoptium.net/temurin/releases/
 
-## Quick Start
+## Quick start
+
+Use the [`docker-compose.yml`](docker-compose.yml) file provided to set up your docker container instance.
+
+> [!NOTE]
+> UnRAID users can use the UnRAID app store.
+
+## Manual installation
 
 ```powershell
 # Clone the repository

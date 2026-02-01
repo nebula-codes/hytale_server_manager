@@ -804,6 +804,123 @@ class ServerUpdateService extends EventEmitter {
     });
   }
 
+  /**
+   * Force reset the update state for a server.
+   * Used when an update gets stuck and the session is lost (e.g., after restart).
+   */
+  async forceResetUpdateState(serverId: string): Promise<void> {
+    const server = await this.prisma.server.findUnique({
+      where: { id: serverId },
+    });
+
+    if (!server) {
+      throw new Error(`Server ${serverId} not found`);
+    }
+
+    // 1. Find and cancel any active session for this server
+    for (const [sessionId, session] of this.sessions) {
+      if (session.serverId === serverId) {
+        if (session.downloadSessionId) {
+          hytaleDownloaderService.cancelDownload(session.downloadSessionId);
+        }
+        if (session.tempPreservePath && await fs.pathExists(session.tempPreservePath)) {
+          await fs.remove(session.tempPreservePath);
+        }
+        this.sessions.delete(sessionId);
+      }
+    }
+
+    // 2. Clean up orphaned .update-preserve-* directories
+    const serverDir = server.serverPath;
+    try {
+      const entries = await fs.readdir(serverDir);
+      for (const entry of entries) {
+        if (entry.startsWith('.update-preserve-')) {
+          const preservePath = path.join(serverDir, entry);
+          logger.info(`[ServerUpdate] Cleaning up orphaned preserve directory: ${preservePath}`);
+          await fs.remove(preservePath);
+        }
+      }
+    } catch (err) {
+      logger.warn(`[ServerUpdate] Failed to clean preserve directories for ${server.name}:`, err);
+    }
+
+    // 3. Reset database flag
+    await this.prisma.server.update({
+      where: { id: serverId },
+      data: { updateInProgress: false },
+    });
+
+    // 4. Mark any pending/in-progress update history as failed
+    await this.prisma.serverUpdateHistory.updateMany({
+      where: {
+        serverId,
+        status: { in: ['pending', 'stopping', 'backing_up', 'preserving', 'downloading', 'installing', 'restoring', 'starting'] },
+      },
+      data: {
+        status: 'failed',
+        error: 'Update forcefully reset by user',
+        completedAt: new Date(),
+      },
+    });
+
+    this.emit('update:reset', { serverId });
+    logger.info(`[ServerUpdate] Force reset update state for server: ${server.name}`);
+  }
+
+  /**
+   * Recover servers with stuck update states on startup.
+   * Called during application initialization.
+   */
+  async recoverStuckUpdates(): Promise<void> {
+    const stuckServers = await this.prisma.server.findMany({
+      where: { updateInProgress: true },
+    });
+
+    if (stuckServers.length === 0) return;
+
+    logger.warn(`[ServerUpdate] Found ${stuckServers.length} server(s) with stuck update state`);
+
+    for (const server of stuckServers) {
+      logger.warn(`[ServerUpdate] Recovering stuck update for server: ${server.name}`);
+
+      // Clean up orphaned preserve directories
+      try {
+        const entries = await fs.readdir(server.serverPath);
+        for (const entry of entries) {
+          if (entry.startsWith('.update-preserve-')) {
+            const preservePath = path.join(server.serverPath, entry);
+            logger.info(`[ServerUpdate] Cleaning up orphaned preserve directory: ${preservePath}`);
+            await fs.remove(preservePath);
+          }
+        }
+      } catch (err) {
+        logger.warn(`[ServerUpdate] Failed to clean preserve directories for ${server.name}:`, err);
+      }
+
+      // Reset database flag
+      await this.prisma.server.update({
+        where: { id: server.id },
+        data: { updateInProgress: false },
+      });
+
+      // Mark pending history as failed
+      await this.prisma.serverUpdateHistory.updateMany({
+        where: {
+          serverId: server.id,
+          status: { notIn: ['completed', 'failed', 'rolled_back'] },
+        },
+        data: {
+          status: 'failed',
+          error: 'Update interrupted by server restart',
+          completedAt: new Date(),
+        },
+      });
+    }
+
+    logger.info(`[ServerUpdate] Recovered ${stuckServers.length} stuck update(s)`);
+  }
+
   // ==========================================
   // Auto-Check Feature
   // ==========================================

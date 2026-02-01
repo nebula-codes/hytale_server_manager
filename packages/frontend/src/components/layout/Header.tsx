@@ -109,8 +109,9 @@ export const Header = () => {
         <div className="relative">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-light-muted dark:text-text-muted" />
           <input
+            disabled
             type="search"
-            placeholder="Search servers, mods, players..."
+            placeholder="Search servers, mods, players... (Coming Soon)"
             className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-primary-bg border border-gray-300 dark:border-gray-700 rounded-lg text-text-light-primary dark:text-text-primary placeholder-text-muted text-base focus:outline-none focus:ring-2 focus:ring-accent-primary/50 focus:border-accent-primary min-h-[44px]"
           />
         </div>

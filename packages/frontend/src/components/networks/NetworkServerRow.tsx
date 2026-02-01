@@ -23,9 +23,17 @@ interface MemberStatus {
   playerCount?: number;
 }
 
+interface LocalServer {
+  id: string;
+  name: string;
+  status: string;
+  [key: string]: any;
+}
+
 interface NetworkServerRowProps {
   member: ServerNetworkMember;
   memberStatus?: MemberStatus;
+  localServer?: LocalServer;
   isLast: boolean;
   onAction: (serverId: string, action: 'start' | 'stop' | 'restart' | 'kill' | 'delete') => void;
 }
@@ -33,12 +41,14 @@ interface NetworkServerRowProps {
 export const NetworkServerRow = ({
   member,
   memberStatus,
+  localServer,
   isLast,
   onAction,
 }: NetworkServerRowProps) => {
   const navigate = useNavigate();
 
-  const serverStatus = memberStatus?.status || member.server.status || 'stopped';
+  // Prefer local server status for immediate UI updates, fall back to member status from API
+  const serverStatus = localServer?.status || memberStatus?.status || member.server.status || 'stopped';
   const isRunning = serverStatus === 'running';
   const isStopped = serverStatus === 'stopped';
   const isStopping = serverStatus === 'stopping';

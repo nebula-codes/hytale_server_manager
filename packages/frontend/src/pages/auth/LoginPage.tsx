@@ -51,24 +51,12 @@ export const LoginPage = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  // Clear errors when form changes
-  useEffect(() => {
-    if (!isSetupMode && error) {
-      clearError();
-    }
-  }, [identifier, password, isSetupMode, error, clearError]);
-
+  // Check for setup requirement from error message
   useEffect(() => {
     if (error && error.toLowerCase().includes('initial setup')) {
       setForceSetup(true);
     }
   }, [error]);
-
-  useEffect(() => {
-    if (setupError) {
-      setSetupError(null);
-    }
-  }, [setupEmail, setupUsername, setupPassword, setupConfirm]);
 
   /**
    * Handles form submission
@@ -162,7 +150,10 @@ export const LoginPage = () => {
                 label="Admin Email"
                 placeholder="Enter your email address"
                 value={setupEmail}
-                onChange={(e) => setSetupEmail(e.target.value)}
+                onChange={(e) => {
+                  setSetupEmail(e.target.value);
+                  if (setupError) setSetupError(null);
+                }}
                 icon={<User size={18} />}
                 required
                 autoComplete="email"
@@ -174,7 +165,10 @@ export const LoginPage = () => {
                 label="Admin Username"
                 placeholder="Choose a username"
                 value={setupUsername}
-                onChange={(e) => setSetupUsername(e.target.value)}
+                onChange={(e) => {
+                  setSetupUsername(e.target.value);
+                  if (setupError) setSetupError(null);
+                }}
                 icon={<User size={18} />}
                 required
                 autoComplete="username"
@@ -186,7 +180,10 @@ export const LoginPage = () => {
                 label="Admin Password"
                 placeholder="Create a strong password"
                 value={setupPassword}
-                onChange={(e) => setSetupPassword(e.target.value)}
+                onChange={(e) => {
+                  setSetupPassword(e.target.value);
+                  if (setupError) setSetupError(null);
+                }}
                 icon={<Lock size={18} />}
                 required
                 autoComplete="new-password"
@@ -198,7 +195,10 @@ export const LoginPage = () => {
                 label="Confirm Password"
                 placeholder="Re-enter your password"
                 value={setupConfirm}
-                onChange={(e) => setSetupConfirm(e.target.value)}
+                onChange={(e) => {
+                  setSetupConfirm(e.target.value);
+                  if (setupError) setSetupError(null);
+                }}
                 icon={<Lock size={18} />}
                 required
                 autoComplete="new-password"
@@ -212,13 +212,27 @@ export const LoginPage = () => {
               <AnimatePresence mode="wait">
                 {setupError && (
                   <motion.div
-                    initial={{ opacity: 0, y: -10, height: 0 }}
-                    animate={{ opacity: 1, y: 0, height: 'auto' }}
-                    exit={{ opacity: 0, y: -10, height: 0 }}
-                    className="p-3 bg-danger/20 border border-danger/30 rounded-lg flex items-start gap-2"
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                      scale: 1,
+                      transition: {
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 25
+                      }
+                    }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    className="p-4 bg-red-500/10 border-2 border-red-500/50 rounded-lg flex items-start gap-3 shadow-lg shadow-red-500/20"
                   >
-                    <AlertCircle size={18} className="text-danger flex-shrink-0 mt-0.5" />
-                    <span className="text-danger text-sm">{setupError}</span>
+                    <div className="p-1.5 bg-red-500/20 rounded-full flex-shrink-0">
+                      <AlertCircle size={20} className="text-red-500" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-red-500 font-semibold text-sm mb-1">Setup Failed</h4>
+                      <p className="text-red-400 text-sm leading-relaxed">{setupError}</p>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -241,11 +255,15 @@ export const LoginPage = () => {
                 label="Username or Email"
                 placeholder="Enter your username or email"
                 value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
+                onChange={(e) => {
+                  setIdentifier(e.target.value);
+                  if (error) clearError();
+                }}
                 icon={<User size={18} />}
                 required
                 autoComplete="username"
                 disabled={isLoading}
+                className={error ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20' : ''}
               />
 
               <Input
@@ -253,11 +271,15 @@ export const LoginPage = () => {
                 label="Password"
                 placeholder="Enter your password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) clearError();
+                }}
                 icon={<Lock size={18} />}
                 required
                 autoComplete="current-password"
                 disabled={isLoading}
+                className={error ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20' : ''}
               />
 
               <div className="flex items-center justify-between">
@@ -291,13 +313,27 @@ export const LoginPage = () => {
               <AnimatePresence mode="wait">
                 {error && (
                   <motion.div
-                    initial={{ opacity: 0, y: -10, height: 0 }}
-                    animate={{ opacity: 1, y: 0, height: 'auto' }}
-                    exit={{ opacity: 0, y: -10, height: 0 }}
-                    className="p-3 bg-danger/20 border border-danger/30 rounded-lg flex items-start gap-2"
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                      scale: 1,
+                      transition: {
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 25
+                      }
+                    }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    className="p-4 bg-red-500/10 border-2 border-red-500/50 rounded-lg flex items-start gap-3 shadow-lg shadow-red-500/20"
                   >
-                    <AlertCircle size={18} className="text-danger flex-shrink-0 mt-0.5" />
-                    <span className="text-danger text-sm">{error}</span>
+                    <div className="p-1.5 bg-red-500/20 rounded-full flex-shrink-0">
+                      <AlertCircle size={20} className="text-red-500" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-red-500 font-semibold text-sm mb-1">Login Failed</h4>
+                      <p className="text-red-400 text-sm leading-relaxed">{error}</p>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>

@@ -17,7 +17,8 @@ import { Button } from '../ui/Button';
 import {
   useCheckServerUpdate,
   useStartServerUpdate,
-  useCancelServerUpdate
+  useCancelServerUpdate,
+  useForceResetServerUpdate
 } from '../../hooks/api/useServerUpdates';
 import { websocket } from '../../services/websocket';
 import type { UpdateStatus, ServerUpdateProgressEvent } from '../../types';
@@ -56,10 +57,12 @@ export const ServerUpdateModal = ({
   const [status, setStatus] = useState<UpdateStatus | null>(null);
   const [message, setMessage] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  const [showResetOption, setShowResetOption] = useState(false);
 
   const { data: versionCheck, isLoading: isChecking } = useCheckServerUpdate(serverId);
   const startUpdate = useStartServerUpdate();
   const cancelUpdate = useCancelServerUpdate();
+  const forceReset = useForceResetServerUpdate();
 
   const isUpdating = sessionId !== null && status !== 'completed' && status !== 'failed' && status !== 'rolled_back';
   const isComplete = status === 'completed' || status === 'failed' || status === 'rolled_back';
@@ -107,12 +110,14 @@ export const ServerUpdateModal = ({
       setStatus(null);
       setMessage('');
       setError(null);
+      setShowResetOption(false);
     }
   }, [isOpen]);
 
   const handleStartUpdate = async () => {
     try {
       setError(null);
+      setShowResetOption(false);
       const session = await startUpdate.mutateAsync({
         serverId,
         targetVersion: versionCheck?.availableVersion || undefined
@@ -120,6 +125,20 @@ export const ServerUpdateModal = ({
       setSessionId(session.sessionId);
       setStatus(session.status);
       setProgress(session.progress);
+    } catch (err: any) {
+      setError(err.message);
+      // Show reset option if the error indicates stuck state
+      if (err.message.includes('already being updated')) {
+        setShowResetOption(true);
+      }
+    }
+  };
+
+  const handleForceReset = async () => {
+    try {
+      await forceReset.mutateAsync(serverId);
+      setShowResetOption(false);
+      setError(null);
     } catch (err: any) {
       setError(err.message);
     }
@@ -243,6 +262,24 @@ export const ServerUpdateModal = ({
             <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
               You're running the latest version ({currentVersion})
             </p>
+          </div>
+        )}
+
+        {/* Error when starting update (outside progress section) */}
+        {error && !isUpdating && !isComplete && (
+          <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <p className="text-sm text-red-400">{error}</p>
+            {showResetOption && (
+              <Button
+                variant="danger"
+                size="sm"
+                className="mt-3"
+                onClick={handleForceReset}
+                disabled={forceReset.isPending}
+              >
+                {forceReset.isPending ? 'Resetting...' : 'Reset Update State'}
+              </Button>
+            )}
           </div>
         )}
       </div>

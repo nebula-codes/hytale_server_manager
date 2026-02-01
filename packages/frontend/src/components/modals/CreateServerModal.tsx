@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Modal, ModalFooter, Button, Input } from '../ui';
-import { ChevronDown, Server as ServerIcon } from 'lucide-react';
+import { AlertTriangle, ChevronDown, Server as ServerIcon } from 'lucide-react';
 import { HytaleServerDownloadSection } from '../features/HytaleServerDownloadSection';
 
 interface CreateServerModalProps {
@@ -50,6 +50,8 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
   const [loading, setLoading] = useState(false);
   const [jvmArgsExpanded, setJvmArgsExpanded] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof ServerFormData, string>>>({});
+  const [skippedDownload, setSkippedDownload] = useState(false);
+  const [showSkipConfirmation, setShowSkipConfirmation] = useState(false);
   const updatingFromRef = useRef<'fields' | 'jvmArgs' | null>(null);
 
   const toggleJvmArgsExpanded = () => {
@@ -265,6 +267,25 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
       return;
     }
 
+    // Show confirmation if download was skipped
+    if (skippedDownload && !showSkipConfirmation) {
+      setShowSkipConfirmation(true);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await onSubmit(formData);
+      handleClose();
+    } catch (error) {
+      console.error('Error creating server:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmSkipCreate = async () => {
+    setShowSkipConfirmation(false);
     setLoading(true);
     try {
       // Process adapter config to format memory values
@@ -302,6 +323,8 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
       adapterType: 'java',
     });
     setErrors({});
+    setSkippedDownload(false);
+    setShowSkipConfirmation(false);
     updatingFromRef.current = null;
     onClose();
   };
@@ -390,6 +413,7 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
           <HytaleServerDownloadSection
             serverPath={formData.serverPath}
             onVersionSet={useCallback((version: string) => updateField('version', version), [updateField])}
+            onSkipDownload={useCallback(skipped) => setSkippedDownload(skipped), [setSkippedDownload])}
           />
           {errors.version && (
             <p className="text-danger text-sm mt-1">{errors.version}</p>
@@ -760,11 +784,54 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
         </div>
       </div>
 
+      {/* Skip Download Confirmation Dialog */}
+      {showSkipConfirmation && (
+        <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg space-y-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-6 h-6 text-yellow-500 shrink-0" />
+            <div>
+              <h4 className="font-medium text-text-light-primary dark:text-text-primary mb-2">
+                Confirm: No Server Files Downloaded
+              </h4>
+              <p className="text-sm text-text-light-muted dark:text-text-muted mb-3">
+                You are creating this server without downloading files. This means:
+              </p>
+              <ul className="text-sm text-text-light-muted dark:text-text-muted list-disc list-inside space-y-1 mb-3">
+                <li>The server directory must already contain valid server files</li>
+                <li>The server JAR file must exist at the specified path</li>
+                <li>This option is only intended for migrating existing servers</li>
+              </ul>
+              <p className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">
+                Are you sure you want to continue?
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSkipConfirmation(false)}
+            >
+              Go Back
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleConfirmSkipCreate}
+              disabled={loading}
+              className="bg-yellow-600 hover:bg-yellow-700"
+            >
+              {loading ? 'Creating...' : 'Yes, Create Server'}
+            </Button>
+          </div>
+        </div>
+      )}
+
       <ModalFooter>
         <Button variant="ghost" onClick={handleClose} disabled={loading}>
           Cancel
         </Button>
-        <Button variant="primary" onClick={handleSubmit} disabled={loading}>
+        <Button variant="primary" onClick={handleSubmit} disabled={loading || showSkipConfirmation}>
           {loading ? 'Creating...' : 'Create Server'}
         </Button>
       </ModalFooter>

@@ -207,35 +207,11 @@ export const useAuthStore = create<AuthStore>()(
             return;
           }
 
-          const isValid = await authService.isSessionValid();
+          // Check if there's an access token in localStorage before attempting refresh
+          // This prevents unnecessary API calls on the login page
+          const hasToken = !!localStorage.getItem('accessToken');
 
-          if (isValid) {
-            const user = await authService.getCurrentUser();
-            set({
-              user,
-              isAuthenticated: !!user,
-              isInitializing: false,
-              setupRequired: false,
-              isSetupLoading: false,
-            });
-
-            // Fetch permissions if user is authenticated
-            if (user) {
-              try {
-                const permissionsResponse = await api.getMyPermissions();
-                set((state) => ({
-                  user: state.user
-                    ? { ...state.user, permissions: permissionsResponse.permissions as PermissionCode[] }
-                    : null,
-                }));
-                logger.debug('User permissions loaded:', permissionsResponse.permissions.length);
-              } catch (permError) {
-                logger.warn('Failed to fetch permissions:', permError);
-              }
-            }
-
-            logger.info('Auth initialized:', user?.email);
-          } else {
+          if (!hasToken) {
             set({
               user: null,
               isAuthenticated: false,
@@ -243,6 +219,36 @@ export const useAuthStore = create<AuthStore>()(
               setupRequired: false,
               isSetupLoading: false,
             });
+            logger.debug('Auth initialized: no stored token');
+            return;
+          }
+
+          // getCurrentUser() calls refreshAccessToken internally
+          const user = await authService.getCurrentUser();
+
+          set({
+            user,
+            isAuthenticated: !!user,
+            isInitializing: false,
+            setupRequired: false,
+            isSetupLoading: false,
+          });
+
+          // Fetch permissions if user is authenticated
+          if (user) {
+            try {
+              const permissionsResponse = await api.getMyPermissions();
+              set((state) => ({
+                user: state.user
+                  ? { ...state.user, permissions: permissionsResponse.permissions as PermissionCode[] }
+                  : null,
+              }));
+              logger.debug('User permissions loaded:', permissionsResponse.permissions.length);
+            } catch (permError) {
+              logger.warn('Failed to fetch permissions:', permError);
+            }
+            logger.info('Auth initialized:', user.email);
+          } else {
             logger.debug('Auth initialized: no valid session');
           }
         } catch (error) {

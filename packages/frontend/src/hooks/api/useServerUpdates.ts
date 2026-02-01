@@ -233,3 +233,28 @@ export function useRefreshVersionCheck() {
     },
   });
 }
+
+/**
+ * Hook to force reset a stuck server update
+ *
+ * @returns Mutation for resetting server update state
+ */
+export function useForceResetServerUpdate() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: async (serverId: string) => {
+      logger.debug('Force resetting server update:', serverId);
+      return api.forceResetServerUpdate(serverId);
+    },
+    onSuccess: (_, serverId) => {
+      toast.success('Update state reset successfully');
+      queryClient.invalidateQueries({ queryKey: serverKeys.detail(serverId) });
+      queryClient.invalidateQueries({ queryKey: serverUpdateKeys.check(serverId) });
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to reset update: ${error.message}`);
+    },
+  });
+}

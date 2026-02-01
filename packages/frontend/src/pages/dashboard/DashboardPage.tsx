@@ -9,6 +9,7 @@ import {
   AlertsSummaryWidget,
   ActivityFeedWidget,
 } from './components';
+import { useNavigate } from 'react-router-dom';
 
 interface DashboardStats {
   totalServers: number;
@@ -65,6 +66,7 @@ export const DashboardPage = () => {
   const [alertsSummary, setAlertsSummary] = useState<AlertsSummary | null>(null);
   const [metricsRange, setMetricsRange] = useState<'1h' | '24h' | '7d' | '30d'>('24h');
 
+  const navigate = useNavigate();
   // Refs to store current metricsRange for use in intervals
   const metricsRangeRef = useRef(metricsRange);
   metricsRangeRef.current = metricsRange;
@@ -216,7 +218,7 @@ export const DashboardPage = () => {
         className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6"
       >
         <motion.div variants={item}>
-          <Card variant="glass" hover>
+          <Card variant="glass" hover onClick={() => navigate('/servers')}>
             <CardContent className="flex items-center justify-between">
               <div>
                 <p className="text-text-light-muted dark:text-text-muted text-sm">Total Servers</p>
@@ -235,7 +237,7 @@ export const DashboardPage = () => {
         </motion.div>
 
         <motion.div variants={item}>
-          <Card variant="glass" hover>
+          <Card variant="glass">
             <CardContent className="flex items-center justify-between">
               <div>
                 <p className="text-text-light-muted dark:text-text-muted text-sm">Host CPU</p>
@@ -262,7 +264,7 @@ export const DashboardPage = () => {
         </motion.div>
 
         <motion.div variants={item}>
-          <Card variant="glass" hover>
+          <Card variant="glass">
             <CardContent className="flex items-center justify-between">
               <div>
                 <p className="text-text-light-muted dark:text-text-muted text-sm">Host Memory</p>

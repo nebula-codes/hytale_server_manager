@@ -456,6 +456,10 @@ export class App {
       await this.serverService.recoverOrphanedServers();
       logger.info('Server recovery complete');
 
+      // Recover any stuck server updates
+      await serverUpdateService.recoverStuckUpdates();
+      logger.info('Server update recovery complete');
+
       // Load scheduled tasks
       await this.schedulerService.loadTasks();
       logger.info('Scheduled tasks loaded');

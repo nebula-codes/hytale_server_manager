@@ -47,6 +47,25 @@ const COOKIE_OPTIONS = {
 const ACCESS_TOKEN_COOKIE = 'access_token';
 const REFRESH_TOKEN_COOKIE = 'refresh_token';
 
+// In-memory storage for failed login attempts on non-existent usernames
+// This prevents username enumeration by applying lockout to invalid usernames too
+interface FailedAttempt {
+  count: number;
+  lockedUntil: Date | null;
+}
+const failedAttemptsByIpAndUsername = new Map<string, FailedAttempt>();
+
+// Clean up old entries periodically (every hour)
+setInterval(() => {
+  const now = new Date();
+  for (const [key, attempt] of failedAttemptsByIpAndUsername.entries()) {
+    // Remove entries that are no longer locked and haven't had attempts recently
+    if (!attempt.lockedUntil || attempt.lockedUntil < now) {
+      failedAttemptsByIpAndUsername.delete(key);
+    }
+  }
+}, 60 * 60 * 1000);
+
 /**
  * Validate password complexity
  * Requirements: 12+ chars, uppercase, lowercase, number, special char
@@ -257,6 +276,23 @@ export function createAuthRoutes(): Router {
         });
       }
 
+      // Get IP address for tracking failed attempts
+      const context = getActivityContext(req);
+      const ipAndUsername = `${context.ipAddress}:${identifier.toLowerCase()}`;
+
+      // Check in-memory lockout for non-existent usernames (prevents enumeration)
+      const failedAttempt = failedAttemptsByIpAndUsername.get(ipAndUsername);
+      if (failedAttempt?.lockedUntil && new Date(failedAttempt.lockedUntil) > new Date()) {
+        const remainingMs = new Date(failedAttempt.lockedUntil).getTime() - Date.now();
+        const remainingMins = Math.ceil(remainingMs / 60000);
+        logger.warn(`Login failed: temporary lockout for identifier "${identifier}" from IP ${context.ipAddress}`);
+
+        return res.status(423).json({
+          message: `Too many failed attempts. Try again in ${remainingMins} minute${remainingMins > 1 ? 's' : ''}.`,
+          lockedUntil: failedAttempt.lockedUntil,
+        });
+      }
+
       // Find user by email or username
       const user = await prisma.user.findFirst({
         where: {
@@ -268,11 +304,24 @@ export function createAuthRoutes(): Router {
       });
 
       if (!user) {
+        // Perform a dummy bcrypt comparison to prevent timing attacks
+        await bcrypt.compare(password, '$2a$12$dummyhashtopreventtimingattack1234567890123456789012345678');
+
         logger.warn(`Login failed: user not found for identifier "${identifier}"`);
+
+        // Track failed attempt for non-existent username
+        const attempt = failedAttemptsByIpAndUsername.get(ipAndUsername) || { count: 0, lockedUntil: null };
+        attempt.count += 1;
+
+        if (attempt.count >= MAX_FAILED_ATTEMPTS) {
+          attempt.lockedUntil = new Date(Date.now() + LOCKOUT_DURATION_MS);
+          logger.warn(`Temporary lockout applied for identifier "${identifier}" from IP ${context.ipAddress} after ${attempt.count} failed attempts`);
+        }
+
+        failedAttemptsByIpAndUsername.set(ipAndUsername, attempt);
 
         // Log failed attempt
         const activityLogService: ActivityLogService = req.app.get('activityLogService');
-        const context = getActivityContext(req);
         activityLogService.logAsync({
           userId: 'unknown',
           username: identifier,
@@ -281,11 +330,12 @@ export function createAuthRoutes(): Router {
           resourceType: RESOURCE_TYPES.USER,
           resourceName: identifier,
           status: 'failed',
-          errorMessage: 'User not found',
+          errorMessage: 'Invalid credentials',
           ipAddress: context.ipAddress,
           userAgent: context.userAgent,
         });
 
+        // Return the same error as invalid password to prevent enumeration
         return res.status(401).json({
           message: 'Invalid username/email or password',
         });
@@ -297,8 +347,9 @@ export function createAuthRoutes(): Router {
         const remainingMins = Math.ceil(remainingMs / 60000);
         logger.warn(`Login failed: account locked for user "${user.username}"`);
 
+        // Use the same message as non-existent username lockout to prevent enumeration
         return res.status(423).json({
-          message: `Account is locked. Try again in ${remainingMins} minute${remainingMins > 1 ? 's' : ''}.`,
+          message: `Too many failed attempts. Try again in ${remainingMins} minute${remainingMins > 1 ? 's' : ''}.`,
           lockedUntil: user.lockedUntil,
         });
       }
@@ -328,7 +379,6 @@ export function createAuthRoutes(): Router {
 
         // Log failed attempt
         const activityLogService: ActivityLogService = req.app.get('activityLogService');
-        const context = getActivityContext(req);
         activityLogService.logAsync({
           userId: user.id,
           username: user.username,
@@ -344,15 +394,15 @@ export function createAuthRoutes(): Router {
         });
 
         if (shouldLock) {
+          const remainingMins = Math.ceil(LOCKOUT_DURATION_MS / 60000);
           return res.status(423).json({
-            message: 'Account locked due to too many failed attempts. Try again in 15 minutes.',
+            message: `Too many failed attempts. Try again in ${remainingMins} minute${remainingMins > 1 ? 's' : ''}.`,
             lockedUntil,
           });
         }
 
         return res.status(401).json({
           message: 'Invalid username/email or password',
-          attemptsRemaining: MAX_FAILED_ATTEMPTS - newFailedAttempts,
         });
       }
 
@@ -371,11 +421,13 @@ export function createAuthRoutes(): Router {
         },
       });
 
+      // Clear in-memory lockout for this IP+username combination on successful login
+      failedAttemptsByIpAndUsername.delete(ipAndUsername);
+
       logger.info(`User logged in: ${user.username}`);
 
       // Log activity
       const activityLogService: ActivityLogService = req.app.get('activityLogService');
-      const context = getActivityContext(req);
       activityLogService.logAsync({
         userId: user.id,
         username: user.username,

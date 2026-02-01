@@ -150,4 +150,23 @@ router.get(
   }
 );
 
+/**
+ * POST /api/server-updates/:serverId/force-reset
+ * Force reset the update state for a server (when session is lost)
+ */
+router.post(
+  '/:serverId/force-reset',
+  requirePermission(PERMISSIONS.SERVERS_UPDATE),
+  async (req: Request, res: Response) => {
+    try {
+      const { serverId } = req.params;
+      await serverUpdateService.forceResetUpdateState(serverId);
+      res.json({ success: true, message: 'Update state reset successfully' });
+    } catch (error: any) {
+      logger.error('[ServerUpdate] Error force resetting update:', error);
+      res.status(500).json({ error: 'Failed to reset update state', message: error.message });
+    }
+  }
+);
+
 export default router;
