@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input } from '../../components/ui';
 import { ArrowLeft, Save, RotateCw, HardDrive, FolderOpen, Server, Plus, X, FileX } from 'lucide-react';
@@ -51,6 +51,16 @@ interface AdvancedSettings {
   jarFile: string;
   assetsPath: string;
   javaPath: string;
+  minMemory: string;
+  maxMemory: string;
+  cpuCores: string;
+  // JVM optimization flags
+  useContainerSupport: boolean;
+  useG1GC: boolean;
+  maxGcPauseMillis: string;
+  parallelGCThreads: string;
+  concGCThreads: string;
+  aotCache: string;
 }
 
 interface FtpStatus {
@@ -103,7 +113,183 @@ export const ServerSettingsPage = () => {
     jarFile: 'Server/HytaleServer.jar',
     assetsPath: '../Assets.zip',
     javaPath: 'java',
+    minMemory: '1',
+    maxMemory: '2',
+    cpuCores: '',
+    useContainerSupport: false,
+    useG1GC: false,
+    maxGcPauseMillis: '200',
+    parallelGCThreads: '',
+    concGCThreads: '',
+    aotCache: 'HytaleServer.aot',
   });
+  const updatingFromRef = useRef<'fields' | 'jvmArgs' | null>(null);
+
+  // Build JVM args from memory and CPU settings
+  const buildJvmArgs = (settings: AdvancedSettings): string => {
+    const args: string[] = [];
+
+    // Memory args
+    if (settings.minMemory) args.push(`-Xms${settings.minMemory}G`);
+    if (settings.maxMemory) args.push(`-Xmx${settings.maxMemory}G`);
+
+    // Container support
+    if (settings.useContainerSupport) {
+      args.push('-XX:+UseContainerSupport');
+    }
+
+    // CPU core limit
+    const cores = settings.cpuCores ? parseInt(settings.cpuCores) : 0;
+    if (cores > 0) {
+      args.push(`-XX:ActiveProcessorCount=${cores}`);
+    }
+
+    // GC thread settings
+    if (settings.parallelGCThreads) {
+      args.push(`-XX:ParallelGCThreads=${settings.parallelGCThreads}`);
+    }
+    if (settings.concGCThreads) {
+      args.push(`-XX:ConcGCThreads=${settings.concGCThreads}`);
+    }
+
+    // G1 Garbage Collector
+    if (settings.useG1GC) {
+      args.push('-XX:+UseG1GC');
+    }
+
+    // Max GC pause time
+    if (settings.maxGcPauseMillis) {
+      args.push(`-XX:MaxGCPauseMillis=${settings.maxGcPauseMillis}`);
+    }
+
+    // AOT cache for Hytale
+    if (settings.aotCache) {
+      args.push(`-XX:AOTCache=${settings.aotCache}`);
+    }
+
+    return args.join(' ');
+  };
+
+  // Parse JVM args to extract memory and CPU settings
+  const parseJvmArgs = (jvmArgs: string): Partial<AdvancedSettings> => {
+    const result: Partial<AdvancedSettings> = {
+      minMemory: '1',
+      maxMemory: '2',
+      cpuCores: '',
+      useContainerSupport: false,
+      useG1GC: false,
+      maxGcPauseMillis: '200',
+      parallelGCThreads: '',
+      concGCThreads: '',
+      aotCache: 'HytaleServer.aot',
+    };
+
+    // Extract -Xms (min memory)
+    const xmsMatch = jvmArgs.match(/-Xms(\d+(?:\.\d+)?)(G|M)?/i);
+    if (xmsMatch) {
+      const value = parseFloat(xmsMatch[1]);
+      const unit = xmsMatch[2]?.toUpperCase();
+      result.minMemory = unit === 'M' ? (value / 1024).toFixed(1) : value.toString();
+    }
+
+    // Extract -Xmx (max memory)
+    const xmxMatch = jvmArgs.match(/-Xmx(\d+(?:\.\d+)?)(G|M)?/i);
+    if (xmxMatch) {
+      const value = parseFloat(xmxMatch[1]);
+      const unit = xmxMatch[2]?.toUpperCase();
+      result.maxMemory = unit === 'M' ? (value / 1024).toFixed(1) : value.toString();
+    }
+
+    // Extract CPU cores from -XX:ActiveProcessorCount
+    const cpuMatch = jvmArgs.match(/-XX:ActiveProcessorCount=(\d+)/i);
+    if (cpuMatch) {
+      result.cpuCores = cpuMatch[1];
+    }
+
+    // Extract UseContainerSupport
+    result.useContainerSupport = /-XX:\+UseContainerSupport/i.test(jvmArgs);
+
+    // Extract ParallelGCThreads
+    const parallelMatch = jvmArgs.match(/-XX:ParallelGCThreads=(\d+)/i);
+    if (parallelMatch) {
+      result.parallelGCThreads = parallelMatch[1];
+    }
+
+    // Extract ConcGCThreads
+    const concMatch = jvmArgs.match(/-XX:ConcGCThreads=(\d+)/i);
+    if (concMatch) {
+      result.concGCThreads = concMatch[1];
+    }
+
+    // Extract UseG1GC
+    result.useG1GC = /-XX:\+UseG1GC/i.test(jvmArgs);
+
+    // Extract MaxGCPauseMillis
+    const pauseMatch = jvmArgs.match(/-XX:MaxGCPauseMillis=(\d+)/i);
+    if (pauseMatch) {
+      result.maxGcPauseMillis = pauseMatch[1];
+    }
+
+    // Extract AOTCache
+    const aotMatch = jvmArgs.match(/-XX:AOTCache=([^\s]+)/i);
+    if (aotMatch) {
+      result.aotCache = aotMatch[1];
+    }
+
+    return result;
+  };
+
+  // Auto-update JVM args when memory or CPU settings change
+  useEffect(() => {
+    if (updatingFromRef.current === 'jvmArgs') {
+      updatingFromRef.current = null;
+      return;
+    }
+
+    const newJvmArgs = buildJvmArgs(advancedSettings);
+
+    if (advancedSettings.jvmArgs !== newJvmArgs) {
+      updatingFromRef.current = 'fields';
+      setAdvancedSettings(prev => ({ ...prev, jvmArgs: newJvmArgs }));
+      setHasChanges(true);
+    }
+  }, [
+    advancedSettings.minMemory,
+    advancedSettings.maxMemory,
+    advancedSettings.cpuCores,
+    advancedSettings.useContainerSupport,
+    advancedSettings.useG1GC,
+    advancedSettings.maxGcPauseMillis,
+    advancedSettings.parallelGCThreads,
+    advancedSettings.concGCThreads,
+    advancedSettings.aotCache,
+  ]);
+
+  // Auto-update fields when JVM args change
+  useEffect(() => {
+    if (updatingFromRef.current === 'fields') {
+      updatingFromRef.current = null;
+      return;
+    }
+
+    if (advancedSettings.jvmArgs) {
+      const parsed = parseJvmArgs(advancedSettings.jvmArgs);
+
+      // Check if any field has changed
+      const hasChanges = Object.keys(parsed).some(
+        key => parsed[key as keyof typeof parsed] !== advancedSettings[key as keyof AdvancedSettings]
+      );
+
+      if (hasChanges) {
+        updatingFromRef.current = 'jvmArgs';
+        setAdvancedSettings(prev => ({
+          ...prev,
+          ...parsed,
+        }));
+        setHasChanges(true);
+      }
+    }
+  }, [advancedSettings.jvmArgs]);
 
   // Load server data
   useEffect(() => {
@@ -153,7 +339,14 @@ export const ServerSettingsPage = () => {
       });
 
       // Parse adapter config
-      let adapterConfig: { jarFile?: string; assetsPath?: string; javaPath?: string } = {};
+      let adapterConfig: {
+        jarFile?: string;
+        assetsPath?: string;
+        javaPath?: string;
+        minMemory?: string;
+        maxMemory?: string;
+        cpuCores?: number;
+      } = {};
       if (serverData.adapterConfig) {
         try {
           adapterConfig = JSON.parse(serverData.adapterConfig);
@@ -169,7 +362,17 @@ export const ServerSettingsPage = () => {
         jarFile: adapterConfig.jarFile || 'Server/HytaleServer.jar',
         assetsPath: adapterConfig.assetsPath || '../Assets.zip',
         javaPath: adapterConfig.javaPath || 'java',
+        minMemory: adapterConfig.minMemory ? adapterConfig.minMemory.replace(/G$/i, '') : '1',
+        maxMemory: adapterConfig.maxMemory ? adapterConfig.maxMemory.replace(/G$/i, '') : '2',
+        cpuCores: adapterConfig.cpuCores ? String(adapterConfig.cpuCores) : '',
+        useContainerSupport: false,
+        useG1GC: false,
+        maxGcPauseMillis: '200',
+        parallelGCThreads: '',
+        concGCThreads: '',
+        aotCache: 'HytaleServer.aot',
       });
+      updatingFromRef.current = null;
     } catch (err: any) {
       console.error('Failed to load server:', err);
       setError(err.message || 'Failed to load server');
@@ -291,6 +494,9 @@ export const ServerSettingsPage = () => {
             jarFile: advancedSettings.jarFile,
             assetsPath: advancedSettings.assetsPath,
             javaPath: advancedSettings.javaPath,
+            minMemory: advancedSettings.minMemory ? `${advancedSettings.minMemory}G` : undefined,
+            maxMemory: advancedSettings.maxMemory ? `${advancedSettings.maxMemory}G` : undefined,
+            cpuCores: advancedSettings.cpuCores ? parseInt(advancedSettings.cpuCores) : undefined,
           },
         };
       }
@@ -345,7 +551,14 @@ export const ServerSettingsPage = () => {
     });
 
     // Parse adapter config for reset
-    let adapterConfig: { jarFile?: string; assetsPath?: string; javaPath?: string } = {};
+    let adapterConfig: {
+      jarFile?: string;
+      assetsPath?: string;
+      javaPath?: string;
+      minMemory?: string;
+      maxMemory?: string;
+      cpuCores?: number;
+    } = {};
     if (server.adapterConfig) {
       try {
         adapterConfig = JSON.parse(server.adapterConfig);
@@ -360,7 +573,17 @@ export const ServerSettingsPage = () => {
       jarFile: adapterConfig.jarFile || 'Server/HytaleServer.jar',
       assetsPath: adapterConfig.assetsPath || '../Assets.zip',
       javaPath: adapterConfig.javaPath || 'java',
+      minMemory: adapterConfig.minMemory ? adapterConfig.minMemory.replace(/G$/i, '') : '1',
+      maxMemory: adapterConfig.maxMemory ? adapterConfig.maxMemory.replace(/G$/i, '') : '2',
+      cpuCores: adapterConfig.cpuCores ? String(adapterConfig.cpuCores) : '',
+      useContainerSupport: false,
+      useG1GC: false,
+      maxGcPauseMillis: '200',
+      parallelGCThreads: '',
+      concGCThreads: '',
+      aotCache: 'HytaleServer.aot',
     });
+    updatingFromRef.current = null;
 
     setHasChanges(false);
   };
@@ -734,6 +957,195 @@ export const ServerSettingsPage = () => {
                 <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
                   Path to the Java executable. Use "java" to use system Java, or specify a full path (e.g., /usr/lib/jvm/java-17/bin/java).
                 </p>
+              </div>
+
+              {/* Memory Settings */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">Min Memory (GB)</label>
+                  <Input
+                    type="number"
+                    min="0.5"
+                    step="0.5"
+                    value={advancedSettings.minMemory}
+                    onChange={(e) => {
+                      setAdvancedSettings(prev => ({ ...prev, minMemory: e.target.value }));
+                      setHasChanges(true);
+                    }}
+                    placeholder="1"
+                  />
+                  <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
+                    Minimum heap memory allocation (-Xms)
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">Max Memory (GB)</label>
+                  <Input
+                    type="number"
+                    min="0.5"
+                    step="0.5"
+                    value={advancedSettings.maxMemory}
+                    onChange={(e) => {
+                      setAdvancedSettings(prev => ({ ...prev, maxMemory: e.target.value }));
+                      setHasChanges(true);
+                    }}
+                    placeholder="2"
+                  />
+                  <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
+                    Maximum heap memory allocation (-Xmx)
+                  </p>
+                </div>
+              </div>
+
+              {/* CPU Core Limit */}
+              <div>
+                <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">CPU Core Limit (Optional)</label>
+                <Input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={advancedSettings.cpuCores}
+                  onChange={(e) => {
+                    setAdvancedSettings(prev => ({ ...prev, cpuCores: e.target.value }));
+                    setHasChanges(true);
+                  }}
+                  placeholder="Leave empty for no limit"
+                />
+                <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
+                  Limit JVM to use a specific number of CPU cores via -XX:ActiveProcessorCount. Leave empty to use all available cores.
+                </p>
+              </div>
+
+              {/* JVM Optimization Flags */}
+              <div className="border-t border-gray-300 dark:border-gray-700 pt-6 mt-6">
+                <h4 className="text-sm font-medium text-text-light-primary dark:text-text-primary mb-4">JVM Optimization Flags</h4>
+
+                <div className="space-y-4">
+                  {/* Container Support */}
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={advancedSettings.useContainerSupport}
+                      onChange={(e) => {
+                        setAdvancedSettings(prev => ({ ...prev, useContainerSupport: e.target.checked }));
+                        setHasChanges(true);
+                      }}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <label className="block text-sm text-text-light-primary dark:text-text-primary font-medium">
+                        Container Support (-XX:+UseContainerSupport)
+                      </label>
+                      <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
+                        Makes the JVM aware it's running in a container. Improves memory and CPU detection for Docker/Kubernetes environments.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* G1 Garbage Collector */}
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={advancedSettings.useG1GC}
+                      onChange={(e) => {
+                        setAdvancedSettings(prev => ({ ...prev, useG1GC: e.target.checked }));
+                        setHasChanges(true);
+                      }}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <label className="block text-sm text-text-light-primary dark:text-text-primary font-medium">
+                        G1 Garbage Collector (-XX:+UseG1GC)
+                      </label>
+                      <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
+                        Uses the G1GC garbage collector, which provides better performance for large heaps and reduces pause times. Recommended for servers with 4GB+ memory.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* GC Thread Settings */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">
+                        Parallel GC Threads (Optional)
+                      </label>
+                      <Input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={advancedSettings.parallelGCThreads}
+                        onChange={(e) => {
+                          setAdvancedSettings(prev => ({ ...prev, parallelGCThreads: e.target.value }));
+                          setHasChanges(true);
+                        }}
+                        placeholder="Auto (CPU cores)"
+                      />
+                      <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
+                        Number of threads for parallel garbage collection (-XX:ParallelGCThreads). Leave empty to auto-detect.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">
+                        Concurrent GC Threads (Optional)
+                      </label>
+                      <Input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={advancedSettings.concGCThreads}
+                        onChange={(e) => {
+                          setAdvancedSettings(prev => ({ ...prev, concGCThreads: e.target.value }));
+                          setHasChanges(true);
+                        }}
+                        placeholder="Auto (cores/2)"
+                      />
+                      <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
+                        Number of concurrent garbage collection threads (-XX:ConcGCThreads). Leave empty to auto-detect.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Max GC Pause Time */}
+                  <div>
+                    <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">
+                      Max GC Pause Time (ms)
+                    </label>
+                    <Input
+                      type="number"
+                      min="50"
+                      step="50"
+                      value={advancedSettings.maxGcPauseMillis}
+                      onChange={(e) => {
+                        setAdvancedSettings(prev => ({ ...prev, maxGcPauseMillis: e.target.value }));
+                        setHasChanges(true);
+                      }}
+                      placeholder="200"
+                    />
+                    <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
+                      Target maximum pause time for garbage collection (-XX:MaxGCPauseMillis). Lower values reduce lag spikes but may increase GC frequency.
+                    </p>
+                  </div>
+
+                  {/* AOT Cache */}
+                  <div>
+                    <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">
+                      AOT Cache File
+                    </label>
+                    <Input
+                      value={advancedSettings.aotCache}
+                      onChange={(e) => {
+                        setAdvancedSettings(prev => ({ ...prev, aotCache: e.target.value }));
+                        setHasChanges(true);
+                      }}
+                      placeholder="HytaleServer.aot"
+                      className="font-mono"
+                    />
+                    <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
+                      Ahead-of-Time compilation cache file (-XX:AOTCache). Enables faster startup times if the cache file exists. Hytale-specific optimization.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               {/* JAR File Name */}

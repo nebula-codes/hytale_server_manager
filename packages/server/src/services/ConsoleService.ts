@@ -167,6 +167,28 @@ export class ConsoleService {
   }
 
   /**
+   * Clear old logs for all servers (housekeeping)
+   */
+  async clearAllOldLogs(olderThanDays: number = 7): Promise<number> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
+
+    const result = await this.prisma.consoleLog.deleteMany({
+      where: {
+        timestamp: {
+          lt: cutoffDate,
+        },
+      },
+    });
+
+    if (result.count > 0) {
+      logger.info(`Cleared ${result.count} old console logs across all servers`);
+    }
+
+    return result.count;
+  }
+
+  /**
    * Stream logs from the adapter
    */
   streamLogs(adapter: IServerAdapter, callback: (log: LogEntry) => void): void {

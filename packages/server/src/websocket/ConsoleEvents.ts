@@ -123,7 +123,7 @@ export class ConsoleEvents {
           }
 
           // Always set up log streaming (in case adapter was recreated)
-          const logHandler = async (log: LogEntry) => {
+          const logHandler = (log: LogEntry) => {
             //logger.debug(`[ConsoleEvents] Emitting log to console:${serverId}`);
             // Emit log to all subscribed clients
             consoleNamespace.to(`console:${serverId}`).emit('log', {
@@ -131,8 +131,10 @@ export class ConsoleEvents {
               log,
             });
 
-            // Save log to database
-            await this.consoleService.saveLog(serverId, log);
+            // Save log to database (async, non-blocking - fire and forget)
+            this.consoleService.saveLog(serverId, log).catch((error) => {
+              logger.error(`[ConsoleEvents] Error saving log to database for ${serverId}:`, error);
+            });
           };
 
           this.consoleService.streamLogs(adapter, logHandler);
