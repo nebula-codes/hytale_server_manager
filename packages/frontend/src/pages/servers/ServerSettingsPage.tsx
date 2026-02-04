@@ -355,22 +355,26 @@ export const ServerSettingsPage = () => {
         }
       }
 
+      // Parse JVM args to get optimization flags
+      const jvmArgs = serverData.jvmArgs || '-Xms1G -Xmx2G -XX:AOTCache=HytaleServer.aot';
+      const parsedJvmSettings = parseJvmArgs(jvmArgs);
+
       // Populate advanced settings
       setAdvancedSettings({
-        jvmArgs: serverData.jvmArgs || '-Xms1G -Xmx2G -XX:AOTCache=HytaleServer.aot',
+        jvmArgs,
         serverArgs: serverData.serverArgs || '',
         jarFile: adapterConfig.jarFile || 'Server/HytaleServer.jar',
         assetsPath: adapterConfig.assetsPath || '../Assets.zip',
         javaPath: adapterConfig.javaPath || 'java',
-        minMemory: adapterConfig.minMemory ? adapterConfig.minMemory.replace(/G$/i, '') : '1',
-        maxMemory: adapterConfig.maxMemory ? adapterConfig.maxMemory.replace(/G$/i, '') : '2',
-        cpuCores: adapterConfig.cpuCores ? String(adapterConfig.cpuCores) : '',
-        useContainerSupport: false,
-        useG1GC: false,
-        maxGcPauseMillis: '200',
-        parallelGCThreads: '',
-        concGCThreads: '',
-        aotCache: 'HytaleServer.aot',
+        minMemory: parsedJvmSettings.minMemory || (adapterConfig.minMemory ? adapterConfig.minMemory.replace(/G$/i, '') : '1'),
+        maxMemory: parsedJvmSettings.maxMemory || (adapterConfig.maxMemory ? adapterConfig.maxMemory.replace(/G$/i, '') : '2'),
+        cpuCores: parsedJvmSettings.cpuCores || (adapterConfig.cpuCores ? String(adapterConfig.cpuCores) : ''),
+        useContainerSupport: parsedJvmSettings.useContainerSupport || false,
+        useG1GC: parsedJvmSettings.useG1GC || false,
+        maxGcPauseMillis: parsedJvmSettings.maxGcPauseMillis || '200',
+        parallelGCThreads: parsedJvmSettings.parallelGCThreads || '',
+        concGCThreads: parsedJvmSettings.concGCThreads || '',
+        aotCache: parsedJvmSettings.aotCache || 'HytaleServer.aot',
       });
       updatingFromRef.current = null;
     } catch (err: any) {
