@@ -3,10 +3,12 @@ interface Props {
   variant?: 'primary' | 'secondary' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   href?: string;
+  target?: string;
+  rel?: string;
   class?: string;
 }
 
-const { variant = 'primary', size = 'md', href, class: className = '' } = Astro.props;
+const { variant = 'primary', size = 'md', href, target, rel, class: className = '' } = Astro.props;
 
 const baseClasses = 'inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-200';
 
@@ -23,12 +25,10 @@ const sizeClasses = {
 };
 
 const classes = [baseClasses, variantClasses[variant], sizeClasses[size], className].join(' ');
-
-const Tag = href ? 'a' : 'button';
 ---
 
 {href ? (
-  <a href={href} class={classes}>
+  <a href={href} class={classes} target={target} rel={rel}>
     <slot />
   </a>
 ) : (

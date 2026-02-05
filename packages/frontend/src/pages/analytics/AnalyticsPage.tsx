@@ -1,13 +1,16 @@
+import { useTranslation } from 'react-i18next';
 import { Card } from '../../components/ui';
 import { BarChart3, Construction } from 'lucide-react';
 
 export const AnalyticsPage = () => {
+  const { t } = useTranslation();
+ 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">Analytics & Reports</h1>
-        <p className="text-text-light-muted dark:text-text-muted mt-1">Performance insights and player analytics</p>
+        <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">{t('analytics.title')}</h1>
+        <p className="text-text-light-muted dark:text-text-muted mt-1">{t('analytics.subtitle')}</p>
       </div>
 
       {/* Coming Soon */}
@@ -19,11 +22,11 @@ export const AnalyticsPage = () => {
           <div className="flex items-center gap-2 mb-4">
             <Construction size={24} className="text-warning" />
             <h2 className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary">
-              Coming Soon
+              {t('analytics.coming_soon')}
             </h2>
           </div>
           <p className="text-text-light-muted dark:text-text-muted max-w-md">
-            Analytics and reporting features will be available once we know more about how Hytale server metrics and player data will work.
+            {t('analytics.description')}
           </p>
         </div>
       </Card>

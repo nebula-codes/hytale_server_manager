@@ -1,4 +1,5 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui';
 
 interface ServerStatusChartProps {
@@ -15,16 +16,18 @@ const STATUS_COLORS: Record<string, string> = {
   error: '#DC2626',
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  running: 'Running',
-  stopped: 'Stopped',
-  starting: 'Starting',
-  stopping: 'Stopping',
-  restarting: 'Restarting',
-  error: 'Error',
-};
-
 export const ServerStatusChart = ({ statusDistribution, loading }: ServerStatusChartProps) => {
+  const { t } = useTranslation();
+
+  const STATUS_LABELS: Record<string, string> = {
+    running: t('dashboard.status_chart.status.running'),
+    stopped: t('dashboard.status_chart.status.stopped'),
+    starting: t('dashboard.status_chart.status.starting'),
+    stopping: t('dashboard.status_chart.status.stopping'),
+    restarting: t('dashboard.status_chart.status.restarting'),
+    error: t('dashboard.status_chart.status.error'),
+  };
+
   const data = Object.entries(statusDistribution)
     .filter(([_, count]) => count > 0)
     .map(([status, count]) => ({
@@ -39,11 +42,11 @@ export const ServerStatusChart = ({ statusDistribution, loading }: ServerStatusC
     return (
       <Card variant="glass">
         <CardHeader>
-          <CardTitle>Server Status</CardTitle>
+          <CardTitle>{t('dashboard.status_chart.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-48 flex items-center justify-center text-text-light-muted dark:text-text-muted">
-            Loading...
+            {t('common.loading')}
           </div>
         </CardContent>
       </Card>
@@ -54,11 +57,11 @@ export const ServerStatusChart = ({ statusDistribution, loading }: ServerStatusC
     return (
       <Card variant="glass">
         <CardHeader>
-          <CardTitle>Server Status</CardTitle>
+          <CardTitle>{t('dashboard.status_chart.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-48 flex items-center justify-center text-text-light-muted dark:text-text-muted">
-            No servers found
+            {t('dashboard.status_chart.empty')}
           </div>
         </CardContent>
       </Card>
@@ -68,7 +71,7 @@ export const ServerStatusChart = ({ statusDistribution, loading }: ServerStatusC
   return (
     <Card variant="glass">
       <CardHeader>
-        <CardTitle>Server Status</CardTitle>
+        <CardTitle>{t('dashboard.status_chart.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-48">
@@ -99,7 +102,9 @@ export const ServerStatusChart = ({ statusDistribution, loading }: ServerStatusC
                   color: '#F9FAFB',
                 }}
                 formatter={(value, name) => [
-                  `${Number(value)} server${Number(value) !== 1 ? 's' : ''}`,
+                  t('dashboard.status_chart.tooltip.count', {
+                    count: Number(value),
+                  }),
                   String(name),
                 ]}
               />
@@ -118,7 +123,7 @@ export const ServerStatusChart = ({ statusDistribution, loading }: ServerStatusC
           </ResponsiveContainer>
         </div>
         <div className="text-center text-sm text-text-light-muted dark:text-text-muted mt-2">
-          {total} server{total !== 1 ? 's' : ''} total
+          {t('dashboard.status_chart.total', { count: total })}
         </div>
       </CardContent>
     </Card>

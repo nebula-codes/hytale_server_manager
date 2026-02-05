@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Bell, Search, User, LogOut, ChevronDown, Sun, Moon, AlertCircle, AlertTriangle, Info, Loader2, KeyRound } from 'lucide-react';
+import { Bell, Search, User, LogOut, ChevronDown, Sun, Moon, AlertCircle, AlertTriangle, Info, Loader2, KeyRound, Languages } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore';
 import { useThemeStore } from '../../stores/themeStore';
 import { useAlertsStore } from '../../stores/alertsStore';
+import { SUPPORTED_LANGUAGES } from '../../types';
 import { Badge } from '../ui';
 import { UpdateBadge } from '../update/UpdateBadge';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,20 +21,6 @@ const getSeverityIcon = (severity: string) => {
   }
 };
 
-const getRelativeTime = (dateString: string) => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString();
-};
 
 export const Header = () => {
   const user = useAuthStore((state) => state.user);
@@ -40,6 +28,27 @@ export const Header = () => {
   const theme = useThemeStore((state) => state.theme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+  };
+
+  const getRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return t('common.time_ago.just_now');
+    if (diffMins < 60) return t('common.time_ago.minutes_ago', { count: diffMins });
+    if (diffHours < 24) return t('common.time_ago.hours_ago', { count: diffHours });
+    if (diffDays < 7) return t('common.time_ago.days_ago', { count: diffDays });
+
+    return date.toLocaleDateString();
+  };
 
   // Alerts from backend
   const { alerts, unreadCount, isLoading, fetchAlerts, markAllAsRead } = useAlertsStore();
@@ -111,7 +120,7 @@ export const Header = () => {
           <input
             disabled
             type="search"
-            placeholder="Search servers, mods, players... (Coming Soon)"
+            placeholder={t('common.search_placeholder')}
             className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-primary-bg border border-gray-300 dark:border-gray-700 rounded-lg text-text-light-primary dark:text-text-primary placeholder-text-muted text-base focus:outline-none focus:ring-2 focus:ring-accent-primary/50 focus:border-accent-primary min-h-[44px]"
           />
         </div>
@@ -127,7 +136,7 @@ export const Header = () => {
           <button
             onClick={() => setShowNotifications(!showNotifications)}
             className="relative p-2.5 text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:text-text-primary hover:bg-gray-200 dark:bg-gray-800 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-            aria-label="Notifications"
+            aria-label={t('header.notifications')}
           >
             <Bell size={20} />
             {unreadCount > 0 && (
@@ -146,7 +155,7 @@ export const Header = () => {
                 className="absolute right-0 mt-2 w-80 sm:w-96 glass-card shadow-xl max-h-96 overflow-auto custom-scrollbar z-50"
               >
                 <div className="p-4 border-b border-gray-300 dark:border-gray-800 flex items-center justify-between">
-                  <h3 className="font-heading font-semibold">Alerts</h3>
+                  <h3 className="font-heading font-semibold">{t('header.notifications')}</h3>
                   {unreadCount > 0 && (
                     <button
                       onClick={handleMarkAllAsRead}
@@ -154,7 +163,7 @@ export const Header = () => {
                       className="text-xs text-accent-primary hover:underline disabled:opacity-50 flex items-center gap-1"
                     >
                       {isMarkingRead && <Loader2 size={10} className="animate-spin" />}
-                      Mark all as read
+                      {t('header.mark_all_read')}
                     </button>
                   )}
                 </div>
@@ -162,12 +171,12 @@ export const Header = () => {
                   {isLoading && alerts.length === 0 ? (
                     <div className="p-8 text-center text-text-light-muted dark:text-text-muted">
                       <Loader2 size={20} className="animate-spin mx-auto mb-2" />
-                      <p>Loading alerts...</p>
+                      <p>{t('header.loading_alerts')}</p>
                     </div>
                   ) : alerts.length === 0 ? (
                     <div className="p-8 text-center text-text-light-muted dark:text-text-muted">
                       <Bell size={24} className="mx-auto mb-2 opacity-50" />
-                      <p>No alerts</p>
+                      <p>{t('header.no_alerts')}</p>
                     </div>
                   ) : (
                     alerts.slice(0, 5).map((alert) => (
@@ -175,9 +184,8 @@ export const Header = () => {
                         key={alert.id}
                         to="/alerts"
                         onClick={() => setShowNotifications(false)}
-                        className={`block p-4 hover:bg-gray-200 dark:hover:bg-gray-800/50 cursor-pointer transition-colors ${
-                          !alert.isRead ? 'bg-accent-primary/5' : ''
-                        }`}
+                        className={`block p-4 hover:bg-gray-200 dark:hover:bg-gray-800/50 cursor-pointer transition-colors ${!alert.isRead ? 'bg-accent-primary/5' : ''
+                          }`}
                       >
                         <div className="flex items-start gap-3">
                           <div className="mt-0.5">
@@ -190,8 +198,8 @@ export const Header = () => {
                                   alert.severity === 'critical'
                                     ? 'danger'
                                     : alert.severity === 'warning'
-                                    ? 'warning'
-                                    : 'info'
+                                      ? 'warning'
+                                      : 'info'
                                 }
                                 size="sm"
                               >
@@ -222,7 +230,7 @@ export const Header = () => {
                     onClick={() => setShowNotifications(false)}
                     className="block p-3 text-center text-sm text-accent-primary hover:bg-gray-200 dark:hover:bg-gray-800/50 border-t border-gray-300 dark:border-gray-800"
                   >
-                    View all alerts
+                    {t('header.view_all')}
                   </Link>
                 )}
               </motion.div>
@@ -234,7 +242,7 @@ export const Header = () => {
         <button
           onClick={toggleTheme}
           className="p-2.5 text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          aria-label={theme === 'dark' ? t('header.theme_toggle.light') : t('header.theme_toggle.dark')}
         >
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
@@ -273,21 +281,41 @@ export const Header = () => {
                 exit={{ opacity: 0, y: 10 }}
                 className="absolute right-0 mt-2 w-48 glass-card shadow-xl z-50"
               >
-                <div className="p-2">
+                <div className="p-2 space-y-1">
+                  <div className="px-3 py-2">
+                    <div className="flex items-center gap-2 mb-2 text-text-light-primary dark:text-text-primary">
+                      <Languages size={18} />
+                      <span className="text-sm font-medium">{t('header.user_menu.language')}</span>
+                    </div>
+                    <div className="pl-6">
+                      <select
+                        value={i18n.language.split('-')[0]}
+                        onChange={(e) => changeLanguage(e.target.value)}
+                        className="w-full bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-text-light-primary dark:text-text-primary text-sm rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-accent-primary"
+                      >
+                        {SUPPORTED_LANGUAGES.map((lang) => (
+                          <option key={lang.code} value={lang.code}>
+                            {lang.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="h-px bg-gray-200 dark:bg-gray-800 my-1" />
                   <Link
                     to="/settings#security"
                     onClick={() => setShowUserMenu(false)}
                     className="w-full flex items-center gap-2 px-3 py-2 text-text-light-primary dark:text-text-primary hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors"
                   >
                     <KeyRound size={18} />
-                    <span>Change Password</span>
+                    <span>{t('header.user_menu.change_password')}</span>
                   </Link>
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-2 px-3 py-2 text-danger hover:bg-danger/10 rounded-lg transition-colors"
                   >
                     <LogOut size={18} />
-                    <span>Logout</span>
+                    <span>{t('header.user_menu.logout')}</span>
                   </button>
                 </div>
               </motion.div>

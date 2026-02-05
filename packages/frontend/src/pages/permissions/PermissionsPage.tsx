@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge } from '../../components/ui';
 import { Shield, Save, RotateCcw, Check, X, AlertCircle, Loader2 } from 'lucide-react';
 import { api } from '../../services/api';
@@ -25,26 +26,8 @@ const ROLE_COLORS: Record<RoleType, 'danger' | 'warning' | 'info'> = {
   viewer: 'info',
 };
 
-const ROLE_DESCRIPTIONS: Record<RoleType, string> = {
-  admin: 'Full access to all features',
-  moderator: 'Manage servers and players',
-  viewer: 'Read-only access',
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  servers: 'Server Management',
-  backups: 'Backup Management',
-  players: 'Player Management',
-  mods: 'Mod Management',
-  worlds: 'World Management',
-  automation: 'Automation & Tasks',
-  alerts: 'Alerts',
-  networks: 'Networks',
-  users: 'User Management',
-  settings: 'Settings & Permissions',
-};
-
 export const PermissionsPage = () => {
+  const { t } = useTranslation();
   const { can, PERMISSIONS } = usePermissions();
   const canManagePermissions = can(PERMISSIONS.PERMISSIONS_MANAGE);
 
@@ -108,35 +91,35 @@ export const PermissionsPage = () => {
     });
   };
 
-  const handleSave = async (role: string) => {
-    if (role === 'admin') return;
+const handleSave = async (role: string) => {
+  if (role === 'admin') return;
 
-    try {
-      setSaving(role);
-      setError(null);
+  try {
+    setSaving(role);
+    setError(null);
 
-      const permissions = rolePermissions[role] || [];
-      await api.updateRolePermissions(role, permissions);
+    const permissions = rolePermissions[role] || [];
+    await api.updateRolePermissions(role, permissions);
 
-      // Update original to match saved
-      setOriginalRolePermissions((prev) => ({
-        ...prev,
-        [role]: [...permissions],
-      }));
+    // Update original to match saved
+    setOriginalRolePermissions((prev) => ({
+      ...prev,
+      [role]: [...permissions],
+    }));
 
-      setSuccessMessage(`${role} permissions saved successfully`);
-      setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : `Failed to save ${role} permissions`);
-    } finally {
-      setSaving(null);
-    }
-  };
+    setSuccessMessage(t('permissions.toast.saved', { role }));
+    setTimeout(() => setSuccessMessage(null), 3000);
+  } catch (err) {
+    setError(err instanceof Error ? err.message : t('permissions.errors.save', { role }));
+  } finally {
+    setSaving(null);
+  }
+};
 
   const handleReset = async (role: string) => {
     if (role === 'admin') return;
 
-    if (!confirm(`Reset ${role} permissions to defaults? This cannot be undone.`)) {
+    if (!confirm(t('permissions.confirm_reset', { role }))) {
       return;
     }
 
@@ -156,10 +139,10 @@ export const PermissionsPage = () => {
         [role]: result.permissions,
       }));
 
-      setSuccessMessage(`${role} permissions reset to defaults`);
+      setSuccessMessage(t('permissions.toast.reset', { role }));
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : `Failed to reset ${role} permissions`);
+      setError(err instanceof Error ? err.message : t('permissions.errors.reset', { role }));
     } finally {
       setResetting(null);
     }
@@ -177,6 +160,7 @@ export const PermissionsPage = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="animate-spin text-accent-primary" size={48} />
+        <span className="sr-only">{t('permissions.loading')}</span>
       </div>
     );
   }
@@ -187,10 +171,10 @@ export const PermissionsPage = () => {
         <div className="text-center">
           <AlertCircle className="mx-auto text-danger mb-4" size={48} />
           <p className="text-text-light-muted dark:text-text-muted">
-            {error || 'Failed to load permissions data'}
+            {error || t('permissions.errors.load')}
           </p>
           <Button variant="secondary" onClick={fetchData} className="mt-4">
-            Retry
+            {t('permissions.actions.retry')}
           </Button>
         </div>
       </div>
@@ -203,15 +187,15 @@ export const PermissionsPage = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">
-            Role Permissions
+            {t('permissions.title')}
           </h1>
           <p className="text-text-light-muted dark:text-text-muted mt-1">
-            Configure what each role can access and manage
+            {t('permissions.subtitle')}
           </p>
         </div>
         {canManagePermissions && hasAnyChanges && (
           <Button variant="primary" icon={<Save size={18} />} onClick={handleSaveAll}>
-            Save All Changes
+            {t('permissions.actions.save_all')}
           </Button>
         )}
       </div>
@@ -247,18 +231,20 @@ export const PermissionsPage = () => {
                     <Shield className={`text-${ROLE_COLORS[roleKey]}`} size={28} />
                     <div>
                       <h3 className="font-heading font-semibold text-text-light-primary dark:text-text-primary capitalize">
-                        {role}
+                        {t(`permissions.roles.${roleKey}.label`, { defaultValue: role })}
                         {modified && (
-                          <span className="ml-2 text-xs text-warning">(modified)</span>
+                          <span className="ml-2 text-xs text-warning">{t('permissions.roles.modified')}</span>
                         )}
                       </h3>
                       <p className="text-sm text-text-light-muted dark:text-text-muted">
-                        {ROLE_DESCRIPTIONS[roleKey]}
+                        {t(`permissions.roles.${roleKey}.description`)}
                       </p>
                     </div>
                   </div>
                   <Badge variant={ROLE_COLORS[roleKey]}>
-                    {isAdmin ? 'All' : permissions.length} permissions
+                    {isAdmin
+                      ? t('permissions.roles.all')
+                      : t('permissions.roles.count', { count: permissions.length })}
                   </Badge>
                 </div>
 
@@ -273,7 +259,7 @@ export const PermissionsPage = () => {
                       disabled={saving !== null || resetting !== null || !modified}
                       className="flex-1"
                     >
-                      Save
+                      {t('permissions.actions.save')}
                     </Button>
                     <Button
                       variant="secondary"
@@ -283,14 +269,14 @@ export const PermissionsPage = () => {
                       onClick={() => handleReset(role)}
                       disabled={saving !== null || resetting !== null}
                     >
-                      Reset
+                      {t('permissions.actions.reset')}
                     </Button>
                   </div>
                 )}
 
                 {isAdmin && (
                   <p className="text-xs text-text-light-muted dark:text-text-muted mt-4 italic">
-                    Admin permissions cannot be modified
+                    {t('permissions.roles.admin_note')}
                   </p>
                 )}
               </CardContent>
@@ -307,9 +293,9 @@ export const PermissionsPage = () => {
         return (
           <Card key={category} variant="glass">
             <CardHeader>
-              <CardTitle>{CATEGORY_LABELS[category] || category}</CardTitle>
+              <CardTitle>{t(`permissions.categories.${category}`, { defaultValue: category })}</CardTitle>
               <CardDescription>
-                {categoryPermissions.length} permission{categoryPermissions.length !== 1 ? 's' : ''}
+                {t('permissions.table.count', { count: categoryPermissions.length })}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -318,16 +304,18 @@ export const PermissionsPage = () => {
                   <thead>
                     <tr className="border-b border-gray-300 dark:border-gray-800">
                       <th className="text-left py-3 px-4 text-sm font-heading font-semibold text-text-light-muted dark:text-text-muted">
-                        Permission
+                        {t('permissions.table.permission')}
                       </th>
                       {roles.map((role) => (
                         <th key={role} className="text-center py-3 px-4 min-w-[100px]">
                           <div className="flex flex-col items-center gap-1">
                             <span className="text-sm font-heading font-semibold text-text-light-primary dark:text-text-primary capitalize">
-                              {role}
+                              {t(`permissions.roles.${role as RoleType}.label`, { defaultValue: role })}
                             </span>
                             <Badge variant={ROLE_COLORS[role as RoleType]} size="sm">
-                              {role === 'admin' ? 'All' : (rolePermissions[role] || []).length}
+                              {role === 'admin'
+                                ? t('permissions.roles.all')
+                                : t('permissions.roles.count', { count: (rolePermissions[role] || []).length })}
                             </Badge>
                           </div>
                         </th>
@@ -368,12 +356,12 @@ export const PermissionsPage = () => {
                                 disabled={!canToggle}
                                 title={
                                   isAdmin
-                                    ? 'Admin has all permissions'
+                                    ? t('permissions.tooltips.admin_all')
                                     : canToggle
                                     ? hasPermission
-                                      ? 'Click to remove permission'
-                                      : 'Click to grant permission'
-                                    : 'You cannot modify permissions'
+                                      ? t('permissions.tooltips.remove')
+                                      : t('permissions.tooltips.grant')
+                                    : t('permissions.tooltips.cannot_modify')
                                 }
                               >
                                 {hasPermission ? <Check size={18} /> : <X size={18} />}
@@ -398,17 +386,17 @@ export const PermissionsPage = () => {
             <Shield className="text-info mt-1" size={20} />
             <div>
               <h4 className="font-heading font-semibold text-text-light-primary dark:text-text-primary mb-2">
-                About Role Permissions
+                {t('permissions.help.title')}
               </h4>
               <ul className="text-sm text-text-light-muted dark:text-text-muted space-y-1">
                 <li>
-                  <strong>Admin:</strong> Has full access to all features. These permissions cannot be modified.
+                  <strong>{t('permissions.roles.admin.label')}:</strong> {t('permissions.help.admin')}
                 </li>
                 <li>
-                  <strong>Moderator:</strong> Can manage servers, players, and most day-to-day operations.
+                  <strong>{t('permissions.roles.moderator.label')}:</strong> {t('permissions.help.moderator')}
                 </li>
                 <li>
-                  <strong>Viewer:</strong> Read-only access to view information without making changes.
+                  <strong>{t('permissions.roles.viewer.label')}:</strong> {t('permissions.help.viewer')}
                 </li>
               </ul>
             </div>

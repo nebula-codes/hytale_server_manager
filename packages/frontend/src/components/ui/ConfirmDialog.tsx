@@ -1,6 +1,7 @@
 import { Modal, ModalFooter } from './Modal';
 import { Button } from './Button';
 import { AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -20,11 +21,12 @@ export const ConfirmDialog = ({
   onConfirm,
   title,
   message,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   variant = 'danger',
   loading = false,
 }: ConfirmDialogProps) => {
+  const { t } = useTranslation();
   const variantStyles = {
     danger: {
       icon: 'text-danger',
@@ -55,14 +57,14 @@ export const ConfirmDialog = ({
 
       <ModalFooter>
         <Button variant="ghost" onClick={onClose} disabled={loading}>
-          {cancelLabel}
+          {cancelLabel ?? t('common.cancel')}
         </Button>
         <Button
           variant={variant === 'danger' ? 'danger' : 'primary'}
           onClick={onConfirm}
           loading={loading}
         >
-          {confirmLabel}
+          {confirmLabel ?? t('common.confirm')}
         </Button>
       </ModalFooter>
     </Modal>

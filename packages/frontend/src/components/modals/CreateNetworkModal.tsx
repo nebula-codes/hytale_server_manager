@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, ModalFooter, Button, Input, Badge } from '../ui';
 import { Network, Server, ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import type { CreateNetworkDto } from '../../types';
@@ -37,6 +38,7 @@ export const CreateNetworkModal = ({
   availableServers,
   isLoadingServers,
 }: CreateNetworkModalProps) => {
+  const { t } = useTranslation();
   const [step, setStep] = useState<Step>('basics');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -63,13 +65,13 @@ export const CreateNetworkModal = ({
     const newErrors: Record<string, string> = {};
 
     if (!name.trim()) {
-      newErrors.name = 'Network name is required';
+      newErrors.name = t('networks.create.errors.name');
     } else if (name.length > 50) {
-      newErrors.name = 'Name must be 50 characters or less';
+      newErrors.name = t('networks.create.errors.name_length');
     }
 
     if (description.length > 200) {
-      newErrors.description = 'Description must be 200 characters or less';
+      newErrors.description = t('networks.create.errors.description_length');
     }
 
     setErrors(newErrors);
@@ -80,7 +82,7 @@ export const CreateNetworkModal = ({
     const newErrors: Record<string, string> = {};
 
     if (selectedServerIds.size === 0) {
-      newErrors.servers = 'Please select at least one server';
+      newErrors.servers = t('networks.create.errors.servers');
     }
 
     setErrors(newErrors);
@@ -138,7 +140,7 @@ export const CreateNetworkModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Create Network"
+      title={t('networks.create.title')}
       size="lg"
     >
       {/* Step Indicator */}
@@ -150,7 +152,7 @@ export const CreateNetworkModal = ({
               : 'bg-gray-700 text-text-muted'
           }`}
         >
-          <span className="text-sm font-medium">1. Basics</span>
+          <span className="text-sm font-medium">{t('networks.create.steps.basics')}</span>
         </div>
         <ChevronRight size={16} className="text-text-muted" />
         <div
@@ -160,7 +162,7 @@ export const CreateNetworkModal = ({
               : 'bg-gray-700 text-text-muted'
           }`}
         >
-          <span className="text-sm font-medium">2. Servers</span>
+          <span className="text-sm font-medium">{t('networks.create.steps.servers')}</span>
         </div>
       </div>
 
@@ -174,10 +176,10 @@ export const CreateNetworkModal = ({
             </div>
             <div>
               <h3 className="font-heading font-semibold text-text-light-primary dark:text-text-primary">
-                Network Configuration
+                {t('networks.create.header')}
               </h3>
               <p className="text-sm text-text-light-muted dark:text-text-muted">
-                Set up basic network properties
+                {t('networks.create.subtitle')}
               </p>
             </div>
           </div>
@@ -185,11 +187,11 @@ export const CreateNetworkModal = ({
           {/* Network Name */}
           <div>
             <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-              Network Name *
+              {t('networks.create.name_label')} *
             </label>
             <Input
               type="text"
-              placeholder="My Server Network"
+              placeholder={t('networks.create.name_placeholder')}
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
@@ -204,10 +206,10 @@ export const CreateNetworkModal = ({
           {/* Description */}
           <div>
             <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-              Description
+              {t('networks.create.description_label')}
             </label>
             <textarea
-              placeholder="Optional description of this network..."
+              placeholder={t('networks.create.description_placeholder')}
               value={description}
               onChange={(e) => {
                 setDescription(e.target.value);
@@ -224,7 +226,7 @@ export const CreateNetworkModal = ({
           {/* Network Color */}
           <div>
             <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-              Color
+              {t('networks.create.color_label')}
             </label>
             <div className="flex gap-2 flex-wrap">
               {NETWORK_COLORS.map((c) => (
@@ -252,10 +254,10 @@ export const CreateNetworkModal = ({
             </div>
             <div>
               <h3 className="font-heading font-semibold text-text-light-primary dark:text-text-primary">
-                Select Servers
+                {t('networks.create.servers_header')}
               </h3>
               <p className="text-sm text-text-light-muted dark:text-text-muted">
-                Choose servers to include in this network
+                {t('networks.create.servers_subtitle')}
               </p>
             </div>
           </div>
@@ -264,25 +266,25 @@ export const CreateNetworkModal = ({
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-medium text-text-light-primary dark:text-text-primary">
-                Member Servers
+                {t('networks.create.member_servers')}
               </label>
               <div className="flex gap-2">
                 <Button variant="ghost" size="sm" onClick={selectAllServers}>
-                  Select All
+                  {t('networks.create.select_all')}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={clearSelection}>
-                  Clear
+                  {t('networks.create.clear')}
                 </Button>
               </div>
             </div>
 
             {isLoadingServers ? (
               <div className="text-center py-8 text-text-muted">
-                Loading servers...
+                {t('networks.create.loading_servers')}
               </div>
             ) : availableServers.length === 0 ? (
               <div className="text-center py-8 text-text-muted">
-                No servers available
+                {t('networks.create.no_servers')}
               </div>
             ) : (
               <div className="max-h-64 overflow-y-auto border border-gray-700 rounded-lg">
@@ -339,7 +341,7 @@ export const CreateNetworkModal = ({
             )}
 
             <p className="text-xs text-text-light-muted dark:text-text-muted mt-2">
-              {selectedServerIds.size} server{selectedServerIds.size !== 1 ? 's' : ''} selected
+              {t('networks.create.selected_count', { count: selectedServerIds.size })}
             </p>
           </div>
         </div>
@@ -349,14 +351,14 @@ export const CreateNetworkModal = ({
         {step === 'basics' ? (
           <>
             <Button variant="ghost" onClick={onClose}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="primary"
               onClick={handleNext}
               icon={<ChevronRight size={16} />}
             >
-              Next
+              {t('common.next', { defaultValue: 'Next' })}
             </Button>
           </>
         ) : (
@@ -366,14 +368,14 @@ export const CreateNetworkModal = ({
               onClick={handleBack}
               icon={<ChevronLeft size={16} />}
             >
-              Back
+              {t('common.back', { defaultValue: 'Back' })}
             </Button>
             <Button
               variant="primary"
               onClick={handleSubmit}
               disabled={loading}
             >
-              {loading ? 'Creating...' : 'Create Network'}
+              {loading ? t('common.creating') : t('networks.create.submit')}
             </Button>
           </>
         )}

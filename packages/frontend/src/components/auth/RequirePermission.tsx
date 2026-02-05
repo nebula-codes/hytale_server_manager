@@ -6,6 +6,7 @@
  */
 
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Navigate } from 'react-router-dom';
 import { ShieldX, ArrowLeft } from 'lucide-react';
 import { usePermissions } from '../../hooks/usePermissions';
@@ -39,6 +40,8 @@ interface RequirePermissionProps {
  * Default access denied component
  */
 function AccessDenied() {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-[400px] flex items-center justify-center">
       <div className="text-center max-w-md">
@@ -46,18 +49,17 @@ function AccessDenied() {
           <ShieldX className="w-10 h-10 text-danger" />
         </div>
         <h1 className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary mb-2">
-          Access Denied
+          {t('auth.permission.denied_title')}
         </h1>
         <p className="text-text-light-muted dark:text-text-muted mb-6">
-          You don't have permission to access this page. Please contact an administrator if you
-          believe this is an error.
+          {t('auth.permission.denied_message')}
         </p>
         <Button
           variant="secondary"
           icon={<ArrowLeft size={18} />}
           onClick={() => window.history.back()}
         >
-          Go Back
+          {t('auth.permission.go_back')}
         </Button>
       </div>
     </div>

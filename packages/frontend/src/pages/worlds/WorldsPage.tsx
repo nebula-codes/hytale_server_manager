@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge } from '../../components/ui';
 import { Globe, Trash2, Check, RefreshCw } from 'lucide-react';
 import { api } from '../../services/api';
@@ -22,6 +23,7 @@ interface World {
 }
 
 export const WorldsPage = () => {
+  const { t } = useTranslation();
   const [servers, setServers] = useState<Server[]>([]);
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
   const [worlds, setWorlds] = useState<World[]>([]);
@@ -46,7 +48,7 @@ export const WorldsPage = () => {
         setSelectedServerId(data[0].id);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to load servers');
+      setError(err.message || t('worlds.errors.servers'));
     }
   };
 
@@ -59,7 +61,7 @@ export const WorldsPage = () => {
       const data = await api.listWorlds<World>(selectedServerId);
       setWorlds(data);
     } catch (err: any) {
-      setError(err.message || 'Failed to load worlds');
+      setError(err.message || t('worlds.errors.worlds'));
     } finally {
       setLoading(false);
     }
@@ -72,14 +74,14 @@ export const WorldsPage = () => {
       await api.activateWorld(selectedServerId, worldId);
       loadWorlds();
     } catch (err: any) {
-      setError(err.message || 'Failed to activate world');
+      setError(err.message || t('worlds.errors.activate'));
     }
   };
 
   const handleDeleteWorld = async (worldId: string, worldName: string) => {
     if (!selectedServerId) return;
 
-    if (!confirm("Are you sure you want to delete world " + worldName + "?")) {
+    if (!confirm(t('worlds.confirm_delete', { name: worldName }))) {
       return;
     }
 
@@ -87,7 +89,7 @@ export const WorldsPage = () => {
       await api.deleteWorld(selectedServerId, worldId);
       loadWorlds();
     } catch (err: any) {
-      setError(err.message || 'Failed to delete world');
+      setError(err.message || t('worlds.errors.delete'));
     }
   };
 
@@ -102,14 +104,14 @@ export const WorldsPage = () => {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-text-primary">World Management</h1>
-        <p className="text-text-secondary mt-1">Manage world files for your servers</p>
+        <h1 className="text-3xl font-bold text-text-primary">{t('worlds.title')}</h1>
+        <p className="text-text-secondary mt-1">{t('worlds.subtitle')}</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Select Server</CardTitle>
-          <CardDescription>Choose a server to manage its worlds</CardDescription>
+          <CardTitle>{t('worlds.select_server')}</CardTitle>
+          <CardDescription>{t('worlds.select_server_description')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2 flex-wrap">
@@ -131,8 +133,8 @@ export const WorldsPage = () => {
           <CardHeader>
             <div className="flex justify-between items-center">
               <div>
-                <CardTitle>Worlds</CardTitle>
-                <CardDescription>Manage world files</CardDescription>
+                <CardTitle>{t('worlds.list.title')}</CardTitle>
+                <CardDescription>{t('worlds.list.subtitle')}</CardDescription>
               </div>
               <Button onClick={loadWorlds} disabled={loading}>
                 <RefreshCw className={loading ? 'animate-spin' : ''} size={16} />
@@ -143,11 +145,11 @@ export const WorldsPage = () => {
             {error && <div className="bg-red-500/10 text-red-500 p-3 rounded mb-4">{error}</div>}
 
             {loading ? (
-              <div className="text-center py-8 text-text-secondary">Loading...</div>
+              <div className="text-center py-8 text-text-secondary">{t('worlds.list.loading')}</div>
             ) : worlds.length === 0 ? (
               <div className="text-center py-8 text-text-secondary">
                 <Globe size={48} className="mx-auto mb-2 opacity-50" />
-                <p>No worlds found</p>
+                <p>{t('worlds.list.empty')}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -161,12 +163,12 @@ export const WorldsPage = () => {
                           {world.isActive && (
                             <Badge variant="success" size="sm">
                               <Check size={12} className="mr-1" />
-                              Active
+                              {t('worlds.status.active')}
                             </Badge>
                           )}
                         </div>
                         <div className="text-sm text-text-secondary mt-1">
-                          <span>Size: {formatSize(world.sizeBytes)}</span>
+                          <span>{t('worlds.size', { size: formatSize(world.sizeBytes) })}</span>
                         </div>
                       </div>
                     </div>
@@ -174,7 +176,7 @@ export const WorldsPage = () => {
                     <div className="flex gap-2">
                       {!world.isActive && (
                         <Button variant="secondary" onClick={() => handleActivateWorld(world.id)}>
-                          Activate
+                          {t('worlds.actions.activate')}
                         </Button>
                       )}
                       <Button variant="secondary" onClick={() => handleDeleteWorld(world.id, world.name)}>

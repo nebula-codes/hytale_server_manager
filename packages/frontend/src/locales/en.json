@@ -1,0 +1,2381 @@
+{
+    "common": {
+        "loading": "Loading...",
+        "refresh": "Refresh",
+        "delete": "Delete",
+        "save": "Save",
+        "cancel": "Cancel",
+        "close": "Close",
+        "saving": "Saving...",
+        "creating": "Creating...",
+        "retry": "Retry",
+        "error": "An error occurred",
+        "save_changes": "Save Changes",
+        "remove": "Remove",
+        "done": "Done",
+        "add": "Add",
+        "deleting": "Removing...",
+        "next": "Next",
+        "back": "Back",
+        "view_all": "View All",
+        "search_placeholder": "Search servers, mods, players... (Coming Soon)",
+        "actions": "Actions",
+        "confirm": "Confirm",
+        "coming_soon": "Coming Soon",
+        "time_ago": {
+            "just_now": "Just now",
+            "minutes_ago": "{count}m ago",
+            "hours_ago": "{count}h ago",
+            "days_ago": "{count}d ago"
+        }
+    },
+    "ui": {
+        "toast": {
+            "close_aria": "Close notification"
+        },
+        "token_expiry": {
+            "expired": "Expired"
+        },
+        "searchable_select": {
+            "all": "All",
+            "search": "Search...",
+            "no_results": "No results found",
+            "selected_count": "{count} selected"
+        },
+        "status": {
+            "online": "Online",
+            "offline": "Offline"
+        },
+        "command": {
+            "placeholder": "Search servers, players, pages...",
+            "no_results": "No results found",
+            "categories": {
+                "page": "Page",
+                "server": "Server",
+                "player": "Player"
+            },
+            "server_desc": "{version} • {current}/{max} players",
+            "player_desc": "{role} • {status}",
+            "hints": {
+                "navigate": "↑↓ Navigate",
+                "select": "↵ Select",
+                "close": "Esc Close",
+                "toggle": "to toggle"
+            },
+            "pages": {
+                "dashboard": "Overview and statistics",
+                "servers": "Manage your servers",
+                "players": "View and manage players",
+                "mods": "Browse and install mods",
+                "modpacks": "Pre-configured mod collections",
+                "backups": "Manage server backups",
+                "console": "Server console and logs",
+                "automation": "Scheduled tasks",
+                "analytics": "Performance metrics",
+                "files": "Browse server files",
+                "permissions": "Manage user permissions",
+                "economy": "Manage server economy",
+                "bridge": "In-game integration",
+                "settings": "Panel configuration"
+            }
+        }
+    },
+    "table": {
+        "search": "Search...",
+        "columns": "Columns",
+        "export": "Export CSV",
+        "no_data": "No data found",
+        "selection": {
+            "count_one": "{count} item selected",
+            "count_other": "{count} items selected",
+            "clear": "Clear selection"
+        },
+        "pagination": {
+            "showing": "Showing {start} to {end} of {total} results",
+            "per_page": "Per page:",
+            "previous": "Previous",
+            "next": "Next",
+            "page_of": "Page {page} of {total}"
+        }
+    },
+    "nav": {
+        "dashboard": "Dashboard",
+        "servers": "Servers",
+        "mods": "Mods",
+        "console": "Console",
+        "marketplace": "Marketplace",
+        "modpacks": "Modpacks",
+        "backups": "Backups",
+        "automation": "Automation",
+        "files": "Files",
+        "alerts": "Alerts",
+        "activity_log": "Activity Log",
+        "hsm_logs": "HSM Logs",
+        "permissions": "Permissions",
+        "users": "Users",
+        "settings": "Settings",
+        "players": "Players",
+        "economy": "Economy",
+        "bridge": "Hytale Bridge",
+        "analytics": "Analytics",
+        "coming_soon": "Coming Soon",
+        "collapse": "Collapse"
+    },
+    "servers": {
+        "title": "Servers",
+        "subtitle": "Manage your Hytale server instances",
+        "create_network": "Create Network",
+        "create": {
+            "title": "Create New Server",
+            "header": "Configure Your Server",
+            "subtitle": "Set up a new Hytale server instance",
+            "name_label": "Server Name",
+            "name_placeholder": "My Awesome Server",
+            "path_label": "Server Directory",
+            "path_placeholder": "C:\\Servers\\MyServer",
+            "path_help": "Full path to the server directory. This directory will be created if it doesn't exist.",
+            "address_label": "Address",
+            "port_label": "Port",
+            "gamemode_label": "Game Mode",
+            "gamemodes": {
+                "expedition": "Expedition",
+                "creative": "Creative"
+            },
+            "adapter": {
+                "label": "Adapter Type",
+                "java": "Java JAR (Hytale, Minecraft, etc.)",
+                "hytale": "Hytale (Coming Soon)",
+                "java_help": "Run a Java JAR file (e.g., Minecraft server)."
+            },
+            "java": {
+                "title": "Java Configuration",
+                "jar_label": "JAR File Path",
+                "jar_help": "Path to the JAR file relative to the server directory",
+                "assets_label": "Assets Path",
+                "assets_help": "Path to Assets.zip relative to the JAR file",
+                "java_label": "Java Path",
+                "java_help": "Path to Java executable (or just \"java\" if in PATH)",
+                "jvm_label": "JVM Arguments",
+                "jvm_help": "JVM arguments for the Java process. AOT cache enables faster startup if HytaleServer.aot exists."
+            },
+            "submit": "Create Server",
+            "errors": {
+                "name": "Server name is required",
+                "server_path": "Server directory path is required",
+                "address": "Address is required",
+                "port": "Port must be between 1 and 65535",
+                "version": "Server version is required. Download server files first.",
+                "game_mode": "Game mode is required"
+            }
+        },
+        "view_mode": {
+            "grouped": "Grouped",
+            "flat": "Flat"
+        },
+        "networks": "Networks",
+        "ungrouped": "Ungrouped Servers",
+        "empty": {
+            "title": "No Servers Yet",
+            "description": "Create your first server to get started, or create a network to organize multiple servers.",
+            "submit": "Create Server"
+        },
+        "columns": {
+            "server": "Server",
+            "status": "Status",
+            "players": "Players",
+            "version": "Version",
+            "tps": "TPS",
+            "cpu": "CPU",
+            "memory": "Memory",
+            "uptime": "Uptime",
+            "actions": "Actions"
+        },
+        "actions": {
+            "start": "Start",
+            "stop": "Stop",
+            "restart": "Restart",
+            "kill": "Kill",
+            "details": "Details",
+            "delete": "Delete"
+        },
+        "status": {
+            "starting": "Starting",
+            "stopping": "Stopping",
+            "stopped": "Stopped",
+            "running": "Running",
+            "crashed": "Crashed",
+            "orphaned": "Orphaned"
+        },
+        "all_servers": "All Servers",
+        "tooltips": {
+            "force_kill": "Force kill the server",
+            "stop_before_delete": "Stop the server before deleting",
+            "delete_server": "Delete server"
+        },
+        "delete_dialog": {
+            "title": "Delete Server",
+            "message": "Are you sure you want to delete \"{name}\"? This action cannot be undone."
+        },
+        "toast": {
+            "generic_error": "Something went wrong",
+            "load_failed": {
+                "title": "Failed to load servers",
+                "description": "Please try again later"
+            },
+            "starting": {
+                "title": "Server starting",
+                "description": "{name} is starting up..."
+            },
+            "start_failed": {
+                "title": "Failed to start server"
+            },
+            "stopping": {
+                "title": "Server stopping",
+                "description": "{name} is shutting down..."
+            },
+            "stop_failed": {
+                "title": "Failed to stop server"
+            },
+            "restarting": {
+                "title": "Server restarting",
+                "description": "{name} is restarting..."
+            },
+            "restart_failed": {
+                "title": "Failed to restart server"
+            },
+            "mod_uninstalled": {
+                "title": "Mod uninstalled",
+                "description": "{mod} has been removed"
+            },
+            "mod_uninstalled_failed": {
+                "title": "Failed to uninstall mod"
+            },
+            "killed": {
+                "title": "Server killed",
+                "description": "{name} has been force killed"
+            },
+            "kill_failed": {
+                "title": "Failed to kill server"
+            },
+            "created": {
+                "title": "Server created",
+                "description": "{name} has been created successfully"
+            },
+            "create_failed": {
+                "title": "Failed to create server"
+            },
+            "deleted": {
+                "title": "Server deleted",
+                "description": "{name} has been deleted"
+            },
+            "delete_failed": {
+                "title": "Failed to delete server"
+            }
+        },
+        "detail": {
+            "back_to_servers": "Back to Servers",
+            "errors": {
+                "not_found": "Server Not Found"
+            },
+            "actions": {
+                "start": "Start",
+                "stop": "Stop",
+                "restart": "Restart",
+                "worlds": "Worlds",
+                "settings": "Settings"
+            },
+            "stats": {
+                "players": "Players",
+                "tps": "TPS",
+                "memory": "Memory",
+                "uptime": "Uptime",
+                "offline": "Offline"
+            },
+            "info": {
+                "title": "Server Information",
+                "version": "Version:",
+                "game_mode": "Game Mode:",
+                "adapter_type": "Adapter Type:",
+                "adapter_java": "Java JAR",
+                "created": "Created:"
+            },
+            "resources": {
+                "title": "Resource Usage",
+                "cpu": "CPU Usage",
+                "memory": "Memory Usage",
+                "slots": "Player Slots"
+            },
+            "mods": {
+                "title": "Installed Mods",
+                "subtitle": "Mods and modpacks installed on this server",
+                "browse": "Browse Mods",
+                "browse_install": "Browse & Install Mods",
+                "empty": "No mods installed on this server",
+                "disabled": "Disabled",
+                "installed_on": "Installed {date}",
+                "uninstall_title": "Uninstall mod",
+                "remove": "Remove",
+                "removing": "Removing...",
+                "view_curseforge": "View on CurseForge",
+                "view_modtale": "View on Modtale"
+            },
+            "quick": {
+                "title": "Quick Actions",
+                "subtitle": "Common server management tasks",
+                "console": "Console",
+                "worlds": "Worlds",
+                "backups": "Backups",
+                "mods": "Mods",
+                "players": "Players",
+                "update": "Update",
+                "history": "History"
+            }
+        },
+        "worlds": {
+            "title": "Worlds",
+            "subtitle": "Manage worlds in this server's universe. Each world has its own configuration and can be activated independently.",
+            "toast": {
+                "load_failed": "Failed to load worlds",
+                "deleted": {
+                    "title": "World deleted",
+                    "description": "{name} has been removed"
+                },
+                "delete_failed": {
+                    "title": "Failed to delete world"
+                }
+            },
+            "confirm_delete": "Are you sure you want to delete world \"{name}\"? This action cannot be undone.",
+            "empty": {
+                "title": "No worlds found",
+                "subtitle": "Worlds will appear here once the server has created them"
+            },
+            "size": "Size: {size}",
+            "last_played": "Last played: {date}",
+            "actions": {
+                "settings": "World settings",
+                "config": "Config",
+                "delete": "Delete world"
+            },
+            "info": {
+                "title": "About Universes & Worlds",
+                "body1": "In Hytale, a universe contains multiple worlds, each with their own configuration files and settings.",
+                "body2": "Each world can have different settings for PvP, fall damage, NPC spawning, game time, and more."
+            },
+            "world_settings": {
+                "title": "World Settings - {name}",
+                "tabs": {
+                    "basic": "Basic Settings",
+                    "gamerules": "Game Rules",
+                    "border": "World Border"
+                },
+                "basic": {
+                    "name": "World Name",
+                    "difficulty": "Difficulty",
+                    "difficulty_peaceful": "Peaceful",
+                    "difficulty_easy": "Easy",
+                    "difficulty_normal": "Normal",
+                    "difficulty_hard": "Hard",
+                    "environment": "Environment Type",
+                    "env_normal": "Normal (Overworld)",
+                    "env_nether": "Nether",
+                    "env_end": "The End",
+                    "env_custom": "Custom",
+                    "seed": "Seed (read-only)",
+                    "seed_helper": "World seed cannot be changed after creation",
+                    "spawn_x": "Spawn X",
+                    "spawn_y": "Spawn Y",
+                    "spawn_z": "Spawn Z",
+                    "loaded": "Load world on server start"
+                },
+                "rules": {
+                    "helper": "Configure game rules that affect gameplay mechanics in this world",
+                    "items": {
+                        "doDaylightCycle": "Daylight Cycle",
+                        "doWeatherCycle": "Weather Cycle",
+                        "doMobSpawning": "Mob Spawning",
+                        "keepInventory": "Keep Inventory",
+                        "mobGriefing": "Mob Griefing",
+                        "naturalRegeneration": "Natural Regeneration",
+                        "showDeathMessages": "Show Death Messages",
+                        "doFireTick": "Fire Tick",
+                        "randomTickSpeed": "Random Tick Speed",
+                        "spawnRadius": "Spawn Radius"
+                    },
+                    "additional": "Additional Game Rules ({count} total)"
+                },
+                "border": {
+                    "helper": "Configure the world border to limit the playable area",
+                    "size": "Border Size (blocks)",
+                    "size_helper": "Diameter of the world border (default: 60,000,000)",
+                    "center_x": "Center X",
+                    "center_z": "Center Z",
+                    "info_title": "Border Info",
+                    "info_radius": "Border radius: {radius} blocks",
+                    "info_area": "Total area: {area}M blocks²",
+                    "info_center": "Center point: ({x}, {z})"
+                }
+            }
+        },
+        "world_config": {
+            "title": "World Config - {name}",
+            "toast": {
+                "load_failed": "Failed to load world config",
+                "saved": {
+                    "title": "Config saved",
+                    "description": "World configuration has been updated"
+                },
+                "save_failed": {
+                    "title": "Failed to save config"
+                }
+            },
+            "running": {
+                "title": "Server is running",
+                "subtitle": "Stop the server to edit world configuration"
+            },
+            "view": {
+                "form": "Form",
+                "json": "JSON"
+            },
+            "json": {
+                "invalid": "Invalid JSON: {error}"
+            },
+            "sections": {
+                "gameplay": "Gameplay",
+                "time": "Time & Effects",
+                "management": "World Management",
+                "info": "Info (Read-only)"
+            },
+            "gameplay": {
+                "pvp": "PvP Enabled",
+                "pvp_desc": "Allow players to damage each other",
+                "fall_damage": "Fall Damage",
+                "fall_damage_desc": "Players take damage from falling",
+                "npc_spawning": "NPC Spawning",
+                "npc_spawning_desc": "Allow NPCs to spawn in the world",
+                "freeze_npc": "Freeze All NPCs",
+                "freeze_npc_desc": "Prevent all NPCs from moving",
+                "spawn_markers": "Spawn Markers",
+                "spawn_markers_desc": "Show spawn point markers",
+                "objective_markers": "Objective Markers",
+                "objective_markers_desc": "Show objective markers on HUD",
+                "compass": "Compass Updating",
+                "compass_desc": "Allow compass to update direction"
+            },
+            "time": {
+                "paused": "Game Time Paused",
+                "paused_desc": "Freeze the day/night cycle",
+                "sun_height": "Sun Height %",
+                "sun_height_desc": "Vertical position of the sun (0-100%)",
+                "sun_angle": "Sun Angle",
+                "sun_angle_desc": "Rotation angle of the sun in degrees",
+                "sun_intensity": "Sun Intensity",
+                "sun_intensity_desc": "Brightness of the sun",
+                "bloom_intensity": "Bloom Intensity",
+                "bloom_intensity_desc": "Post-processing bloom effect",
+                "bloom_power": "Bloom Power",
+                "bloom_power_desc": "Bloom effect power"
+            },
+            "management": {
+                "world_ticking": "World Ticking",
+                "world_ticking_desc": "Enable world simulation updates",
+                "block_ticking": "Block Ticking",
+                "block_ticking_desc": "Enable random block updates",
+                "save_players": "Save Players",
+                "save_players_desc": "Persist player data to disk",
+                "save_chunks": "Save Chunks",
+                "save_chunks_desc": "Persist chunk data to disk",
+                "save_new_chunks": "Save New Chunks",
+                "save_new_chunks_desc": "Save newly generated chunks",
+                "unload_chunks": "Unload Chunks",
+                "unload_chunks_desc": "Unload inactive chunks from memory",
+                "delete_on_start": "Delete on Universe Start",
+                "delete_on_start_desc": "Remove world when universe starts",
+                "delete_on_remove": "Delete on Remove",
+                "delete_on_remove_desc": "Delete world files when removed"
+            },
+            "info": {
+                "version": "Version",
+                "seed": "Seed",
+                "generator": "World Generator",
+                "gameplay": "Gameplay Config"
+            }
+        },
+        "settings": {
+            "title": "Server Settings",
+            "back": "Back to Server",
+            "reset": "Reset",
+            "tabs": {
+                "general": "General",
+                "general_desc": "Basic server settings",
+                "storage": "Storage",
+                "storage_desc": "Server directories and backup location",
+                "network": "Network",
+                "network_desc": "Network and connection settings",
+                "advanced": "Advanced",
+                "advanced_desc": "JVM and advanced configuration"
+            },
+            "toast": {
+                "saved": {
+                    "title": "Settings saved",
+                    "description": "Server configuration updated successfully"
+                },
+                "error": {
+                    "title": "Failed to save settings",
+                    "fallback": "An error occurred"
+                }
+            },
+            "general": {
+                "title": "General Settings",
+                "subtitle": "Configure basic server information and behavior",
+                "name": "Server Name",
+                "name_placeholder": "My Hytale Server",
+                "version": "Server Version",
+                "version_placeholder": "e.g., 2025.01.15",
+                "version_helper": "The game server version (updated automatically when using the Update feature)",
+                "max_players": "Max Players",
+                "game_mode": "Game Mode",
+                "modes": {
+                    "exploration": "Exploration",
+                    "creative": "Creative",
+                    "custom": "Custom"
+                }
+            },
+            "storage": {
+                "title": "Storage Settings",
+                "subtitle": "Configure server directories and backup storage location",
+                "toast": {
+                    "saved": {
+                        "title": "Storage settings saved",
+                        "description": "Server storage configuration updated successfully"
+                    },
+                    "error": {
+                        "title": "Failed to save storage settings"
+                    }
+                },
+                "server_dir": "Server Directory",
+                "server_dir_placeholder": "/path/to/server",
+                "server_dir_helper": "The directory where server files are stored",
+                "type": "Backup Storage Type",
+                "type_local": "Local Directory",
+                "type_ftp": "FTP Server",
+                "backup_path_local": "Local Backup Directory",
+                "backup_path_local_placeholder": "/path/to/backups",
+                "backup_path_local_helper": "Local directory for storing backups. Leave empty to use default location.",
+                "backup_path_ftp": "FTP Remote Path",
+                "backup_path_ftp_placeholder": "/backups/my-server/",
+                "backup_path_ftp_helper": "Path on the FTP server where backups will be stored. Leave empty to use default.",
+                "exclusions": "Backup Exclusions",
+                "exclusions_helper": "Files and folders matching these patterns will be excluded from backups. Examples: *.log (all .log files), logs/* (logs folder contents), *.log.gz (compressed logs)",
+                "exclusions_placeholder": "e.g., *.log, logs/*, crash-reports/**",
+                "exclusions_add": "Add",
+                "exclusions_remove": "Remove exclusion",
+                "exclusions_empty": "No exclusions configured. All files will be included in backups.",
+                "ftp": {
+                    "connected": "FTP Connected",
+                    "disconnected": "FTP Disconnected",
+                    "not_configured": "Not Configured",
+                    "note_label": "Note:",
+                    "note": "When using FTP storage, backups will be uploaded to the FTP server and deleted from local storage after successful upload. Make sure your FTP server has sufficient storage space."
+                },
+                "save": "Save Storage Settings"
+            },
+            "network": {
+                "title": "Network Settings",
+                "subtitle": "Configure network address and port settings",
+                "address": "Server IP / Address",
+                "address_helper": "The IP address the server will bind to. Use 0.0.0.0 to listen on all interfaces.",
+                "port": "Server Port",
+                "port_helper": "The port the server will listen on (default: 5520)."
+            },
+            "advanced": {
+                "title": "Advanced Settings",
+                "subtitle": "Java configuration and JVM arguments",
+                "java_path": "Java Executable Path",
+                "java_path_helper": "Path to the Java executable. Use \"java\" to use system Java, or specify a full path (e.g., /usr/lib/jvm/java-17/bin/java).",
+                "jar_path": "JAR File Path",
+                "jar_path_helper": "Path to the server JAR file relative to the server directory.",
+                "assets_path": "Assets Path",
+                "assets_path_helper": "Path to the Assets.zip file relative to the JAR file location. Used with --assets argument.",
+                "jvm_args": "JVM Arguments",
+                "jvm_args_helper": "JVM arguments passed to the Java process. AOT cache enables faster startup if HytaleServer.aot exists.",
+                "server_args": "Server Arguments",
+                "server_args_helper": "Arguments passed to the server after the jar file (e.g., --accept-early-plugins)",
+                "preview": "Command Preview",
+                "preview_helper": "This is how the server start command will look with your current settings:",
+                "legend": {
+                    "jvm": "JVM Arguments",
+                    "default_args": "Default Server Args",
+                    "custom_args": "Custom Server Args"
+                }
+            }
+        }
+    },
+    "settings": {
+        "title": "Settings",
+        "subtitle": "Configure application settings",
+        "loading": "Loading settings...",
+        "updates": {
+            "title": "Software Updates",
+            "description": "Check for and install updates to Hytale Server Manager",
+            "current_version": "Current Version",
+            "latest_version": "Latest Version",
+            "check": "Check for Updates",
+            "checking": "Checking...",
+            "update_available": "Update Available",
+            "update_now": "Update Now",
+            "updating": "Updating...",
+            "updating_message": "Downloading and applying update. The server will restart automatically.",
+            "update_complete": "Update complete! The server is restarting. This page will reload automatically...",
+            "apply_failed": "Failed to apply update",
+            "download_manually": "Download Manually",
+            "view_github": "View on GitHub",
+            "up_to_date": "You are running the latest version!",
+            "confirm_update": "Confirm Update",
+            "confirm_message": "This will download the update, stop the server, apply changes, and restart.",
+            "confirm_yes": "Yes, Update Now",
+            "release_notes": "Release Notes:",
+            "version_name": "Version {version}",
+            "released_on": "Released {date}",
+            "released_recently": "Released recently",
+            "docker_mode": "Running in Docker",
+            "last_checked": "Last checked: {date}",
+            "show_update": "Show Update",
+            "docker": {
+                "instructions_title": "Updating Docker Deployments",
+                "step_pull": "Pull the latest image:",
+                "step_restart": "Restart your container with the new image",
+                "step_data": "Your data is preserved in mounted volumes"
+            },
+            "info": {
+                "title": "How Updates Work",
+                "steps": [
+                    "Click \"Update Now\" to automatically download and install",
+                    "The server will stop, update, and restart automatically",
+                    "Your configuration and data are preserved",
+                    "You'll be disconnected briefly during the restart"
+                ]
+            }
+        },
+        "downloader": {
+            "title": "Hytale Server Downloader",
+            "description": "Download official Hytale server files using your Hytale account",
+            "installed": "Installed",
+            "not_installed": "The Hytale Downloader tool is not installed.",
+            "install": "Install Downloader",
+            "installing": "Installing...",
+            "install_success": "Hytale Downloader installed successfully!",
+            "install_failed": "Failed to install",
+            "update": "Check for Updates",
+            "updating": "Updating...",
+            "update_success": "Hytale Downloader updated successfully!",
+            "update_failed": "Failed to update",
+            "connect_account": "Connect Hytale Account",
+            "connect_message": "Connect your Hytale account to download official server files.",
+            "connect_success": "Hytale account connected successfully!",
+            "connected": "Connected",
+            "reconnect": "Reconnect",
+            "disconnect": "Disconnect",
+            "disconnecting": "Disconnecting...",
+            "disconnect_confirm": "Are you sure you want to disconnect your Hytale account?",
+            "disconnect_success": "Hytale account disconnected.",
+            "disconnect_failed": "Failed to clear credentials",
+            "token_status": "Token Status",
+            "access_token": "Access Token",
+            "refresh_token": "Refresh Token",
+            "branch": "Branch",
+            "auto_refresh": "Auto-refresh (30 min)",
+            "auto_refresh_enable": "Enable Auto-refresh",
+            "auto_refresh_disable": "Disable Auto-refresh",
+            "refresh_now": "Refresh Now",
+            "refresh_now_action": "Refresh Now",
+            "refreshing": "Refreshing...",
+            "refresh_success": "Token refreshed successfully!",
+            "refresh_failed": "Failed to refresh token",
+            "auto_refresh_enabled": "Auto-refresh enabled!",
+            "auto_refresh_disabled": "Auto-refresh disabled!",
+            "auto_refresh_failed": "Failed to update auto-refresh settings",
+            "loading": "Loading status...",
+            "tool": "Downloader Tool",
+            "version": "Version",
+            "unknown": "Unknown",
+            "refresh": "Refresh Token",
+            "account_title": "Hytale Account",
+            "account_label": "Account: {email}",
+            "token_expires": "Access token expires in {minutes} minutes",
+            "install_first": "Install the downloader tool first to connect your account.",
+            "help": "Need help? Read the setup guide in our docs.",
+            "info": "The Hytale Downloader uses OAuth to authenticate with your Hytale account. Your credentials are stored locally and are never sent to third parties.",
+            "view_manual": "View Hytale Server Manual"
+        },
+        "mods": {
+            "title": "Mod Providers",
+            "description": "Configure API keys for mod providers",
+            "configured": "Configured",
+            "key_required": "API key required",
+            "no_key": "No API key required",
+            "enter_key": "Enter API key",
+            "save": "Save",
+            "saving": "Saving...",
+            "saved": "API key saved successfully!",
+            "save_error": "Failed to save API key",
+            "loading": "Loading providers...",
+            "placeholder_configured": "(Configured - enter new key to update)",
+            "placeholder_key": "Enter API key",
+            "get_key": "Get an API key from",
+            "curseforge_console": "CurseForge Console",
+            "modtale_dashboard": "Modtale Dashboard"
+        },
+        "providers": {
+            "loading": "Loading providers...",
+            "all": "All Providers",
+            "not_configured": "Not configured",
+            "configured": "Configured",
+            "api_key_required": "API key required",
+            "ready": "Ready",
+            "search_all": "Search all",
+            "warning": {
+                "none": "No providers are configured. Go to Settings to add API keys.",
+                "single": "{provider} requires an API key. Go to Settings to configure it."
+            },
+            "this_provider": "This provider"
+        },
+        "security": {
+            "title": "Change Password",
+            "description": "Update your account password",
+            "current": "Current Password",
+            "new": "New Password",
+            "confirm": "Confirm New Password",
+            "mismatch": "Passwords do not match",
+            "min_length": "Password must be at least 8 characters",
+            "change": "Change Password",
+            "changing": "Changing..."
+        },
+        "discord": {
+            "title": "Discord Notifications",
+            "description": "Configure Discord webhook notifications",
+            "enable": "Enable",
+            "webhook_url": "Webhook URL",
+            "username": "Bot Username",
+            "avatar_url": "Avatar URL",
+            "events": "Enabled Events",
+            "save": "Save Changes",
+            "test": "Test",
+            "sending": "Sending...",
+            "errors": {
+                "load": "Failed to load Discord settings",
+                "save": "Failed to save Discord settings",
+                "test": "Failed to send test notification"
+            },
+            "success": {
+                "saved": "Discord settings saved successfully",
+                "test": "Test notification sent! Check your Discord channel."
+            },
+            "webhook_placeholder": "https://discord.com/api/webhooks/...",
+            "webhook_placeholder_configured": "(Configured - enter new URL to change)",
+            "webhook_configured_hint": "Webhook URL is configured. Enter a new URL to change it.",
+            "webhook_hint": "Get this URL from Discord: Server Settings → Integrations → Webhooks"
+        },
+        "ftp": {
+            "title": "FTP Storage",
+            "description": "Configure FTP server for remote backup storage",
+            "host": "FTP Host",
+            "port": "Port",
+            "username": "Username",
+            "password": "Password",
+            "secure": "Use SFTP (FTP over TLS/SSL)",
+            "test": "Test Connection",
+            "testing": "Testing...",
+            "password_placeholder": "Enter FTP password",
+            "note_title": "Note:",
+            "note": "FTP credentials are configured via environment variables on the server for security. You can use this form to test connections with different credentials.",
+            "status": {
+                "connected": "Connected",
+                "disconnected": "Disconnected",
+                "not_configured": "Not Configured"
+            },
+            "errors": {
+                "load": "Failed to load FTP settings",
+                "test": "Failed to test FTP connection"
+            }
+        }
+    },
+    "header": {
+        "notifications": "Notifications",
+        "mark_all_read": "Mark all as read",
+        "loading_alerts": "Loading alerts...",
+        "no_alerts": "No alerts",
+        "view_all": "View all alerts",
+        "theme_toggle": {
+            "light": "Switch to light mode",
+            "dark": "Switch to dark mode"
+        },
+        "user_menu": {
+            "change_password": "Change Password",
+            "logout": "Logout",
+            "language": "Language",
+            "toggle_menu": "Toggle menu",
+            "close_menu": "Close menu"
+        }
+    },
+    "app": {
+        "loading": "Loading...",
+        "initializing": "Initializing...",
+        "error": {
+            "title": "Application Error",
+            "unexpected": "An unexpected error occurred",
+            "try_again": "Try Again",
+            "reload": "Reload Application"
+        }
+    },
+    "console": {
+        "title": "Console",
+        "subtitle": "Monitor and control your servers",
+        "live_console_title": "Live Console - {server}",
+        "select_server_placeholder": "Select a server",
+        "waiting_for_logs": "Waiting for logs...",
+        "start_server_prompt": "Start the server to see console output",
+        "command_placeholder": "Enter command...",
+        "server_default": "Server",
+        "not_running_warning": "Server must be running or starting to execute commands",
+        "actions": {
+            "download_logs": "Download Logs",
+            "clear_console": "Clear Console",
+            "send": "Send"
+        },
+        "toast": {
+            "command_executed": "Command executed",
+            "command_failed": "Command failed",
+            "unknown_error": "Unknown error",
+            "load_servers_failed": {
+                "title": "Failed to load servers",
+                "description": "Please try again later"
+            },
+            "console_cleared": "Console cleared",
+            "logs_downloaded": "Logs downloaded"
+        }
+    },
+    "installation_queue": {
+        "title": "Installation Queue",
+        "active": "{count} active",
+        "clear_completed": "Clear Completed ({count})",
+        "status": {
+            "pending": "Pending",
+            "downloading": "Downloading",
+            "installing": "Installing",
+            "completed": "Completed",
+            "failed": "Failed"
+        }
+    },
+    "auth": {
+        "login": {
+            "title": "HytalePanel",
+            "subtitle": "Server Management Dashboard",
+            "checking_setup": "Checking setup..."
+        },
+        "setup": {
+            "subtitle": "Create your first admin account to continue",
+            "email": "Admin Email",
+            "username": "Admin Username",
+            "password": "Admin Password",
+            "confirm_password": "Confirm Password",
+            "requirements": "Password must be 12+ characters with uppercase, lowercase, number, and special character.",
+            "password_mismatch": "Passwords do not match",
+            "create_error": "Failed to create admin account"
+        },
+        "form": {
+            "identifier": "Username or Email",
+            "identifier_placeholder": "Enter your username or email",
+            "password": "Password",
+            "password_placeholder": "Enter your password",
+            "setup_email_placeholder": "Enter your email address",
+            "setup_username_placeholder": "Choose a username",
+            "setup_password_placeholder": "Create a strong password",
+            "setup_confirm_placeholder": "Re-enter your password",
+            "remember_me": "Remember me",
+            "forgot_password": "Forgot password?"
+        },
+        "action": {
+            "sign_in": "Sign In",
+            "signing_in": "Signing in...",
+            "create_account": "Create Admin Account",
+            "creating": "Creating admin..."
+        },
+        "permission": {
+            "denied_title": "Access Denied",
+            "denied_message": "You don't have permission to access this page. Please contact an administrator if you believe this is an error.",
+            "go_back": "Go Back"
+        }
+    },
+    "dashboard": {
+        "title": "Dashboard",
+        "subtitle": "Overview of your Hytale server network",
+        "loading": "Loading dashboard...",
+        "stats": {
+            "total_servers": "Total Servers",
+            "running": "running",
+            "host_cpu": "Host CPU",
+            "cores": "cores",
+            "host_memory": "Host Memory",
+            "of": "of"
+        },
+        "charts": {
+            "cpu_memory_title": "CPU & Memory Usage",
+            "loading": "Loading chart data...",
+            "no_data": "No data available for this time range",
+            "cpu_legend": "CPU Usage",
+            "memory_legend": "Memory Usage",
+            "player_activity_title": "Player Activity",
+            "player_activity_empty": "No player data available",
+            "player_activity_series": "Players",
+            "player_activity_tooltip_value": "{count} players"
+        },
+        "activity": {
+            "title": "Recent Activity",
+            "loading": "Loading activity...",
+            "empty": "No recent activity",
+            "failed": "Failed"
+        },
+        "alerts": {
+            "title": "Alerts",
+            "loading": "Loading alerts...",
+            "new_badge": "{count} new",
+            "no_unresolved": "No unresolved alerts"
+        },
+        "quick_actions": {
+            "title": "Quick Actions",
+            "start_all": "Start All Servers",
+            "stop_all": "Stop All Servers",
+            "restart_all": "Restart All Servers",
+            "refresh": "Refresh Dashboard",
+            "stopped_count": "({count} stopped)",
+            "running_count": "({count} running)",
+            "toast": {
+                "success_start": "Starting {count} server(s)",
+                "success_stop": "Stopping {count} server(s)",
+                "success_restart": "Restarting {count} server(s)",
+                "failed_title": "Action failed",
+                "failed_body": "{count} server(s) failed",
+                "none_title": "No servers affected",
+                "none_body": "No servers matched the action criteria"
+            }
+        },
+        "health": {
+            "title": "Server Health",
+            "loading": "Loading server health...",
+            "empty": "No servers found",
+            "status": {
+                "healthy": "Healthy",
+                "warning": "Warning",
+                "critical": "Critical",
+                "offline": "Offline"
+            }
+        },
+        "status_chart": {
+            "title": "Server Status",
+            "empty": "No servers found",
+            "total": "{count} server(s) total",
+            "tooltip": {
+                "count": "{count} server(s)"
+            },
+            "status": {
+                "running": "Running",
+                "stopped": "Stopped",
+                "starting": "Starting",
+                "stopping": "Stopping",
+                "restarting": "Restarting",
+                "error": "Error"
+            }
+        }
+    },
+    "analytics": {
+        "title": "Analytics & Reports",
+        "subtitle": "Performance insights and player analytics",
+        "coming_soon": "Coming Soon",
+        "description": "Analytics and reporting features will be available once we know more about how Hytale server metrics and player data will work."
+    },
+    "backups": {
+        "title": "Backups",
+        "subtitle": "Manage server backups and schedules",
+        "columns": {
+            "server": "Server",
+            "name": "Name",
+            "size": "Size",
+            "files": "Files",
+            "created": "Created",
+            "status": "Status",
+            "actions": "Actions"
+        },
+        "actions": {
+            "create_backup": "Create Backup",
+            "restore": "Restore",
+            "delete": "Delete",
+            "delete_selected": "Delete Selected"
+        },
+        "server_selector": {
+            "label": "Server:",
+            "all_servers": "All Servers"
+        },
+        "stats": {
+            "total": "Total Backups",
+            "completed_failed": "{completed} completed, {failed} failed",
+            "storage_used": "Storage Used",
+            "avg_size": "Avg Backup Size"
+        },
+        "cards": {
+            "all_backups": "All Backups",
+            "server_backups": "{server} Backups",
+            "description": "All server backups with advanced filtering and sorting"
+        },
+        "empty": {
+            "title": "No backups found",
+            "button": "Create Your First Backup"
+        },
+        "create": {
+            "title": "Create Backup",
+            "server_label": "Server",
+            "server_placeholder": "Select a server...",
+            "description_label": "Description (Optional)",
+            "description_placeholder": "e.g., Before major update, Manual backup...",
+            "description_help": "Add a note to help identify this backup later",
+            "preview_title": "Backup Preview",
+            "preview_server": "Server: {server}",
+            "preview_note": "Note: {note}",
+            "preview_info": "The backup will include all server files, worlds, and configurations.",
+            "submit": "Create Backup",
+            "errors": {
+                "server_required": "Please select a server",
+                "create_failed": "Failed to create backup"
+            }
+        },
+        "tooltips": {
+            "files_skipped": "{count} files skipped"
+        },
+        "skipped": {
+            "title": "Skipped Files",
+            "summary": "{count} file(s) were skipped during backup",
+            "excluded": "Excluded by Pattern ({count})",
+            "locked": "Locked/Inaccessible ({count})",
+            "other": "Other ({count})",
+            "none": "No files were skipped during this backup.",
+            "close": "Close"
+        },
+        "confirm": {
+            "restore": "Are you sure you want to restore {server} from this backup? This will replace all current server files.",
+            "delete_backup": "Are you sure you want to delete this backup? This action cannot be undone.",
+            "bulk_delete": "Are you sure you want to delete {count} backup(s)? This action cannot be undone."
+        },
+        "toast": {
+            "generic_error": "Unknown error",
+            "load_servers": {
+                "title": "Failed to load servers",
+                "description": "Please try again later"
+            },
+            "load_backups": {
+                "title": "Failed to load backups",
+                "description": "Please try again later"
+            },
+            "backup_started": {
+                "title": "Backup started",
+                "description": "{server} backup is being created in the background"
+            },
+            "create_failed": {
+                "title": "Failed to create backup"
+            },
+            "restored": {
+                "title": "Backup restored",
+                "description": "{server} has been restored from backup"
+            },
+            "deleted": {
+                "title": "Backup deleted",
+                "description": "Backup has been removed"
+            },
+            "delete_failed": {
+                "title": "Failed to delete backup"
+            },
+            "bulk_deleted": {
+                "title": "Deleted {count} backup(s)",
+                "description": "{failed} backup(s) failed to delete"
+            },
+            "bulk_failed": {
+                "title": "Some backups failed to delete",
+                "description": "Unknown error"
+            }
+        },
+        "statuses": {
+            "completed": "Completed",
+            "creating": "Creating",
+            "failed": "Failed",
+            "pending": "Pending"
+        }
+    },
+    "bridge": {
+        "title": "Hytale Bridge",
+        "subtitle": "In-game integration and real-time monitoring",
+        "connection": {
+            "title": "Connection Status",
+            "description": "Bridge plugin connectivity",
+            "connected": "Connected",
+            "disconnected": "Disconnected"
+        },
+        "plugin_version": "Plugin v{version}",
+        "latency": "Latency",
+        "features": {
+            "title": "Available Features",
+            "description": "Bridge functionality and capabilities",
+            "configure": "Configure"
+        },
+        "feature_status": {
+            "enabled": "Enabled",
+            "disabled": "Disabled"
+        },
+        "events": {
+            "title": "Real-time Events",
+            "description": "Live server events and activities",
+            "player_join_badge": "Player Join",
+            "player_leave_badge": "Player Leave",
+            "alert_badge": "Alert",
+            "info_badge": "Info",
+            "player_join": "{username} joined the server",
+            "player_leave": "{username} left the server",
+            "chat": "{username}: {message}",
+            "achievement": "{username} earned {achievement}"
+        }
+    },
+    "economy": {
+        "title": "Economy Management",
+        "subtitle": "Manage server economy, shops, and transactions",
+        "actions": {
+            "create_shop": "Create Shop",
+            "edit": "Edit",
+            "delete": "Delete"
+        },
+        "stats": {
+            "total_currency": "Total Currency",
+            "avg_balance": "Average Balance",
+            "daily_volume": "Daily Volume",
+            "active_shops": "Active Shops",
+            "median_balance": "Median Balance",
+            "recent_transactions": "Recent Transactions"
+        },
+        "charts": {
+            "volume": {
+                "title": "Transaction Volume (7 Days)",
+                "description": "Daily transaction volume in currency",
+                "series": "Volume ($)"
+            },
+            "count": {
+                "title": "Transaction Count (7 Days)",
+                "description": "Number of transactions per day",
+                "series": "Transactions"
+            }
+        },
+        "richest": {
+            "title": "Richest Player",
+            "description": "Player with the highest account balance",
+            "current_balance": "Current balance"
+        },
+        "shops": {
+            "title": "Server Shops",
+            "description": "Manage in-game shops and inventory",
+            "description_line": "In-game shop with {count} items",
+            "labels": {
+                "items": "Items",
+                "location": "Location",
+                "owner": "Owner"
+            },
+            "sample_items": "Sample Items:",
+            "more_items": "+{count} more items",
+            "badges": {
+                "buy": "Buy: ${price}",
+                "sell": "Sell: ${price}"
+            }
+        },
+        "modal": {
+            "title": "Create Shop",
+            "labels": {
+                "name": "Shop Name",
+                "description": "Description",
+                "x": "X Coordinate",
+                "y": "Y Coordinate",
+                "z": "Z Coordinate",
+                "world": "World"
+            },
+            "actions": {
+                "cancel": "Cancel",
+                "submit": "Create Shop"
+            }
+        },
+        "confirm": {
+            "delete_shop": "Are you sure you want to delete this shop?"
+        }
+    },
+    "files": {
+        "title": "File Manager",
+        "subtitle": "Browse and manage server files",
+        "actions": {
+            "new_file": "New File",
+            "new_folder": "New Folder",
+            "upload": "Upload",
+            "search": "Search",
+            "clear": "Clear"
+        },
+        "server_selector": {
+            "placeholder": "Select a server..."
+        },
+        "disk_usage": "Disk Usage",
+        "search": {
+            "placeholder": "Search files..."
+        },
+        "table": {
+            "name": "Name",
+            "size": "Size",
+            "modified": "Modified",
+            "actions": "Actions",
+            "files_and_folders": "Files and Folders",
+            "search_results": "Search Results for \"{query}\""
+        },
+        "empty": {
+            "search": "No files found",
+            "directory": "This directory is empty"
+        },
+        "badge": {
+            "editable": "Editable"
+        },
+        "confirm": {
+            "delete_file": "Are you sure you want to delete \"{name}\"?",
+            "delete_directory": "Are you sure you want to delete the directory \"{name}\" and all its contents?"
+        },
+        "alert": {
+            "unexpected_error": "An unexpected error occurred",
+            "delete_error": "Error deleting {type}: {message}"
+        },
+        "types": {
+            "file": "file",
+            "directory": "directory"
+        },
+        "create": {
+            "title_file": "Create New File",
+            "title_folder": "Create New Folder",
+            "creating_file": "Creating a new file",
+            "creating_folder": "Creating a new folder",
+            "location": "Location: /{path}",
+            "file_name": "File Name",
+            "folder_name": "Folder Name",
+            "placeholder": {
+                "file": "e.g., config.yml, server.properties",
+                "folder": "e.g., configs, mods"
+            },
+            "no_separators": "Do not include path separators (/ or \\)",
+            "initial_content": "Initial Content (Optional)",
+            "initial_content_placeholder": "Leave empty to create an empty file...",
+            "full_path": "Full path:",
+            "create_file": "Create File",
+            "create_folder": "Create Folder",
+            "errors": {
+                "required": "Name is required",
+                "separators": "Name cannot contain path separators (/ or \\)"
+            },
+            "error_generic": "Failed to create {type}"
+        },
+        "editor": {
+            "title": "Edit File: {name}",
+            "load_error": "Failed to load file",
+            "save_error": "Failed to save file",
+            "meta": "{lang} • {size} KB",
+            "unsaved": "Unsaved changes",
+            "loading": "Loading file...",
+            "placeholder": "File content...",
+            "lines": "{count} lines",
+            "characters": "{count} characters",
+            "save": "Save Changes"
+        },
+        "upload": {
+            "title": "Upload Files",
+            "drag_drop": "Drag and drop files here",
+            "click_select": "or click to select files from your computer",
+            "select_files": "Select Files",
+            "max_size_label": "Maximum file size:",
+            "auto_extract": "Auto-extract ZIP files",
+            "list_title": "Uploads ({count})",
+            "clear_completed": "Clear completed",
+            "extracted": "Extracted",
+            "waiting": "Waiting...",
+            "extracted_count": "Extracted {count} file(s)",
+            "cancelled": "Cancelled",
+            "cancel_title": "Cancel upload",
+            "remove_title": "Remove from list",
+            "errors": {
+                "empty": "Empty files cannot be uploaded",
+                "too_large": "File exceeds maximum size of {max}MB (file is {size}MB)",
+                "duplicate": "Duplicate: \"{file}\" appears {count} times in queue",
+                "cancelled": "Upload was cancelled",
+                "network": "Network error during upload",
+                "invalid": "Invalid file or request",
+                "session": "Session expired. Please login again.",
+                "permission": "You do not have permission to upload files",
+                "conflict": "File conflict or already exists",
+                "network_generic": "Network error. Please check your connection.",
+                "failed": "Upload failed"
+            },
+            "validation": {
+                "failed": "{count} file(s) could not be added"
+            }
+        }
+    },
+    "inventory": {
+        "rarity": {
+            "legendary": "Legendary",
+            "epic": "Epic",
+            "rare": "Rare",
+            "uncommon": "Uncommon",
+            "common": "Common"
+        },
+        "durability": "Durability: {current}/{max}"
+    },
+    "error": {
+        "title": "Something went wrong",
+        "error": "Error",
+        "time": "Time",
+        "user_agent": "User Agent",
+        "stack_trace": "Stack Trace",
+        "component_stack": "Component Stack",
+        "not_available": "Not available",
+        "details_title": "Error Details (Development)",
+        "copy": "Copy",
+        "copied": "Copied!",
+        "actions": {
+            "try_again": "Try Again",
+            "refresh": "Refresh Page",
+            "home": "Go Home"
+        }
+    },
+    "modpacks": {
+        "title": "Modpacks",
+        "subtitle": "Pre-configured mod collections for quick setup {available}",
+        "available": "available",
+        "no_providers": "No Mod Providers Configured",
+        "provider_not_configured": "{provider} Not Configured",
+        "provider": "Provider",
+        "configure_hint": "Configure API keys for mod providers in settings to browse and install modpacks.",
+        "search": {
+            "placeholder": "Search modpacks...",
+            "clear": "Clear search"
+        },
+        "filters": {
+            "categories": "All Categories",
+            "search_categories": "Search categories...",
+            "all_categories": "All Categories",
+            "authors": "All Authors",
+            "search_authors": "Search authors...",
+            "all_authors": "All Authors"
+        },
+        "view_modes": {
+            "card": "Card view",
+            "table": "Table view"
+        },
+        "sort": {
+            "downloads": "Most Downloads",
+            "rating": "Highest Rated",
+            "updated": "Recently Updated"
+        },
+        "columns": {
+            "modpack": "Modpack",
+            "author": "Author",
+            "categories": "Categories",
+            "downloads": "Downloads",
+            "rating": "Rating",
+            "actions": "Actions"
+        },
+        "actions": {
+            "install": "Install",
+            "view": "View",
+            "configure_providers": "Configure Providers",
+            "retry": "Retry"
+        },
+        "downloads": "{downloads} downloads",
+        "installed": "Installed",
+        "more_categories": "+{count}",
+        "empty": "No modpacks found matching your criteria",
+        "loading": "Loading modpacks...",
+        "error": {
+            "title": "Failed to Load Modpacks"
+        },
+        "toast": {
+            "installing": {
+                "title": "Installing...",
+                "description": "{title} is being installed to {server}"
+            },
+            "completed": {
+                "title": "Installation complete",
+                "description": "{title} has been installed"
+            },
+            "failed": {
+                "title": "Installation failed",
+                "description": "Please try again"
+            }
+        }
+    },
+    "mods": {
+        "title": "Mods",
+        "subtitle": "Discover mods to enhance your server {available}",
+        "available_suffix": "({count} available)",
+        "no_providers": "No Mod Providers Configured",
+        "provider_not_configured": "{provider} Not Configured",
+        "provider": "Provider",
+        "configure_hint": "Configure API keys for mod providers in settings to browse and install mods.",
+        "search": {
+            "placeholder": "Search mods...",
+            "clear": "Clear search"
+        },
+        "filters": {
+            "categories": "All Categories",
+            "search_categories": "Search categories...",
+            "all_categories": "All Categories",
+            "authors": "All Authors",
+            "search_authors": "Search authors...",
+            "all_authors": "All Authors"
+        },
+        "types": {
+            "all": "All Types",
+            "plugin": "Plugins",
+            "data": "Data Assets",
+            "art": "Art Assets",
+            "save": "World Saves",
+            "modpack": "Modpack"
+        },
+        "view_modes": {
+            "card": "Card view",
+            "table": "Table view"
+        },
+        "sort": {
+            "downloads": "Most Downloads",
+            "rating": "Highest Rated",
+            "updated": "Recently Updated"
+        },
+        "columns": {
+            "mod": "Mod",
+            "author": "Author",
+            "type": "Type",
+            "categories": "Categories",
+            "downloads": "Downloads",
+            "rating": "Rating",
+            "actions": "Actions"
+        },
+        "actions": {
+            "install": "Install",
+            "view": "View",
+            "configure_providers": "Configure Providers",
+            "retry": "Retry"
+        },
+        "latest_version": "Latest",
+        "by_author": "by {author}",
+        "downloads": "{downloads} downloads",
+        "more_categories": "+{count}",
+        "empty": "No mods found matching your criteria",
+        "loading": "Loading mods...",
+        "error": {
+            "title": "Failed to Load Mods"
+        },
+        "server_select": {
+            "title": "Install {name}",
+            "by_author": "by {author}",
+            "downloads": "{count} downloads",
+            "version_label": "Select Version",
+            "version_option": "v{version}",
+            "version_option_with_date": "v{version} - {date}",
+            "latest": "Latest",
+            "deps_checking": "Checking dependencies...",
+            "deps_error": "Failed to fetch dependencies",
+            "deps_label": "Dependencies",
+            "deps_version": "Version: {version}",
+            "any": "Any",
+            "required": "Required",
+            "optional": "Optional",
+            "deps_notice": "Required dependencies will be installed automatically",
+            "server_label": "Select Target Server",
+            "server_meta": "{address}:{port} • v{version}",
+            "players": "{current}/{max} players",
+            "summary": "✓ {project} will be installed to {server}",
+            "install": "Install"
+        },
+        "toast": {
+            "installing": {
+                "title": "Installing...",
+                "description": "{title} is being installed to {server}"
+            },
+            "completed": {
+                "title": "Installation complete",
+                "description": "{title} has been installed"
+            },
+            "failed": {
+                "title": "Installation failed",
+                "description": "Please try again"
+            }
+        }
+    },
+    "providers": {
+        "loading": "Loading providers...",
+        "all": "All Providers",
+        "not_configured": "Not configured",
+        "configured": "Configured",
+        "api_key_required": "API key required",
+        "ready": "Ready",
+        "search_all": "Search all",
+        "warning": {
+            "none": "No providers are configured. Go to Settings to add API keys.",
+            "single": "{provider} requires an API key. Go to Settings to configure it."
+        },
+        "this_provider": "This provider"
+    },
+    "players": {
+        "title": "Players",
+        "subtitle": "Manage and monitor player activity",
+        "coming_soon": {
+            "title": "Coming Soon",
+            "description": "Player management features will be available once we know more about how Hytale handles player data, authentication, and moderation."
+        },
+        "detail": {
+            "title": "Player Details",
+            "subtitle": "View player information and history",
+            "description": "Player details will be available once we know more about how Hytale handles player data.",
+            "back": "Back to Players"
+        }
+    },
+    "hytale_downloader": {
+        "install": {
+            "title": "Hytale Downloader Required",
+            "description": "Install the Hytale Downloader to download official server files.",
+            "button": "Install Downloader",
+            "button_loading": "Installing...",
+            "error": "Failed to install"
+        },
+        "auth": {
+            "title": "Hytale Account Required",
+            "description": "Connect your Hytale account to download server files.",
+            "button": "Connect Hytale Account",
+            "connected": "Connected"
+        },
+        "download": {
+            "title": "Download Server Files",
+            "patchline_label": "Patchline",
+            "patchline_release": "Release (Stable)",
+            "patchline_prerelease": "Pre-release (Beta)",
+            "available_version": "Available Version",
+            "actions": {
+                "refresh": "Refresh Version",
+                "checking": "Checking...",
+                "download": "Download Server",
+                "starting": "Starting..."
+            },
+            "path_hint": "Enter a server directory path above to enable downloading.",
+            "errors": {
+                "path_required": "Please specify a server path first",
+                "check_version": "Failed to check version",
+                "start": "Failed to start download"
+            }
+        },
+        "progress": {
+            "downloading": "Downloading",
+            "extracting": "Extracting",
+            "validating": "Validating",
+            "complete": "Complete",
+            "failed": "Failed",
+            "processing": "Processing",
+            "success": "Server files downloaded successfully to:",
+            "inline": {
+                "downloading": "Downloading {percent}%",
+                "extracting": "Extracting...",
+                "validating": "Validating..."
+            }
+        },
+        "oauth": {
+            "title": "Connect Hytale Account",
+            "header_title": "Hytale Authentication",
+            "header_subtitle": "Required to download official server files",
+            "initiating": "Initiating authentication...",
+            "preparing": "Preparing authentication...",
+            "error_title": "Authentication Failed",
+            "error_description": "An error occurred during authentication.",
+            "retry": "Try Again",
+            "expired_title": "Code Expired",
+            "expired_description": "The device code has expired. Please try again.",
+            "get_new": "Get New Code",
+            "success_title": "Authentication Successful",
+            "success_description": "Your Hytale account has been connected.",
+            "instructions": "To connect your Hytale account, open the verification link and enter the code below.",
+            "code_label": "Your device code",
+            "expires_in": "Expires in",
+            "open_login": "Open Hytale Login",
+            "waiting": "Waiting for authentication..."
+        }
+    },
+    "users": {
+        "title": "User Management",
+        "subtitle": "Manage user accounts and permissions",
+        "actions": {
+            "add": "Add User"
+        },
+        "access_denied": {
+            "title": "Access Denied",
+            "description": "You need admin privileges to manage users."
+        },
+        "list": {
+            "title": "Users ({count})",
+            "subtitle": "All registered users in the system",
+            "loading": "Loading users...",
+            "empty": "No users found"
+        },
+        "table": {
+            "user": "User",
+            "role": "Role",
+            "created": "Created",
+            "last_login": "Last Login",
+            "actions": "Actions"
+        },
+        "roles": {
+            "admin": "Admin",
+            "moderator": "Moderator",
+            "viewer": "Viewer",
+            "viewer_option": "Viewer - Read-only access",
+            "moderator_option": "Moderator - Can manage servers",
+            "admin_option": "Admin - Full access"
+        },
+        "modal": {
+            "create_title": "Create User",
+            "edit_title": "Edit User"
+        },
+        "form": {
+            "username": "Username",
+            "username_placeholder": "Enter username",
+            "email": "Email",
+            "email_placeholder": "Enter email",
+            "password": "Password",
+            "password_optional": "leave blank to keep current",
+            "password_placeholder": "Enter password",
+            "password_new_placeholder": "Enter new password",
+            "role": "Role",
+            "password_required": "Password is required for new users",
+            "saving": "Saving...",
+            "create": "Create User",
+            "update": "Update User",
+            "cancel": "Cancel"
+        },
+        "toast": {
+            "created": "User created successfully",
+            "updated": "User updated successfully",
+            "deleted": "User deleted successfully"
+        },
+        "errors": {
+            "load": "Failed to load users",
+            "save": "Failed to save user",
+            "delete": "Failed to delete user"
+        },
+        "never": "Never"
+    },
+    "worlds": {
+        "title": "World Management",
+        "subtitle": "Manage world files for your servers",
+        "select_server": "Select Server",
+        "select_server_description": "Choose a server to manage its worlds",
+        "list": {
+            "title": "Worlds",
+            "subtitle": "Manage world files",
+            "loading": "Loading worlds...",
+            "empty": "No worlds found"
+        },
+        "status": {
+            "active": "Active"
+        },
+        "size": "Size: {size}",
+        "actions": {
+            "activate": "Activate"
+        },
+        "confirm_delete": "Are you sure you want to delete world {name}?",
+        "errors": {
+            "servers": "Failed to load servers",
+            "worlds": "Failed to load worlds",
+            "activate": "Failed to activate world",
+            "delete": "Failed to delete world"
+        }
+    },
+    "permissions": {
+        "title": "Role Permissions",
+        "subtitle": "Configure what each role can access and manage",
+        "loading": "Loading permissions...",
+        "actions": {
+            "save_all": "Save All Changes",
+            "save": "Save",
+            "reset": "Reset",
+            "retry": "Retry"
+        },
+        "toast": {
+            "saved": "{role} permissions saved successfully",
+            "reset": "{role} permissions reset to defaults"
+        },
+        "errors": {
+            "load": "Failed to load permissions data",
+            "save": "Failed to save {role} permissions",
+            "reset": "Failed to reset {role} permissions"
+        },
+        "confirm_reset": "Reset {role} permissions to defaults? This cannot be undone.",
+        "roles": {
+            "admin": {
+                "label": "Admin",
+                "description": "Full access to all features"
+            },
+            "moderator": {
+                "label": "Moderator",
+                "description": "Manage servers and players"
+            },
+            "viewer": {
+                "label": "Viewer",
+                "description": "Read-only access"
+            },
+            "modified": "(modified)",
+            "all": "All",
+            "count": "{count} permissions",
+            "admin_note": "Admin permissions cannot be modified"
+        },
+        "categories": {
+            "servers": "Server Management",
+            "backups": "Backup Management",
+            "players": "Player Management",
+            "mods": "Mod Management",
+            "worlds": "World Management",
+            "automation": "Automation & Tasks",
+            "alerts": "Alerts",
+            "networks": "Networks",
+            "users": "User Management",
+            "settings": "Settings & Permissions"
+        },
+        "table": {
+            "permission": "Permission",
+            "count": "{count} permissions"
+        },
+        "tooltips": {
+            "admin_all": "Admin has all permissions",
+            "remove": "Click to remove permission",
+            "grant": "Click to grant permission",
+            "cannot_modify": "You cannot modify permissions"
+        },
+        "help": {
+            "title": "About Role Permissions",
+            "admin": "Has full access to all features. These permissions cannot be modified.",
+            "moderator": "Can manage servers, players, and most day-to-day operations.",
+            "viewer": "Read-only access to view information without making changes."
+        }
+    },
+    "alerts": {
+        "title": "Alerts & Notifications",
+        "subtitle": "Monitor server alerts and system notifications",
+        "stats": {
+            "total": "Total",
+            "unread": "Unread",
+            "critical": "Critical",
+            "warning": "Warning",
+            "info": "Info"
+        },
+        "filter": {
+            "all": "All",
+            "unread": "Unread",
+            "unresolved": "Unresolved"
+        },
+        "list": {
+            "all_title": "All Alerts",
+            "server_title": "{serverName} Alerts",
+            "description": "System alerts with filtering, search and pagination",
+            "empty_title": "No alerts to display",
+            "empty_message": "All systems are running smoothly"
+        },
+        "columns": {
+            "severity": "Severity",
+            "alert": "Alert",
+            "server": "Server",
+            "type": "Type",
+            "time": "Time",
+            "actions": "Actions"
+        },
+        "badges": {
+            "new": "New",
+            "resolved": "Resolved"
+        },
+        "actions": {
+            "mark_read": "Mark Read",
+            "resolve": "Resolve",
+            "delete_selected": "Delete Selected",
+            "mark_as_read_tooltip": "Mark as read",
+            "resolve_tooltip": "Resolve",
+            "delete_tooltip": "Delete"
+        },
+        "messages": {
+            "marked_read": "Alert marked as read",
+            "mark_read_error": "Failed to mark as read",
+            "resolved": "Alert resolved",
+            "resolve_error": "Failed to resolve alert",
+            "deleted": "Alert deleted",
+            "delete_error": "Failed to delete alert",
+            "bulk_read_success": "Marked {count} alert(s) as read",
+            "bulk_read_error": "Failed to mark alerts as read",
+            "bulk_resolve_success": "Resolved {count} alert(s)",
+            "bulk_resolve_error": "Failed to resolve alerts",
+            "bulk_delete_confirm": "Are you sure you want to delete {count} alert(s)?",
+            "bulk_delete_success": "Deleted {count} alert(s)",
+            "bulk_delete_error": "Failed to delete alerts",
+            "delete_confirm": "Are you sure you want to delete this alert?",
+            "load_error": "Failed to load alerts"
+        },
+        "server_selector": {
+            "label": "Server:",
+            "all_servers": "All Servers"
+        }
+    },
+    "automation": {
+        "title": "Task Automation",
+        "subtitle": "Schedule and automate server tasks",
+        "buttons": {
+            "create_task": "Create Task",
+            "create_group": "Create Group"
+        },
+        "tabs": {
+            "tasks": "Tasks ({count})",
+            "groups": "Task Groups ({count})"
+        },
+        "server_selector": {
+            "label": "Server:",
+            "all_servers": "All Servers"
+        },
+        "stats": {
+            "total_tasks": "Total Tasks",
+            "active": "Active",
+            "successful": "Successful",
+            "failed": "Failed"
+        },
+        "cards": {
+            "all_tasks": "All Tasks",
+            "server_tasks": "{server} Tasks",
+            "description": "Automated tasks and recurring jobs with advanced filtering"
+        },
+        "empty": {
+            "title": "No scheduled tasks found",
+            "button": "Create Your First Task"
+        },
+        "table": {
+            "task": "Task",
+            "type": "Type",
+            "schedule": "Schedule",
+            "status": "Status",
+            "last_run": "Last Run",
+            "result": "Result",
+            "actions": "Actions",
+            "group": "Group",
+            "tasks": "Tasks",
+            "delay": "Delay",
+            "on_failure": "On Failure",
+            "task_count": "{count} task(s)"
+        },
+        "status": {
+            "active": "Active",
+            "disabled": "Disabled",
+            "never": "Never",
+            "none": "None",
+            "never_run": "Never run",
+            "success": "Success",
+            "failed": "Failed",
+            "partial": "Partial",
+            "unknown": "Unknown"
+        },
+        "groups": {
+            "title": "Task Groups",
+            "description": "Groups of tasks that run in sequence with configurable delays",
+            "stats": {
+                "total": "Total Groups",
+                "active": "Active Groups",
+                "tasks_in_groups": "Total Tasks in Groups"
+            },
+            "empty": {
+                "title": "No task groups found",
+                "subtitle": "Create a group to run multiple tasks in sequence",
+                "button": "Create Your First Group"
+            }
+        },
+        "failure": {
+            "stop": "Stop",
+            "continue": "Continue"
+        },
+        "cron": {
+            "every_hour": "Every hour",
+            "daily_midnight": "Daily at midnight",
+            "weekly_sunday": "Weekly on Sunday",
+            "every_5_minutes": "Every 5 minutes",
+            "every_15_minutes": "Every 15 minutes",
+            "every_30_minutes": "Every 30 minutes",
+            "every_6_hours": "Every 6 hours",
+            "daily_noon": "Daily at noon",
+            "weekly_monday": "Weekly on Monday",
+            "custom": "Custom"
+        },
+        "actions": {
+            "delete_selected": "Delete Selected"
+        },
+        "confirm": {
+            "delete_task": "Are you sure you want to delete this task?",
+            "bulk_delete_tasks": "Are you sure you want to delete {count} task(s)? This action cannot be undone.",
+            "delete_group": "Are you sure you want to delete this task group?",
+            "bulk_delete_groups": "Are you sure you want to delete {count} task group(s)? This action cannot be undone."
+        },
+        "toast": {
+            "generic_error": "Something went wrong",
+            "load_servers": {
+                "title": "Failed to load servers",
+                "description": "Please try again later"
+            },
+            "load_tasks": {
+                "title": "Failed to load tasks",
+                "description": "Please try again later"
+            },
+            "load_groups": {
+                "title": "Failed to load task groups",
+                "description": "Please try again later"
+            },
+            "task_disabled": "Task disabled",
+            "task_enabled": "Task enabled",
+            "toggle_task_failed": {
+                "title": "Failed to toggle task"
+            },
+            "task_executed": {
+                "title": "Task executed",
+                "description": "Task has been run manually"
+            },
+            "run_task_failed": {
+                "title": "Failed to run task"
+            },
+            "task_deleted": {
+                "title": "Task deleted",
+                "description": "Task has been removed"
+            },
+            "delete_task_failed": {
+                "title": "Failed to delete task"
+            },
+            "bulk_tasks_deleted": {
+                "title": "Deleted {count} task(s)",
+                "description": "{failed} task(s) failed to delete"
+            },
+            "bulk_tasks_failed": {
+                "title": "Failed to delete tasks",
+                "description": "{failed} task(s) failed to delete"
+            },
+            "task_created": {
+                "title": "Task created",
+                "description": "Scheduled task has been created"
+            },
+            "task_updated": {
+                "title": "Task updated",
+                "description": "Scheduled task has been updated"
+            },
+            "group_disabled": "Task group disabled",
+            "group_enabled": "Task group enabled",
+            "toggle_group_failed": {
+                "title": "Failed to toggle task group"
+            },
+            "group_running": {
+                "title": "Running task group...",
+                "description": "Tasks will execute in sequence"
+            },
+            "group_executed": {
+                "title": "Task group executed",
+                "description": "All tasks have been run"
+            },
+            "run_group_failed": {
+                "title": "Failed to run task group"
+            },
+            "group_deleted": {
+                "title": "Task group deleted",
+                "description": "Task group has been removed"
+            },
+            "delete_group_failed": {
+                "title": "Failed to delete task group"
+            },
+            "bulk_groups_deleted": {
+                "title": "Deleted {count} task group(s)",
+                "description": "{failed} group(s) failed to delete"
+            },
+            "bulk_groups_failed": {
+                "title": "Failed to delete task groups",
+                "description": "{failed} group(s) failed to delete"
+            },
+            "group_created": {
+                "title": "Task group created",
+                "description": "Task group has been created"
+            },
+            "group_updated": {
+                "title": "Task group updated",
+                "description": "Task group has been updated"
+            }
+        },
+        "modals": {
+            "create_task": {
+                "title_create": "Create Scheduled Task",
+                "title_edit": "Edit Scheduled Task",
+                "server_label": "Server *",
+                "server_placeholder": "Select a server...",
+                "server_edit_helper": "Server cannot be changed when editing a task",
+                "name_label": "Task Name *",
+                "name_placeholder": "e.g., Daily Backup, Restart Server...",
+                "type_label": "Task Type *",
+                "type_edit_helper": "Task type cannot be changed when editing a task",
+                "type_options": {
+                    "backup": "Create Backup",
+                    "restart": "Restart Server",
+                    "start": "Start Server",
+                    "stop": "Stop Server",
+                    "command": "Execute Command"
+                },
+                "command_label": "Command *",
+                "command_placeholder": "/say Server restart in 5 minutes",
+                "command_helper": "Enter the command to execute on the server console",
+                "description_label": "Backup Description (Optional)",
+                "description_placeholder": "e.g., Daily automated backup",
+                "backup_limit_label": "Backup Limit",
+                "backup_limit_helper": "Maximum number of backups to keep from this task. Oldest backups will be deleted when limit is exceeded. Set to 0 for unlimited backups.",
+                "schedule_label": "Schedule *",
+                "custom_cron_label": "Custom Cron Expression *",
+                "custom_cron_placeholder": "* * * * *",
+                "custom_cron_helper": "Format: minute hour day month weekday (e.g., \"0 2 * * *\" = 2 AM daily)",
+                "preview": {
+                    "title": "Task Preview",
+                    "server": "Server: {server}",
+                    "name": "Name: {name}",
+                    "type": "Type: {type}",
+                    "schedule": "Schedule: {schedule}",
+                    "command": "Command: {command}"
+                },
+                "errors": {
+                    "select_server": "Please select a server",
+                    "name": "Please enter a task name",
+                    "cron": "Please enter a valid cron expression",
+                    "command": "Please enter a command",
+                    "update": "Failed to update task",
+                    "create": "Failed to create task"
+                },
+                "submit": "Create Task"
+            },
+            "task_group": {
+                "title_create": "Create Task Group",
+                "title_edit": "Edit Task Group",
+                "name_label": "Group Name *",
+                "name_placeholder": "e.g., Daily Server Maintenance",
+                "description_label": "Description (Optional)",
+                "description_placeholder": "e.g., Backup, restart, and notify",
+                "schedule_label": "Schedule *",
+                "custom_cron_label": "Custom Cron Expression *",
+                "custom_cron_placeholder": "* * * * *",
+                "custom_cron_helper": "Format: minute hour day month weekday (e.g., \"0 2 * * *\" = 2 AM daily)",
+                "failure_label": "On Task Failure",
+                "failure_stop": "Stop remaining tasks",
+                "failure_continue": "Continue with remaining tasks",
+                "delay_label": "Delay Between Tasks (seconds)",
+                "delay_helper": "Wait time between each task execution. Set to 0 for no delay.",
+                "tasks_label": "Tasks *",
+                "tasks_selected": "{count} selected",
+                "tasks_empty": "No tasks available. Create some scheduled tasks first.",
+                "tasks_all_selected": "All tasks selected",
+                "disabled": "Disabled",
+                "preview": {
+                    "title": "Group Preview",
+                    "name": "Name: {name}",
+                    "schedule": "Schedule: {schedule}",
+                    "tasks": "Tasks: {count} task(s) will run in sequence",
+                    "delay": "with {seconds}s delay between each",
+                    "failure": "On failure: {mode}"
+                },
+                "errors": {
+                    "name": "Please enter a group name",
+                    "cron": "Please enter a valid cron expression",
+                    "tasks": "Please select at least one task",
+                    "update": "Failed to update task group",
+                    "create": "Failed to create task group"
+                },
+                "submit": "Create Group"
+            }
+        }
+    },
+    "activity": {
+        "title": "Activity Log",
+        "subtitle": "Track and audit all user actions across the system",
+        "history": {
+            "title": "Activity History",
+            "total": "{count} total entries"
+        },
+        "loading": "Loading activity...",
+        "filters": {
+            "search_placeholder": "Search by username or resource...",
+            "search": "Search",
+            "all_categories": "All Categories",
+            "categories": {
+                "auth": "Authentication",
+                "server": "Server",
+                "backup": "Backup",
+                "player": "Player",
+                "mod": "Mod",
+                "world": "World",
+                "automation": "Automation",
+                "network": "Network",
+                "user": "User",
+                "settings": "Settings"
+            },
+            "statuses": {
+                "all": "All Statuses"
+            }
+        },
+        "table": {
+            "time": "Time",
+            "user": "User",
+            "action": "Action",
+            "resource": "Resource",
+            "status": "Status",
+            "ip_address": "IP Address"
+        },
+        "status": {
+            "success": "Success",
+            "failed": "Failed"
+        },
+        "empty": {
+            "title": "No activity found",
+            "subtitle": "Activity will appear here as actions are performed"
+        },
+        "actions": {
+            "auth_login": "Logged in",
+            "auth_logout": "Logged out",
+            "auth_password_change": "Changed password",
+            "auth_login_failed": "Login failed",
+            "server_create": "Created server",
+            "server_update": "Updated server",
+            "server_delete": "Deleted server",
+            "server_start": "Started server",
+            "server_stop": "Stopped server",
+            "server_restart": "Restarted server",
+            "server_kill": "Force killed server",
+            "server_command": "Executed command",
+            "backup_create": "Created backup",
+            "backup_restore": "Restored backup",
+            "backup_delete": "Deleted backup",
+            "player_kick": "Kicked player",
+            "player_ban": "Banned player",
+            "player_unban": "Unbanned player",
+            "mod_install": "Installed mod",
+            "mod_uninstall": "Uninstalled mod",
+            "mod_enable": "Enabled mod",
+            "mod_disable": "Disabled mod",
+            "world_activate": "Activated world",
+            "world_delete": "Deleted world",
+            "automation_create": "Created automation rule",
+            "automation_delete": "Deleted automation rule",
+            "automation_execute": "Executed automation rule",
+            "network_create": "Created network",
+            "network_delete": "Deleted network",
+            "settings_update": "Updated settings",
+            "user_create": "Created user",
+            "user_delete": "Deleted user"
+        }
+    },
+    "hsm_logs": {
+        "title": "HSM Logs",
+        "subtitle": "View application logs and diagnostics",
+        "waiting_for_logs": "No logs available",
+        "log_source": "HSM",
+        "actions": {
+            "download_logs": "Download Logs",
+            "clear_display": "Clear Display",
+            "refresh": "Refresh"
+        },
+        "toast": {
+            "logs_downloaded": "Logs downloaded",
+            "display_cleared": "Display cleared",
+            "load_failed": "Failed to load logs"
+        },
+        "filters": {
+            "all": "All Levels",
+            "error": "Errors",
+            "warn": "Warnings",
+            "info": "Info",
+            "debug": "Debug"
+        }
+    },
+    "networks": {
+        "create": {
+            "title": "Create Network",
+            "steps": {
+                "basics": "1. Basics",
+                "servers": "2. Servers"
+            },
+            "header": "Network Configuration",
+            "subtitle": "Set up basic network properties",
+            "name_label": "Network Name",
+            "name_placeholder": "My Server Network",
+            "description_label": "Description",
+            "description_placeholder": "Optional description of this network...",
+            "color_label": "Color",
+            "servers_header": "Select Servers",
+            "servers_subtitle": "Choose servers to include in this network",
+            "member_servers": "Member Servers",
+            "select_all": "Select All",
+            "clear": "Clear",
+            "loading_servers": "Loading servers...",
+            "no_servers": "No servers available",
+            "selected_count": "{count, plural, =1 {# server selected} other {#servers selected} ",
+            "submit": "Create Network",
+            "errors": {
+                "name": "Network name is required",
+                "name_length": "Name must be 50 characters or less",
+                "description_length": "Description must be 200 characters or less",
+                "servers": "Please select at least one server"
+            }
+        },
+        "card": {
+            "status": {
+                "running": "Running",
+                "stopped": "Stopped",
+                "starting": "Starting",
+                "stopping": "Stopping",
+                "partial": "Partial",
+                "unknown": "Unknown"
+            },
+            "member_count": "{count} {count, plural, =1 {server} other {servers}}",
+            "stats": {
+                "players": "Players",
+                "avg_cpu": "Avg CPU",
+                "memory": "Memory",
+                "online": "Online",
+                "cpu": "CPU"
+            },
+            "actions": {
+                "start_all": "Start All",
+                "stop_all": "Stop All",
+                "restart_all": "Restart All",
+                "manage": "Manage Servers",
+                "delete": "Delete Network"
+            },
+            "empty": "No servers in this network",
+            "confirm": {
+                "title": "Delete Network",
+                "message": "Are you sure you want to delete \"{name}\"? This will only remove the network grouping, not the servers themselves.",
+                "confirm": "Delete Network"
+            }
+        },
+        "manage": {
+            "title": "Manage Servers - {name}",
+            "status": {
+                "running": "Running",
+                "stopped": "Stopped",
+                "starting": "Starting",
+                "stopping": "Stopping"
+            },
+            "role": {
+                "proxy": "Proxy",
+                "backend": "Backend",
+                "member": "Member"
+            },
+            "current_members": "Current Members ({count})",
+            "available": "Available Servers ({count})",
+            "empty": "No servers in this network",
+            "empty_available": "No ungrouped servers available"
+        },
+        "row": {
+            "status": {
+                "unknown": "Unknown"
+            },
+            "role": {
+                "proxy": "Proxy",
+                "backend": "Backend"
+            },
+            "actions": {
+                "force_kill": "Force Kill Server",
+                "start": "Start Server",
+                "starting": "Starting...",
+                "stop": "Stop Server",
+                "restart": "Restart Server",
+                "console": "Console",
+                "settings": "Server Settings",
+                "delete": "Delete Server",
+                "delete_blocked": "Stop server before deleting"
+            }
+        }
+    },
+    "updates": {
+        "badge": {
+            "checking": "Checking...",
+            "available_tooltip": "Update available: {version}",
+            "update": "Update",
+            "update_to": "Update to {version}"
+        },
+        "banner": {
+            "version": "Update v{version}",
+            "short": "Update",
+            "dismiss_aria": "Dismiss update notification"
+        },
+        "modal": {
+            "title": "Server Update",
+            "current_version": "Current version: {version}",
+            "available_version_label": "Available version:",
+            "completed_message": "Update completed successfully!",
+            "errors": {
+                "unknown": "Unknown error occurred",
+                "cancelled": "Update was cancelled"
+            },
+            "before": {
+                "title": "Before updating:",
+                "items": {
+                    "backup": "A full backup will be created automatically",
+                    "preserve": "Your configs, mods, universe, and logs will be preserved",
+                    "stop": "The server will be stopped during the update",
+                    "rollback": "You can rollback if something goes wrong"
+                }
+            },
+            "status": {
+                "pending": "Preparing...",
+                "stopping": "Stopping server...",
+                "backing_up": "Creating backup...",
+                "preserving": "Preserving user files...",
+                "downloading": "Downloading new version...",
+                "installing": "Installing update...",
+                "restoring": "Restoring user files...",
+                "starting": "Starting server...",
+                "completed": "Update completed!",
+                "failed": "Update failed",
+                "rolled_back": "Rolled back"
+            },
+            "progress": "{percent}% complete",
+            "checking": "Checking for updates...",
+            "up_to_date": {
+                "title": "Server is up to date",
+                "description": "You're running the latest version ({version})"
+            },
+            "start": "Start Update",
+            "cancel": "Cancel Update"
+        },
+        "history": {
+            "title": "Update History",
+            "subtitle": "Version update history for {server}",
+            "rollback_title": "Rollback Available",
+            "rollback_description": "You can restore the server to the state before the last update.",
+            "rollback": "Rollback",
+            "rollback_confirm": "Are you sure you want to rollback to the previous version? This will restore the backup created before the last update.",
+            "load_error": "Failed to load update history: {error}",
+            "empty_title": "No update history",
+            "empty_description": "This server hasn't been updated yet.",
+            "status": {
+                "pending": "Pending",
+                "stopping": "Stopping",
+                "backing_up": "Backing Up",
+                "preserving": "Preserving",
+                "downloading": "Downloading",
+                "installing": "Installing",
+                "restoring": "Restoring",
+                "starting": "Starting",
+                "completed": "Completed",
+                "failed": "Failed",
+                "rolled_back": "Rolled Back"
+            }
+        }
+    }
+}

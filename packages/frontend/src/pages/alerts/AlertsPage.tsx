@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge, DataTable, type Column } from '../../components/ui';
 import { Bell, AlertCircle, AlertTriangle, Info, Check, CheckCheck, RefreshCw, Trash2 } from 'lucide-react';
 import { useToast } from '../../stores/toastStore';
 import api from '../../services/api';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 interface Alert {
   id: string;
@@ -26,6 +27,7 @@ interface Server {
 }
 
 export const AlertsPage = () => {
+  const { t, i18n } = useTranslation();
   const toast = useToast();
   const [servers, setServers] = useState<Server[]>([]);
   const [selectedServer, setSelectedServer] = useState<string>('all');
@@ -65,7 +67,7 @@ export const AlertsPage = () => {
       setServers(data.map((s: any) => ({ id: s.id, name: s.name, status: s.status })));
     } catch (error) {
       console.error('Error fetching servers:', error);
-      toast.error('Failed to load servers', 'Please try again later');
+      toast.error(t('common.loading'), t('alerts.messages.load_error'));
     }
   };
 
@@ -114,7 +116,7 @@ export const AlertsPage = () => {
       });
     } catch (error: any) {
       console.error('Error fetching alerts:', error);
-      toast.error('Failed to load alerts', error.message);
+      toast.error(t('alerts.messages.load_error'), error.message);
     } finally {
       setLoading(false);
     }
@@ -123,34 +125,34 @@ export const AlertsPage = () => {
   const handleMarkRead = async (alert: Alert) => {
     try {
       await api.markAlertAsRead(alert.serverId, alert.id);
-      toast.success('Alert marked as read');
+      toast.success(t('alerts.messages.marked_read'));
       await fetchAlerts();
     } catch (error: any) {
-      toast.error('Failed to mark as read', error.message);
+      toast.error(t('alerts.messages.mark_read_error'), error.message);
     }
   };
 
   const handleResolve = async (alert: Alert) => {
     try {
       await api.resolveAlert(alert.serverId, alert.id);
-      toast.success('Alert resolved');
+      toast.success(t('alerts.messages.resolved'));
       await fetchAlerts();
     } catch (error: any) {
-      toast.error('Failed to resolve alert', error.message);
+      toast.error(t('alerts.messages.resolve_error'), error.message);
     }
   };
 
   const handleDelete = async (alert: Alert) => {
-    if (!confirm('Are you sure you want to delete this alert?')) {
+    if (!confirm(t('alerts.messages.delete_confirm'))) {
       return;
     }
 
     try {
       await api.deleteAlert(alert.serverId, alert.id);
-      toast.success('Alert deleted');
+      toast.success(t('alerts.messages.deleted'));
       await fetchAlerts();
     } catch (error: any) {
-      toast.error('Failed to delete alert', error.message);
+      toast.error(t('alerts.messages.delete_error'), error.message);
     }
   };
 
@@ -161,11 +163,11 @@ export const AlertsPage = () => {
       for (const alert of selectedAlerts.filter(a => !a.isRead)) {
         await api.markAlertAsRead(alert.serverId, alert.id);
       }
-      toast.success(`Marked ${selectedAlerts.length} alert(s) as read`);
+      toast.success(t('alerts.messages.bulk_read_success', { count: selectedAlerts.length }));
       await fetchAlerts();
       setSelectedAlerts([]);
     } catch (error: any) {
-      toast.error('Failed to mark alerts as read', error.message);
+      toast.error(t('alerts.messages.bulk_read_error'), error.message);
     }
   };
 
@@ -176,29 +178,31 @@ export const AlertsPage = () => {
       for (const alert of selectedAlerts.filter(a => !a.isResolved)) {
         await api.resolveAlert(alert.serverId, alert.id);
       }
-      toast.success(`Resolved ${selectedAlerts.length} alert(s)`);
+      toast.success(t('alerts.messages.bulk_resolve_success', { count: selectedAlerts.length }));
       await fetchAlerts();
       setSelectedAlerts([]);
     } catch (error: any) {
-      toast.error('Failed to resolve alerts', error.message);
+      toast.error(t('alerts.messages.bulk_resolve_error'), error.message);
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedAlerts.length === 0) return;
 
-    if (!confirm(`Are you sure you want to delete ${selectedAlerts.length} alert(s)?`)) {
+    if (!confirm(t('alerts.messages.bulk_delete_confirm', { count: selectedAlerts.length }))) {
       return;
     }
 
     try {
       const alertIds = selectedAlerts.map(a => a.id);
       const result = await api.deleteAlertsBatch(alertIds);
-      toast.success(`Deleted ${result.deleted} alert(s)`);
+      // Note: result.deleted might be used if API returns it, otherwise verify logic.
+      // Assuming result matches expectation or just using selection length.
+      toast.success(t('alerts.messages.bulk_delete_success', { count: result.deleted }));
       await fetchAlerts();
       setSelectedAlerts([]);
     } catch (error: any) {
-      toast.error('Failed to delete alerts', error.message);
+      toast.error(t('alerts.messages.bulk_delete_error'), error.message);
     }
   };
 
@@ -213,10 +217,10 @@ export const AlertsPage = () => {
     }
   };
 
-  const columns: Column<Alert>[] = [
+  const columns: Column<Alert>[] = useMemo(() => [
     {
       key: 'severity',
-      label: 'Severity',
+      label: t('alerts.columns.severity'),
       render: (alert) => (
         <div className="flex items-center gap-2">
           {getSeverityIcon(alert.severity)}
@@ -225,19 +229,19 @@ export const AlertsPage = () => {
               alert.severity === 'critical'
                 ? 'danger'
                 : alert.severity === 'warning'
-                ? 'warning'
-                : 'info'
+                  ? 'warning'
+                  : 'info'
             }
             size="sm"
           >
-            {alert.severity}
+            {t(`alerts.stats.${alert.severity}`)}
           </Badge>
         </div>
       ),
     },
     {
       key: 'title',
-      label: 'Alert',
+      label: t('alerts.columns.alert'),
       render: (alert) => (
         <div>
           <div className="flex items-center gap-2">
@@ -245,10 +249,10 @@ export const AlertsPage = () => {
               {alert.title}
             </span>
             {!alert.isRead && (
-              <Badge variant="default" size="sm">New</Badge>
+              <Badge variant="default" size="sm">{t('alerts.badges.new')}</Badge>
             )}
             {alert.isResolved && (
-              <Badge variant="success" size="sm">Resolved</Badge>
+              <Badge variant="success" size="sm">{t('alerts.badges.resolved')}</Badge>
             )}
           </div>
           <p className="text-sm text-text-light-muted dark:text-text-muted mt-1 line-clamp-2">
@@ -259,7 +263,7 @@ export const AlertsPage = () => {
     },
     {
       key: 'serverName',
-      label: 'Server',
+      label: t('alerts.columns.server'),
       render: (alert) => (
         <span className="text-sm text-text-light-primary dark:text-text-primary">
           {alert.serverName}
@@ -268,7 +272,7 @@ export const AlertsPage = () => {
     },
     {
       key: 'type',
-      label: 'Type',
+      label: t('alerts.columns.type'),
       render: (alert) => (
         <Badge variant="default" size="sm">
           {alert.type.replace(/_/g, ' ')}
@@ -277,19 +281,19 @@ export const AlertsPage = () => {
     },
     {
       key: 'createdAt',
-      label: 'Time',
+      label: t('alerts.columns.time'),
       render: (alert) => (
         <div>
           <p className="text-sm">{formatDistanceToNow(new Date(alert.createdAt), { addSuffix: true })}</p>
           <p className="text-xs text-text-light-muted dark:text-text-muted">
-            {new Date(alert.createdAt).toLocaleString()}
+            {new Date(alert.createdAt).toLocaleString(i18n.language === 'es' ? 'es-ES' : 'en-US')}
           </p>
         </div>
       ),
     },
     {
       key: 'actions',
-      label: 'Actions',
+      label: t('alerts.columns.actions'),
       sortable: false,
       render: (alert) => (
         <div className="flex gap-1">
@@ -299,7 +303,7 @@ export const AlertsPage = () => {
               size="sm"
               icon={<Check size={14} />}
               onClick={() => handleMarkRead(alert)}
-              title="Mark as read"
+              title={t('alerts.actions.mark_as_read_tooltip')}
             />
           )}
           {!alert.isResolved && (
@@ -308,7 +312,7 @@ export const AlertsPage = () => {
               size="sm"
               icon={<CheckCheck size={14} />}
               onClick={() => handleResolve(alert)}
-              title="Resolve"
+              title={t('alerts.actions.resolve_tooltip')}
             />
           )}
           <Button
@@ -316,12 +320,12 @@ export const AlertsPage = () => {
             size="sm"
             icon={<Trash2 size={14} />}
             onClick={() => handleDelete(alert)}
-            title="Delete"
+            title={t('alerts.actions.delete_tooltip')}
           />
         </div>
       ),
     },
-  ];
+  ], [t, i18n.language]);
 
   return (
     <div className="space-y-6">
@@ -329,10 +333,10 @@ export const AlertsPage = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">
-            Alerts & Notifications
+            {t('alerts.title')}
           </h1>
           <p className="text-text-light-muted dark:text-text-muted mt-1">
-            Monitor server alerts and system notifications
+            {t('alerts.subtitle')}
           </p>
         </div>
         <Button
@@ -341,32 +345,30 @@ export const AlertsPage = () => {
           onClick={fetchAlerts}
           disabled={loading}
         >
-          Refresh
+          {t('common.refresh')}
         </Button>
       </div>
 
       {/* Server Selector */}
       <div className="flex flex-wrap gap-2 items-center">
-        <span className="text-sm text-text-light-muted dark:text-text-muted">Server:</span>
+        <span className="text-sm text-text-light-muted dark:text-text-muted">{t('alerts.server_selector.label')}</span>
         <button
           onClick={() => setSelectedServer('all')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            selectedServer === 'all'
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedServer === 'all'
               ? 'bg-accent-primary text-black'
               : 'bg-white dark:bg-primary-bg-secondary text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary'
-          }`}
+            }`}
         >
-          All Servers
+          {t('alerts.server_selector.all_servers')}
         </button>
         {servers.map((server) => (
           <button
             key={server.id}
             onClick={() => setSelectedServer(server.id)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              selectedServer === server.id
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedServer === server.id
                 ? 'bg-accent-primary text-black'
                 : 'bg-white dark:bg-primary-bg-secondary text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary'
-            }`}
+              }`}
           >
             {server.name}
           </button>
@@ -378,7 +380,7 @@ export const AlertsPage = () => {
         <Card variant="glass">
           <CardContent>
             <div className="text-center">
-              <p className="text-text-light-muted dark:text-text-muted text-sm">Total</p>
+              <p className="text-text-light-muted dark:text-text-muted text-sm">{t('alerts.stats.total')}</p>
               <p className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary">
                 {stats.total}
               </p>
@@ -388,7 +390,7 @@ export const AlertsPage = () => {
         <Card variant="glass">
           <CardContent>
             <div className="text-center">
-              <p className="text-text-light-muted dark:text-text-muted text-sm">Unread</p>
+              <p className="text-text-light-muted dark:text-text-muted text-sm">{t('alerts.stats.unread')}</p>
               <p className="text-2xl font-heading font-bold text-accent-primary">
                 {stats.unread}
               </p>
@@ -398,7 +400,7 @@ export const AlertsPage = () => {
         <Card variant="glass">
           <CardContent>
             <div className="text-center">
-              <p className="text-text-light-muted dark:text-text-muted text-sm">Critical</p>
+              <p className="text-text-light-muted dark:text-text-muted text-sm">{t('alerts.stats.critical')}</p>
               <p className="text-2xl font-heading font-bold text-red-500">
                 {stats.critical}
               </p>
@@ -408,7 +410,7 @@ export const AlertsPage = () => {
         <Card variant="glass">
           <CardContent>
             <div className="text-center">
-              <p className="text-text-light-muted dark:text-text-muted text-sm">Warning</p>
+              <p className="text-text-light-muted dark:text-text-muted text-sm">{t('alerts.stats.warning')}</p>
               <p className="text-2xl font-heading font-bold text-yellow-500">
                 {stats.warning}
               </p>
@@ -418,7 +420,7 @@ export const AlertsPage = () => {
         <Card variant="glass">
           <CardContent>
             <div className="text-center">
-              <p className="text-text-light-muted dark:text-text-muted text-sm">Info</p>
+              <p className="text-text-light-muted dark:text-text-muted text-sm">{t('alerts.stats.info')}</p>
               <p className="text-2xl font-heading font-bold text-blue-500">
                 {stats.info}
               </p>
@@ -435,7 +437,7 @@ export const AlertsPage = () => {
             variant={filter === f ? 'primary' : 'secondary'}
             onClick={() => setFilter(f)}
           >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
+            {t(`alerts.filter.${f}`)}
           </Button>
         ))}
       </div>
@@ -445,20 +447,20 @@ export const AlertsPage = () => {
         <CardHeader>
           <CardTitle>
             {selectedServer === 'all'
-              ? 'All Alerts'
-              : `${servers.find((s) => s.id === selectedServer)?.name} Alerts`}
-            {loading && ' (Loading...)'}
+              ? t('alerts.list.all_title')
+              : t('alerts.list.server_title', { serverName: servers.find((s) => s.id === selectedServer)?.name })}
+            {loading && ` (${t('common.loading')})`}
           </CardTitle>
           <CardDescription>
-            System alerts with filtering, search and pagination
+            {t('alerts.list.description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {alerts.length === 0 && !loading ? (
             <div className="text-center py-12 text-text-light-muted dark:text-text-muted">
               <Bell size={48} className="mx-auto mb-4 opacity-50" />
-              <p>No alerts to display</p>
-              <p className="text-sm mt-2">All systems are running smoothly</p>
+              <p>{t('alerts.list.empty_title')}</p>
+              <p className="text-sm mt-2">{t('alerts.list.empty_message')}</p>
             </div>
           ) : (
             <DataTable
@@ -479,7 +481,7 @@ export const AlertsPage = () => {
                     onClick={handleBulkMarkRead}
                     disabled={selectedAlerts.filter(a => !a.isRead).length === 0}
                   >
-                    Mark Read
+                    {t('alerts.actions.mark_read')}
                   </Button>
                   <Button
                     variant="secondary"
@@ -488,7 +490,7 @@ export const AlertsPage = () => {
                     onClick={handleBulkResolve}
                     disabled={selectedAlerts.filter(a => !a.isResolved).length === 0}
                   >
-                    Resolve
+                    {t('alerts.actions.resolve')}
                   </Button>
                   <Button
                     variant="danger"
@@ -497,7 +499,7 @@ export const AlertsPage = () => {
                     onClick={handleBulkDelete}
                     disabled={selectedAlerts.length === 0}
                   >
-                    Delete Selected
+                    {t('alerts.actions.delete_selected')}
                   </Button>
                 </div>
               }

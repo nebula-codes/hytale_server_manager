@@ -1,4 +1,5 @@
 import { CheckCircle, XCircle, RotateCcw, Clock, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Modal, ModalFooter } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -45,11 +46,12 @@ export const UpdateHistoryModal = ({
   serverName,
   canRollback,
 }: UpdateHistoryModalProps) => {
+  const { t } = useTranslation();
   const { data: history, isLoading, error } = useServerUpdateHistory(serverId, 20);
   const rollbackUpdate = useRollbackServerUpdate();
 
   const handleRollback = async () => {
-    if (!confirm('Are you sure you want to rollback to the previous version? This will restore the backup created before the last update.')) {
+    if (!confirm(t('updates.history.rollback_confirm'))) {
       return;
     }
 
@@ -65,21 +67,21 @@ export const UpdateHistoryModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Update History"
+      title={t('updates.history.title')}
       size="lg"
     >
       <div className="space-y-4">
         <p className="text-sm text-text-light-muted dark:text-text-muted">
-          Version update history for <span className="font-medium text-text-light-primary dark:text-text-primary">{serverName}</span>
+          {t('updates.history.subtitle', { server: serverName })}
         </p>
 
         {/* Rollback option */}
         {canRollback && (
           <div className="flex items-center justify-between p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
             <div>
-              <p className="font-medium text-yellow-500">Rollback Available</p>
+              <p className="font-medium text-yellow-500">{t('updates.history.rollback_title')}</p>
               <p className="text-sm text-text-light-muted dark:text-text-muted">
-                You can restore the server to the state before the last update.
+                {t('updates.history.rollback_description')}
               </p>
             </div>
             <Button
@@ -93,7 +95,7 @@ export const UpdateHistoryModal = ({
               ) : (
                 <RotateCcw className="w-4 h-4" />
               )}
-              Rollback
+              {t('updates.history.rollback')}
             </Button>
           </div>
         )}
@@ -108,7 +110,7 @@ export const UpdateHistoryModal = ({
         {/* Error state */}
         {error && (
           <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-            <p className="text-sm text-red-400">Failed to load update history: {error.message}</p>
+            <p className="text-sm text-red-400">{t('updates.history.load_error', { error: error.message })}</p>
           </div>
         )}
 
@@ -116,9 +118,9 @@ export const UpdateHistoryModal = ({
         {!isLoading && !error && (!history || history.length === 0) && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Clock className="w-12 h-12 text-text-light-muted dark:text-text-muted mb-3" />
-            <p className="font-medium text-text-light-primary dark:text-text-primary">No update history</p>
+            <p className="font-medium text-text-light-primary dark:text-text-primary">{t('updates.history.empty_title')}</p>
             <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
-              This server hasn't been updated yet.
+              {t('updates.history.empty_description')}
             </p>
           </div>
         )}
@@ -162,13 +164,13 @@ export const UpdateHistoryModal = ({
                           {record.toVersion}
                         </span>
                         <Badge variant={statusConfig.variant} size="sm">
-                          {statusConfig.label}
+                          {t(`updates.history.status.${record.status}`, statusConfig.label)}
                         </Badge>
                       </div>
 
                       <p className="text-sm text-text-light-muted dark:text-text-muted">
                         {formatDate(record.startedAt)}
-                        {record.completedAt && ` - ${formatDate(record.completedAt)}`}
+                       {record.completedAt && ` - ${formatDate(record.completedAt)}`}
                       </p>
 
                       {record.error && (
@@ -185,7 +187,7 @@ export const UpdateHistoryModal = ({
 
       <ModalFooter>
         <Button variant="ghost" onClick={onClose}>
-          Close
+          {t('common.close')}
         </Button>
       </ModalFooter>
     </Modal>

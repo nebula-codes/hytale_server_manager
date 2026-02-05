@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, Check, AlertCircle, Globe } from 'lucide-react';
 import { useModProviderStore } from '../../stores/modProviderStore';
 
@@ -11,6 +12,7 @@ export const ProviderSelector = ({
   className = '',
   showConfigurationWarning = true,
 }: ProviderSelectorProps) => {
+  const { t } = useTranslation();
   const {
     selectedProvider,
     providers,
@@ -40,7 +42,7 @@ export const ProviderSelector = ({
     return (
       <div className={`px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 ${className}`}>
         <span className="text-text-light-muted dark:text-text-muted text-sm">
-          Loading providers...
+          {t('providers.loading')}
         </span>
       </div>
     );
@@ -55,11 +57,11 @@ export const ProviderSelector = ({
             onChange={(e) => setSelectedProvider(e.target.value)}
             className="appearance-none px-4 py-2 pr-10 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-text-light-primary dark:text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary cursor-pointer min-w-[180px]"
           >
-            <option value="all">All Providers</option>
+            <option value="all">{t('providers.all')}</option>
             {providers.map((provider) => (
               <option key={provider.id} value={provider.id}>
                 {provider.displayName}
-                {!provider.isConfigured && provider.requiresApiKey ? ' (Not configured)' : ''}
+                {!provider.isConfigured && provider.requiresApiKey ? ` (${t('providers.not_configured')})` : ''}
               </option>
             ))}
           </select>
@@ -75,17 +77,17 @@ export const ProviderSelector = ({
             {currentProvider.isConfigured ? (
               <span className="flex items-center gap-1 text-green-500 text-xs">
                 <Check size={14} />
-                Configured
+                {t('providers.configured')}
               </span>
             ) : currentProvider.requiresApiKey ? (
               <span className="flex items-center gap-1 text-amber-500 text-xs">
                 <AlertCircle size={14} />
-                API key required
+                {t('providers.api_key_required')}
               </span>
             ) : (
               <span className="flex items-center gap-1 text-green-500 text-xs">
                 <Check size={14} />
-                Ready
+                {t('providers.ready')}
               </span>
             )}
           </div>
@@ -94,7 +96,7 @@ export const ProviderSelector = ({
         {selectedProvider === 'all' && (
           <span className="flex items-center gap-1 text-text-light-muted dark:text-text-muted text-xs">
             <Globe size={14} />
-            Search all
+            {t('providers.search_all')}
           </span>
         )}
       </div>
@@ -104,8 +106,8 @@ export const ProviderSelector = ({
         <div className="mt-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
           <p className="text-amber-600 dark:text-amber-400 text-xs">
             {selectedProvider === 'all'
-              ? 'No providers are configured. Go to Settings to add API keys.'
-              : `${currentProvider?.displayName || 'This provider'} requires an API key. Go to Settings to configure it.`}
+              ? t('providers.warning.none')
+              : t('providers.warning.single', { provider: currentProvider?.displayName || t('providers.this_provider') })}
           </p>
         </div>
       )}
@@ -121,6 +123,7 @@ export const ProviderSelectorCompact = ({
 }: {
   className?: string;
 }) => {
+  const { t } = useTranslation();
   const { selectedProvider, providers, setSelectedProvider, loadProviders } =
     useModProviderStore();
 
@@ -137,7 +140,7 @@ export const ProviderSelectorCompact = ({
         onChange={(e) => setSelectedProvider(e.target.value)}
         className="appearance-none px-3 py-1.5 pr-8 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-text-light-primary dark:text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary cursor-pointer text-sm"
       >
-        <option value="all">All</option>
+        <option value="all">{t('providers.all')}</option>
         {providers.map((provider) => (
           <option key={provider.id} value={provider.id}>
             {provider.displayName}

@@ -5,7 +5,11 @@ import FeatureGrid from '../components/home/FeatureGrid.astro';
 import CTASection from '../components/home/CTASection.astro';
 ---
 
-<BaseLayout title="Home">
+<BaseLayout
+  title="Home"
+  isHome={true}
+  description="HytalePanel is a free, open-source, self-hosted dashboard for managing Hytale game servers. Features real-time monitoring, mod marketplace, automated backups, task automation, live console, and role-based access control."
+>
   <Hero />
   <FeatureGrid />
 

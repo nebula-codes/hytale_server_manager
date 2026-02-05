@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge } from '../ui';
 import { Download, X, ChevronDown, ChevronUp, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { useInstallationQueueStore, type InstallationStatus } from '../../stores/installationQueueStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const InstallationQueueWidget = () => {
+  const { t } = useTranslation();
   const { queue, removeFromQueue, clearCompleted } = useInstallationQueueStore();
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -58,12 +60,12 @@ export const InstallationQueueWidget = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Download size={20} className="text-accent-primary" />
-              <CardTitle className="text-base">Installation Queue</CardTitle>
+              <CardTitle className="text-base">{t('installation_queue.title')}</CardTitle>
             </div>
             <div className="flex items-center gap-2">
               {activeCount > 0 && (
                 <Badge size="sm" variant="info">
-                  {activeCount} active
+                  {t('installation_queue.active', { count: activeCount })}
                 </Badge>
               )}
               <Button
@@ -124,7 +126,7 @@ export const InstallationQueueWidget = () => {
 
                         <div className="mt-2">
                           <Badge size="sm" variant={getStatusColor(item.status)}>
-                            {item.status}
+                            {t(`installation_queue.status.${item.status}`)}
                           </Badge>
                         </div>
 
@@ -159,7 +161,7 @@ export const InstallationQueueWidget = () => {
                       onClick={clearCompleted}
                       className="w-full"
                     >
-                      Clear Completed ({completedCount + failedCount})
+                      {t('installation_queue.clear_completed', { count: completedCount + failedCount })}
                     </Button>
                   </div>
                 )}

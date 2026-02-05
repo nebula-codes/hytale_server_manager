@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Play,
   Square,
@@ -46,6 +47,7 @@ export const NetworkServerRow = ({
   onAction,
 }: NetworkServerRowProps) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Prefer local server status for immediate UI updates, fall back to member status from API
   const serverStatus = localServer?.status || memberStatus?.status || member.server.status || 'stopped';
@@ -76,26 +78,26 @@ export const NetworkServerRow = ({
   const getStatusBadge = () => {
     switch (serverStatus) {
       case 'running':
-        return <Badge variant="success" size="sm">Running</Badge>;
+        return <Badge variant="success" size="sm">{t('servers.status.running')}</Badge>;
       case 'stopped':
-        return <Badge variant="default" size="sm">Stopped</Badge>;
+        return <Badge variant="default" size="sm">{t('servers.status.stopped')}</Badge>;
       case 'starting':
-        return <Badge variant="warning" size="sm">Starting</Badge>;
+        return <Badge variant="warning" size="sm">{t('servers.status.starting')}</Badge>;
       case 'stopping':
-        return <Badge variant="warning" size="sm">Stopping</Badge>;
+        return <Badge variant="warning" size="sm">{t('servers.status.stopping')}</Badge>;
       case 'crashed':
-        return <Badge variant="danger" size="sm">Crashed</Badge>;
+        return <Badge variant="danger" size="sm">{t('servers.status.crashed')}</Badge>;
       default:
-        return <Badge variant="default" size="sm">Unknown</Badge>;
+        return <Badge variant="default" size="sm">{t('networks.row.status.unknown')}</Badge>;
     }
   };
 
   const getRoleBadge = () => {
     switch (member.role) {
       case 'proxy':
-        return <Badge variant="info" size="sm">Proxy</Badge>;
+        return <Badge variant="info" size="sm">{t('networks.row.role.proxy')}</Badge>;
       case 'backend':
-        return <Badge variant="warning" size="sm">Backend</Badge>;
+        return <Badge variant="warning" size="sm">{t('networks.row.role.backend')}</Badge>;
       default:
         return null;
     }
@@ -172,7 +174,7 @@ export const NetworkServerRow = ({
             icon={<Skull size={14} />}
             onClick={() => onAction(member.serverId, 'kill')}
             className="text-danger hover:bg-danger/10"
-            title="Force Kill Server"
+            title={t('networks.row.actions.force_kill')}
           />
         ) : canStart ? (
           <Button
@@ -180,7 +182,7 @@ export const NetworkServerRow = ({
             size="sm"
             icon={<Play size={14} />}
             onClick={() => onAction(member.serverId, 'start')}
-            title="Start Server"
+            title={t('networks.row.actions.start')}
           />
         ) : isStarting ? (
           <Button
@@ -188,7 +190,7 @@ export const NetworkServerRow = ({
             size="sm"
             icon={<Play size={14} />}
             disabled
-            title="Starting..."
+            title={t('networks.row.actions.starting')}
           />
         ) : (
           <Button
@@ -196,7 +198,7 @@ export const NetworkServerRow = ({
             size="sm"
             icon={<Square size={14} />}
             onClick={() => onAction(member.serverId, 'stop')}
-            title="Stop Server"
+            title={t('networks.row.actions.stop')}
           />
         )}
         <Button
@@ -205,7 +207,7 @@ export const NetworkServerRow = ({
           icon={<RotateCw size={14} />}
           onClick={() => onAction(member.serverId, 'restart')}
           disabled={canStart || isStopping || isStarting}
-          title="Restart Server"
+          title={t('networks.row.actions.restart')}
         />
         <Button
           variant="ghost"
@@ -213,14 +215,14 @@ export const NetworkServerRow = ({
           icon={<Terminal size={14} />}
           onClick={() => navigate(`/console/${member.serverId}`)}
           disabled={!isRunning}
-          title="Console"
+          title={t('networks.row.actions.console')}
         />
         <Button
           variant="ghost"
           size="sm"
           icon={<Settings size={14} />}
           onClick={() => navigate(`/servers/${member.serverId}`)}
-          title="Server Settings"
+          title={t('networks.row.actions.settings')}
         />
         <Button
           variant="ghost"
@@ -229,7 +231,7 @@ export const NetworkServerRow = ({
           onClick={() => onAction(member.serverId, 'delete')}
           disabled={!canDelete}
           className="text-danger hover:bg-danger/10"
-          title={!canDelete ? 'Stop server before deleting' : 'Delete Server'}
+          title={!canDelete ? t('networks.row.actions.delete_blocked') : t('networks.row.actions.delete')}
         />
       </div>
     </div>

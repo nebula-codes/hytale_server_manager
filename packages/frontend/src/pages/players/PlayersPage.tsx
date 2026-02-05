@@ -1,13 +1,16 @@
+import { useTranslation } from 'react-i18next';
 import { Card } from '../../components/ui';
 import { Users, Construction } from 'lucide-react';
 
 export const PlayersPage = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">Players</h1>
-        <p className="text-text-light-muted dark:text-text-muted mt-1">Manage and monitor player activity</p>
+        <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">{t('players.title')}</h1>
+        <p className="text-text-light-muted dark:text-text-muted mt-1">{t('players.subtitle')}</p>
       </div>
 
       {/* Coming Soon */}
@@ -19,11 +22,11 @@ export const PlayersPage = () => {
           <div className="flex items-center gap-2 mb-4">
             <Construction size={24} className="text-warning" />
             <h2 className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary">
-              Coming Soon
+              {t('players.coming_soon.title')}
             </h2>
           </div>
           <p className="text-text-light-muted dark:text-text-muted max-w-md">
-            Player management features will be available once we know more about how Hytale handles player data, authentication, and moderation.
+            {t('players.coming_soon.description')}
           </p>
         </div>
       </Card>

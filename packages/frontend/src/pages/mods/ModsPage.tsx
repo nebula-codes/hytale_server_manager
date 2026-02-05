@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge, DataTable, Input, SearchableSelect } from '../../components/ui';
 import type { Column } from '../../components/ui';
 import { Download, AlertCircle, ExternalLink, Grid, List, Settings, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
@@ -17,6 +18,7 @@ import api from '../../services/api';
 export const ModsPage = () => {
   const navigate = useNavigate();
   const toast = useToast();
+  const { t } = useTranslation();
   const {
     selectedProvider,
     providers,
@@ -206,7 +208,7 @@ export const ModsPage = () => {
       projectTitle: selectedProject.title,
       projectIconUrl: selectedProject.iconUrl,
       versionId,
-      versionName: version?.version || 'Latest',
+      versionName: version?.version || t('mods.latest_version'),
       classification: selectedProject.classification,
     });
 
@@ -215,8 +217,8 @@ export const ModsPage = () => {
     updateStatus(queueId, 'downloading');
 
     toast.success(
-      'Installing...',
-      `${selectedProject.title} is being installed to ${server.name}`
+      t('mods.toast.installing.title'),
+      t('mods.toast.installing.description', { title: selectedProject.title, server: server.name })
     );
 
     // Call backend API to actually install the mod
@@ -228,20 +230,20 @@ export const ModsPage = () => {
         projectTitle: selectedProject.title,
         projectIconUrl: selectedProject.iconUrl,
         versionId,
-        versionName: version?.version || 'Latest',
+        versionName: version?.version || t('mods.latest_version'),
         classification: selectedProject.classification,
         fileSize: version?.fileSize || 0,
         fileName: version?.fileName,
       });
       updateStatus(queueId, 'completed');
-      toast.success('Installation complete', `${selectedProject.title} has been installed`);
+      toast.success(t('mods.toast.completed.title'), t('mods.toast.completed.description', { title: selectedProject.title }));
 
       // Remove from queue after a short delay so user can see completion
       setTimeout(() => removeFromQueue(queueId), 2000);
     } catch (error: any) {
       console.error('Error installing mod:', error);
       updateStatus(queueId, 'failed', error.message);
-      toast.error('Installation failed', error.message);
+      toast.error(t('mods.toast.failed.title'), error.message || t('mods.toast.failed.description'));
 
       // Remove failed items after showing error
       setTimeout(() => removeFromQueue(queueId), 5000);
@@ -266,11 +268,19 @@ export const ModsPage = () => {
     'world-save': 'bg-warning/20 text-warning border-warning/30',
   };
 
+  const classificationLabels: Record<UnifiedClassification, string> = {
+    'PLUGIN': t('mods.types.plugin'),
+    'DATA': t('mods.types.data'),
+    'ART': t('mods.types.art'),
+    'SAVE': t('mods.types.save'),
+    'MODPACK': t('mods.types.modpack'),
+  };
+
   // DataTable columns
   const columns: Column<UnifiedProject>[] = [
     {
       key: 'title',
-      label: 'Mod',
+      label: t('mods.columns.mod'),
       sortable: true,
       render: (mod) => (
         <div className="flex items-center gap-3">
@@ -291,7 +301,7 @@ export const ModsPage = () => {
     },
     {
       key: 'author',
-      label: 'Author',
+      label: t('mods.columns.author'),
       sortable: true,
       render: (mod) => (
         <span className="whitespace-nowrap">{mod.author.username}</span>
@@ -299,21 +309,21 @@ export const ModsPage = () => {
     },
     {
       key: 'classification',
-      label: 'Type',
+      label: t('mods.columns.type'),
       sortable: true,
       className: 'hidden lg:table-cell',
       render: (mod) => {
         const modType = mapClassificationToType(mod.classification);
         return (
           <Badge size="sm" className={modTypeColors[modType]}>
-            {mod.classification}
+            {classificationLabels[mod.classification]}
           </Badge>
         );
       },
     },
     {
       key: 'categories',
-      label: 'Categories',
+      label: t('mods.columns.categories'),
       sortable: false,
       className: 'hidden md:table-cell',
       render: (mod) => (
@@ -325,7 +335,7 @@ export const ModsPage = () => {
           ))}
           {mod.categories.length > 2 && (
             <Badge size="sm" variant="default">
-              +{mod.categories.length - 2}
+              {t('mods.more_categories', { count: mod.categories.length - 2 })}
             </Badge>
           )}
         </div>
@@ -333,7 +343,7 @@ export const ModsPage = () => {
     },
     {
       key: 'downloads',
-      label: 'Downloads',
+      label: t('mods.columns.downloads'),
       sortable: true,
       className: 'text-right',
       render: (mod) => (
@@ -342,7 +352,7 @@ export const ModsPage = () => {
     },
     {
       key: 'rating',
-      label: 'Rating',
+      label: t('mods.columns.rating'),
       sortable: true,
       className: 'text-right',
       render: (mod) => (
@@ -351,7 +361,7 @@ export const ModsPage = () => {
     },
     {
       key: 'actions',
-      label: 'Actions',
+      label: t('mods.columns.actions'),
       sortable: false,
       className: 'text-right',
       render: (mod) => (
@@ -362,7 +372,7 @@ export const ModsPage = () => {
             icon={<Download size={14} />}
             onClick={() => handleInstallClick(mod)}
           >
-            Install
+            {t('mods.actions.install')}
           </Button>
           <Button
             variant="ghost"
@@ -370,7 +380,7 @@ export const ModsPage = () => {
             icon={<ExternalLink size={14} />}
             onClick={() => window.open(getProjectUrl(mod), '_blank')}
           >
-            View
+            {t('mods.actions.view')}
           </Button>
         </div>
       ),
@@ -382,9 +392,11 @@ export const ModsPage = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">Mods</h1>
+          <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">{t('mods.title')}</h1>
           <p className="text-text-light-muted dark:text-text-muted mt-1">
-            Browse and install mods {totalResults > 0 && `(${totalResults.toLocaleString()} available)`}
+            {t('mods.subtitle', {
+              available: totalResults > 0 ? t('mods.available_suffix', { count: totalResults }) : '',
+            })}
           </p>
         </div>
         <ProviderSelector />
@@ -400,7 +412,7 @@ export const ModsPage = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-light-muted dark:text-text-muted" size={20} />
                 <Input
                   type="text"
-                  placeholder="Search mods..."
+                  placeholder={t('mods.search.placeholder')}
                   value={localSearchQuery}
                   onChange={(e) => setLocalSearchQuery(e.target.value)}
                   onKeyPress={handleKeyPress}
@@ -410,6 +422,7 @@ export const ModsPage = () => {
                   <button
                     onClick={() => setLocalSearchQuery('')}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary"
+                    title={t('mods.search.clear')}
                   >
                     <X size={20} />
                   </button>
@@ -429,11 +442,11 @@ export const ModsPage = () => {
                     }}
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-text-light-primary dark:text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary"
                   >
-                    <option value="all">All Types</option>
-                    <option value="PLUGIN">Plugins</option>
-                    <option value="DATA">Data Assets</option>
-                    <option value="ART">Art Assets</option>
-                    <option value="SAVE">World Saves</option>
+                    <option value="all">{t('mods.types.all')}</option>
+                    <option value="PLUGIN">{t('mods.types.plugin')}</option>
+                    <option value="DATA">{t('mods.types.data')}</option>
+                    <option value="ART">{t('mods.types.art')}</option>
+                    <option value="SAVE">{t('mods.types.save')}</option>
                   </select>
                 </div>
 
@@ -443,10 +456,10 @@ export const ModsPage = () => {
                     options={uniqueTags}
                     value={filterTags}
                     onChange={(value) => setFilterTags(value as string[])}
-                    placeholder="All Categories"
-                    searchPlaceholder="Search categories..."
+                    placeholder={t('mods.filters.categories')}
+                    searchPlaceholder={t('mods.filters.search_categories')}
                     multiple={true}
-                    allLabel="All Categories"
+                    allLabel={t('mods.filters.all_categories')}
                   />
                 </div>
 
@@ -456,10 +469,10 @@ export const ModsPage = () => {
                     options={uniqueAuthors}
                     value={filterAuthor}
                     onChange={(value) => setFilterAuthor(value as string)}
-                    placeholder="All Authors"
-                    searchPlaceholder="Search authors..."
+                    placeholder={t('mods.filters.authors')}
+                    searchPlaceholder={t('mods.filters.search_authors')}
                     multiple={false}
-                    allLabel="All Authors"
+                    allLabel={t('mods.filters.all_authors')}
                   />
                 </div>
 
@@ -470,9 +483,9 @@ export const ModsPage = () => {
                     onChange={(e) => setSortBy(e.target.value as 'downloads' | 'rating' | 'updated')}
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-text-light-primary dark:text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary"
                   >
-                    <option value="downloads">Most Downloads</option>
-                    <option value="rating">Highest Rated</option>
-                    <option value="updated">Recently Updated</option>
+                    <option value="downloads">{t('mods.sort.downloads')}</option>
+                    <option value="rating">{t('mods.sort.rating')}</option>
+                    <option value="updated">{t('mods.sort.updated')}</option>
                   </select>
                 </div>
 
@@ -480,23 +493,21 @@ export const ModsPage = () => {
                 <div className="flex gap-2 md:ml-auto">
                   <button
                     onClick={() => setViewMode('card')}
-                    className={`p-2 rounded-lg border transition-colors ${
-                      viewMode === 'card'
-                        ? 'bg-accent-primary text-white border-accent-primary'
-                        : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary'
-                    }`}
-                    title="Card view"
+                    className={`p-2 rounded-lg border transition-colors ${viewMode === 'card'
+                      ? 'bg-accent-primary text-white border-accent-primary'
+                      : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary'
+                      }`}
+                    title={t('mods.view_modes.card')}
                   >
                     <Grid size={20} />
                   </button>
                   <button
                     onClick={() => setViewMode('table')}
-                    className={`p-2 rounded-lg border transition-colors ${
-                      viewMode === 'table'
-                        ? 'bg-accent-primary text-white border-accent-primary'
-                        : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary'
-                    }`}
-                    title="Table view"
+                    className={`p-2 rounded-lg border transition-colors ${viewMode === 'table'
+                      ? 'bg-accent-primary text-white border-accent-primary'
+                      : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary'
+                      }`}
+                    title={t('mods.view_modes.table')}
                   >
                     <List size={20} />
                   </button>
@@ -516,11 +527,13 @@ export const ModsPage = () => {
               <div className="flex-1">
                 <h3 className="font-heading font-semibold text-text-light-primary dark:text-text-primary">
                   {selectedProvider === 'all'
-                    ? 'No Mod Providers Configured'
-                    : `${providers.find(p => p.id === selectedProvider)?.displayName || 'Provider'} Not Configured`}
+                    ? t('mods.no_providers')
+                    : t('mods.provider_not_configured', {
+                      provider: providers.find(p => p.id === selectedProvider)?.displayName || t('mods.provider'),
+                    })}
                 </h3>
                 <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
-                  Configure API keys for mod providers in settings to browse and install mods.
+                  {t('mods.configure_hint')}
                 </p>
               </div>
               <Button
@@ -528,7 +541,7 @@ export const ModsPage = () => {
                 icon={<Settings size={18} />}
                 onClick={() => navigate('/settings')}
               >
-                Configure Providers
+                {t('mods.actions.configure_providers')}
               </Button>
             </div>
           </CardContent>
@@ -539,7 +552,7 @@ export const ModsPage = () => {
       {searchLoading && (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-accent-primary border-t-transparent"></div>
-          <p className="text-text-light-muted dark:text-text-muted mt-4">Loading mods...</p>
+          <p className="text-text-light-muted dark:text-text-muted mt-4">{t('mods.loading')}</p>
         </div>
       )}
 
@@ -551,12 +564,12 @@ export const ModsPage = () => {
               <AlertCircle size={32} className="text-danger" />
               <div className="flex-1">
                 <h3 className="font-heading font-semibold text-text-light-primary dark:text-text-primary">
-                  Failed to Load Mods
+                  {t('mods.error.title')}
                 </h3>
                 <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">{searchError}</p>
               </div>
               <Button variant="secondary" onClick={() => search()}>
-                Retry
+                {t('mods.actions.retry')}
               </Button>
             </div>
           </CardContent>
@@ -592,7 +605,9 @@ export const ModsPage = () => {
                                 <CardTitle className="truncate">{mod.title}</CardTitle>
                                 {selectedProvider === 'all' && <ProviderBadge providerId={mod.providerId} />}
                               </div>
-                              <CardDescription className="truncate">by {mod.author.username}</CardDescription>
+                              <CardDescription className="truncate">
+                                {t('mods.by_author', { author: mod.author.username })}
+                              </CardDescription>
                             </div>
                           </div>
                         </CardHeader>
@@ -617,7 +632,7 @@ export const ModsPage = () => {
                           </div>
 
                           <div className="flex items-center justify-between text-xs text-text-light-muted dark:text-text-muted">
-                            <span>{mod.downloads.toLocaleString()} downloads</span>
+                            <span>{t('mods.downloads', { downloads: mod.downloads.toLocaleString() })}</span>
                             <span>{mod.rating?.toFixed(1) || '-'}</span>
                           </div>
 
@@ -629,7 +644,7 @@ export const ModsPage = () => {
                               className="flex-1"
                               onClick={() => handleInstallClick(mod)}
                             >
-                              Install
+                              {t('mods.actions.install')}
                             </Button>
                             <Button
                               variant="ghost"
@@ -637,7 +652,7 @@ export const ModsPage = () => {
                               icon={<ExternalLink size={14} />}
                               onClick={() => window.open(getProjectUrl(mod), '_blank')}
                             >
-                              View
+                              {t('mods.actions.view')}
                             </Button>
                           </div>
                         </CardContent>
@@ -651,8 +666,11 @@ export const ModsPage = () => {
               {totalCardPages > 1 && (
                 <div className="flex items-center justify-between mt-6 px-2">
                   <span className="text-sm text-text-light-muted dark:text-text-muted">
-                    Showing {(cardPage - 1) * searchPageSize + 1} to{' '}
-                    {Math.min(cardPage * searchPageSize, totalResults)} of {totalResults.toLocaleString()} mods
+                    {t('table.pagination.showing', {
+                      start: (cardPage - 1) * searchPageSize + 1,
+                      end: Math.min(cardPage * searchPageSize, totalResults),
+                      total: totalResults.toLocaleString(),
+                    })}
                   </span>
                   <div className="flex items-center gap-2">
                     <Button
@@ -665,10 +683,10 @@ export const ModsPage = () => {
                       }}
                       disabled={cardPage === 1}
                     >
-                      Previous
+                      {t('table.pagination.previous')}
                     </Button>
                     <span className="text-sm text-text-light-muted dark:text-text-muted px-2">
-                      Page {cardPage} of {totalCardPages}
+                      {t('table.pagination.page_of', { page: cardPage, total: totalCardPages })}
                     </span>
                     <Button
                       variant="ghost"
@@ -680,7 +698,7 @@ export const ModsPage = () => {
                       }}
                       disabled={cardPage === totalCardPages}
                     >
-                      Next
+                      {t('table.pagination.next')}
                     </Button>
                   </div>
                 </div>
@@ -702,7 +720,7 @@ export const ModsPage = () => {
 
           {filteredMods.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-text-light-muted dark:text-text-muted">No mods found matching your criteria</p>
+              <p className="text-text-light-muted dark:text-text-muted">{t('mods.empty')}</p>
             </div>
           )}
         </>

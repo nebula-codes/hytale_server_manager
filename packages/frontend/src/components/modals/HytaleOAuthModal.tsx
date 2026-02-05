@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, ModalFooter } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import {
@@ -24,6 +25,7 @@ interface HytaleOAuthModalProps {
 }
 
 export const HytaleOAuthModal = ({ isOpen, onClose, onSuccess }: HytaleOAuthModalProps) => {
+  const { t } = useTranslation();
   const {
     startOAuth,
     cancelOAuth,
@@ -104,7 +106,7 @@ export const HytaleOAuthModal = ({ isOpen, onClose, onSuccess }: HytaleOAuthModa
         <div className="flex flex-col items-center justify-center py-12 gap-4">
           <Loader2 className="w-12 h-12 text-accent-primary animate-spin" />
           <p className="text-text-light-secondary dark:text-text-secondary">
-            Initiating authentication...
+            {t('hytale_downloader.oauth.initiating')}
           </p>
         </div>
       );
@@ -119,15 +121,15 @@ export const HytaleOAuthModal = ({ isOpen, onClose, onSuccess }: HytaleOAuthModa
           </div>
           <div className="text-center">
             <h3 className="text-lg font-semibold text-text-light-primary dark:text-text-primary mb-2">
-              Authentication Failed
+              {t('hytale_downloader.oauth.error_title')}
             </h3>
             <p className="text-text-light-muted dark:text-text-muted">
-              {error || oauthSession?.error || 'An error occurred during authentication.'}
+              {error || oauthSession?.error || t('hytale_downloader.oauth.error_description')}
             </p>
           </div>
           <Button onClick={handleRetry} variant="primary">
             <RefreshCw size={16} className="mr-2" />
-            Try Again
+            {t('hytale_downloader.oauth.retry')}
           </Button>
         </div>
       );
@@ -142,15 +144,15 @@ export const HytaleOAuthModal = ({ isOpen, onClose, onSuccess }: HytaleOAuthModa
           </div>
           <div className="text-center">
             <h3 className="text-lg font-semibold text-text-light-primary dark:text-text-primary mb-2">
-              Code Expired
+              {t('hytale_downloader.oauth.expired_title')}
             </h3>
             <p className="text-text-light-muted dark:text-text-muted">
-              The device code has expired. Please try again.
+              {t('hytale_downloader.oauth.expired_description')}
             </p>
           </div>
           <Button onClick={handleRetry} variant="primary">
             <RefreshCw size={16} className="mr-2" />
-            Get New Code
+            {t('hytale_downloader.oauth.get_new')}
           </Button>
         </div>
       );
@@ -165,10 +167,10 @@ export const HytaleOAuthModal = ({ isOpen, onClose, onSuccess }: HytaleOAuthModa
           </div>
           <div className="text-center">
             <h3 className="text-lg font-semibold text-text-light-primary dark:text-text-primary mb-2">
-              Authentication Successful
+              {t('hytale_downloader.oauth.success_title')}
             </h3>
             <p className="text-text-light-muted dark:text-text-muted">
-              Your Hytale account has been connected.
+              {t('hytale_downloader.oauth.success_description')}
             </p>
           </div>
         </div>
@@ -182,14 +184,14 @@ export const HytaleOAuthModal = ({ isOpen, onClose, onSuccess }: HytaleOAuthModa
           {/* Instructions */}
           <div className="text-center">
             <p className="text-text-light-secondary dark:text-text-secondary mb-4">
-              To connect your Hytale account, open the verification link and enter the code below.
+              {t('hytale_downloader.oauth.instructions')}
             </p>
           </div>
 
           {/* Device Code */}
           <div className="bg-gray-100 dark:bg-gray-800/50 rounded-lg p-6 text-center">
             <p className="text-sm text-text-light-muted dark:text-text-muted mb-2">
-              Your device code
+              {t('hytale_downloader.oauth.code_label')}
             </p>
             <div className="flex items-center justify-center gap-3">
               <code className="text-3xl font-mono font-bold tracking-wider text-accent-primary">
@@ -210,7 +212,7 @@ export const HytaleOAuthModal = ({ isOpen, onClose, onSuccess }: HytaleOAuthModa
             </div>
             {timeRemaining !== null && (
               <p className="text-sm text-text-light-muted dark:text-text-muted mt-3">
-                Expires in{' '}
+                {t('hytale_downloader.oauth.expires_in')}{' '}
                 <span className={timeRemaining < 60 ? 'text-yellow-500' : ''}>
                   {formatTime(timeRemaining)}
                 </span>
@@ -227,14 +229,14 @@ export const HytaleOAuthModal = ({ isOpen, onClose, onSuccess }: HytaleOAuthModa
               className="inline-flex items-center gap-2 px-4 py-2 bg-accent-primary hover:bg-accent-secondary text-white rounded-lg transition-colors"
             >
               <ExternalLink size={18} />
-              Open Hytale Login
+              {t('hytale_downloader.oauth.open_login')}
             </a>
           </div>
 
           {/* Status indicator */}
           <div className="flex items-center justify-center gap-2 text-text-light-muted dark:text-text-muted">
             <Loader2 size={16} className="animate-spin" />
-            <span>Waiting for authentication...</span>
+            <span>{t('hytale_downloader.oauth.waiting')}</span>
           </div>
         </div>
       );
@@ -245,24 +247,24 @@ export const HytaleOAuthModal = ({ isOpen, onClose, onSuccess }: HytaleOAuthModa
       <div className="flex flex-col items-center justify-center py-12 gap-4">
         <Loader2 className="w-12 h-12 text-accent-primary animate-spin" />
         <p className="text-text-light-secondary dark:text-text-secondary">
-          Preparing authentication...
+          {t('hytale_downloader.oauth.preparing')}
         </p>
       </div>
     );
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Connect Hytale Account" size="sm">
+    <Modal isOpen={isOpen} onClose={handleClose} title={t('hytale_downloader.oauth.title')} size="sm">
       <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
         <div className="w-10 h-10 rounded-full bg-accent-primary/20 flex items-center justify-center">
           <Key className="w-5 h-5 text-accent-primary" />
         </div>
         <div>
           <h3 className="text-sm font-medium text-text-light-primary dark:text-text-primary">
-            Hytale Authentication
+            {t('hytale_downloader.oauth.header_title')}
           </h3>
           <p className="text-xs text-text-light-muted dark:text-text-muted">
-            Required to download official server files
+            {t('hytale_downloader.oauth.header_subtitle')}
           </p>
         </div>
       </div>
@@ -271,7 +273,7 @@ export const HytaleOAuthModal = ({ isOpen, onClose, onSuccess }: HytaleOAuthModa
 
       <ModalFooter>
         <Button variant="secondary" onClick={handleClose}>
-          Cancel
+          {t('common.cancel')}
         </Button>
       </ModalFooter>
     </Modal>

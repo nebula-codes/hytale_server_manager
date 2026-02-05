@@ -1,4 +1,5 @@
 import type { ItemStack } from '../../types/inventory';
+import { useTranslation } from 'react-i18next';
 import { Badge } from '../ui';
 
 interface InventoryGridProps {
@@ -8,6 +9,7 @@ interface InventoryGridProps {
 }
 
 export const InventoryGrid = ({ items, columns = 9, showTooltip = true }: InventoryGridProps) => {
+  const { t } = useTranslation();
   const getRarityColor = (rarity: ItemStack['rarity']) => {
     switch (rarity) {
       case 'legendary': return 'border-accent-primary shadow-accent-primary/30';
@@ -72,14 +74,14 @@ export const InventoryGrid = ({ items, columns = 9, showTooltip = true }: Invent
                   <div className="glass-card p-3 min-w-max shadow-xl">
                     <p className="font-heading font-semibold text-text-primary">{item.name}</p>
                     <Badge size="sm" variant="default" className="mt-1">
-                      {item.rarity}
+                      {t(`inventory.rarity.${item.rarity}`, { defaultValue: item.rarity })}
                     </Badge>
                     {item.description && (
                       <p className="text-xs text-text-muted mt-2">{item.description}</p>
                     )}
                     {item.durability && (
                       <p className="text-xs text-text-muted mt-1">
-                        Durability: {item.durability.current}/{item.durability.max}
+                        {t('inventory.durability', { current: item.durability.current, max: item.durability.max })}
                       </p>
                     )}
                     {item.enchantments && item.enchantments.length > 0 && (

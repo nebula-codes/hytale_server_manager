@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useChartTheme } from '../../hooks/useChartTheme';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge, Input, Modal } from '../../components/ui';
 import { Coins, TrendingUp, DollarSign, ShoppingBag, Plus, Edit, Trash2 } from 'lucide-react';
 import { mockEconomyStats, mockShops } from '../../data/mockAdvanced';
@@ -10,6 +11,7 @@ export const EconomyPage = () => {
   const stats = mockEconomyStats;
   const [shops, setShops] = useState(mockShops);
   const [isCreateShopOpen, setIsCreateShopOpen] = useState(false);
+  const { t } = useTranslation();
 
   // Mock transaction history data
   const transactionHistory = Array.from({ length: 7 }, (_, i) => ({
@@ -23,7 +25,7 @@ export const EconomyPage = () => {
   };
 
   const handleDeleteShop = (shopId: string) => {
-    if (confirm('Are you sure you want to delete this shop?')) {
+    if (confirm(t('economy.confirm.delete_shop'))) {
       setShops(shops.filter(s => s.id !== shopId));
     }
   };
@@ -33,11 +35,11 @@ export const EconomyPage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">Economy Management</h1>
-          <p className="text-text-light-muted dark:text-text-muted mt-1">Manage server economy, shops, and transactions</p>
+        <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">{t('economy.title')}</h1>
+        <p className="text-text-light-muted dark:text-text-muted mt-1">{t('economy.subtitle')}</p>
         </div>
         <Button variant="primary" icon={<Plus size={18} />} onClick={() => setIsCreateShopOpen(true)}>
-          Create Shop
+          {t('economy.actions.create_shop')}
         </Button>
       </div>
 
@@ -46,7 +48,7 @@ export const EconomyPage = () => {
         <Card variant="glass">
           <CardContent className="flex items-center justify-between">
             <div>
-              <p className="text-text-light-muted dark:text-text-muted text-sm">Total Currency</p>
+              <p className="text-text-light-muted dark:text-text-muted text-sm">{t('economy.stats.total_currency')}</p>
               <p className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary">
                 ${stats.totalCurrency.toLocaleString()}
               </p>
@@ -58,7 +60,7 @@ export const EconomyPage = () => {
         <Card variant="glass">
           <CardContent className="flex items-center justify-between">
             <div>
-              <p className="text-text-light-muted dark:text-text-muted text-sm">Average Balance</p>
+              <p className="text-text-light-muted dark:text-text-muted text-sm">{t('economy.stats.avg_balance')}</p>
               <p className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary">
                 ${stats.averageBalance.toLocaleString()}
               </p>
@@ -70,13 +72,13 @@ export const EconomyPage = () => {
         <Card variant="glass">
           <CardContent className="flex items-center justify-between">
             <div>
-              <p className="text-text-light-muted dark:text-text-muted text-sm">Daily Volume</p>
+              <p className="text-text-light-muted dark:text-text-muted text-sm">{t('economy.stats.daily_volume')}</p>
               <p className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary">
                 ${stats.transactionVolume.toLocaleString()}
               </p>
               <div className="flex items-center gap-1 mt-1">
                 <TrendingUp size={14} className="text-success" />
-                <span className="text-xs text-success">+12.5%</span>
+                      <span className="text-xs text-success">+12.5%</span>
               </div>
             </div>
             <TrendingUp size={32} className="text-accent-primary" />
@@ -86,7 +88,7 @@ export const EconomyPage = () => {
         <Card variant="glass">
           <CardContent className="flex items-center justify-between">
             <div>
-              <p className="text-text-light-muted dark:text-text-muted text-sm">Active Shops</p>
+              <p className="text-text-light-muted dark:text-text-muted text-sm">{t('economy.stats.active_shops')}</p>
               <p className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary">
                 {shops.length}
               </p>
@@ -100,8 +102,8 @@ export const EconomyPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card variant="glass">
           <CardHeader>
-            <CardTitle>Transaction Volume (7 Days)</CardTitle>
-            <CardDescription>Daily transaction volume in currency</CardDescription>
+          <CardTitle>{t('economy.charts.volume.title')}</CardTitle>
+          <CardDescription>{t('economy.charts.volume.description')}</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
@@ -113,7 +115,7 @@ export const EconomyPage = () => {
                   contentStyle={{ backgroundColor: chartTheme.tooltipBg, border: `1px solid ${chartTheme.tooltipBorder}`, borderRadius: '0.5rem' }}
                   labelStyle={{ color: chartTheme.tooltipLabel }}
                 />
-                <Line type="monotone" dataKey="volume" stroke="#10b981" strokeWidth={2} dot={false} name="Volume ($)" />
+                <Line type="monotone" dataKey="volume" stroke="#10b981" strokeWidth={2} dot={false} name={t('economy.charts.volume.series')} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -121,8 +123,8 @@ export const EconomyPage = () => {
 
         <Card variant="glass">
           <CardHeader>
-            <CardTitle>Transaction Count (7 Days)</CardTitle>
-            <CardDescription>Number of transactions per day</CardDescription>
+          <CardTitle>{t('economy.charts.count.title')}</CardTitle>
+          <CardDescription>{t('economy.charts.count.description')}</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
@@ -134,7 +136,7 @@ export const EconomyPage = () => {
                   contentStyle={{ backgroundColor: chartTheme.tooltipBg, border: `1px solid ${chartTheme.tooltipBorder}`, borderRadius: '0.5rem' }}
                   labelStyle={{ color: chartTheme.tooltipLabel }}
                 />
-                <Bar dataKey="transactions" fill="#f59e0b" />
+                <Bar dataKey="transactions" fill="#f59e0b" name={t('economy.charts.count.series')} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -144,8 +146,8 @@ export const EconomyPage = () => {
       {/* Top Balance */}
       <Card variant="glass">
         <CardHeader>
-          <CardTitle>Richest Player</CardTitle>
-          <CardDescription>Player with the highest account balance</CardDescription>
+          <CardTitle>{t('economy.richest.title')}</CardTitle>
+          <CardDescription>{t('economy.richest.description')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between p-4 rounded-lg bg-white dark:bg-primary-bg">
@@ -162,16 +164,16 @@ export const EconomyPage = () => {
               <p className="text-3xl font-heading font-bold text-success">
                 ${stats.richestPlayer.balance.toLocaleString()}
               </p>
-              <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">Current balance</p>
+                <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">{t('economy.richest.current_balance')}</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4 mt-4">
             <div className="p-3 rounded-lg bg-white dark:bg-primary-bg text-center">
-              <p className="text-text-light-muted dark:text-text-muted text-sm">Median Balance</p>
+              <p className="text-text-light-muted dark:text-text-muted text-sm">{t('economy.stats.median_balance')}</p>
               <p className="text-xl font-heading font-bold text-text-light-primary dark:text-text-primary">${stats.medianBalance.toLocaleString()}</p>
             </div>
             <div className="p-3 rounded-lg bg-white dark:bg-primary-bg text-center">
-              <p className="text-text-light-muted dark:text-text-muted text-sm">Recent Transactions</p>
+              <p className="text-text-light-muted dark:text-text-muted text-sm">{t('economy.stats.recent_transactions')}</p>
               <p className="text-xl font-heading font-bold text-text-light-primary dark:text-text-primary">{stats.recentTransactions.toLocaleString()}</p>
             </div>
           </div>
@@ -181,8 +183,8 @@ export const EconomyPage = () => {
       {/* Shops */}
       <Card variant="glass">
         <CardHeader>
-          <CardTitle>Server Shops</CardTitle>
-          <CardDescription>Manage in-game shops and inventory</CardDescription>
+          <CardTitle>{t('economy.shops.title')}</CardTitle>
+          <CardDescription>{t('economy.shops.description')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -191,7 +193,7 @@ export const EconomyPage = () => {
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <h3 className="font-heading font-semibold text-text-light-primary dark:text-text-primary">{shop.name}</h3>
-                    <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">In-game shop with {shop.items.length} items</p>
+                    <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">{t('economy.shops.description_line', { count: shop.items.length })}</p>
                   </div>
                   <Badge variant="success" size="sm">
                     Active
@@ -200,47 +202,47 @@ export const EconomyPage = () => {
 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-text-light-muted dark:text-text-muted">Items</span>
+                    <span className="text-text-light-muted dark:text-text-muted">{t('economy.shops.labels.items')}</span>
                     <span className="text-text-light-primary dark:text-text-primary font-medium">{shop.items.length}</span>
                   </div>
                   {shop.location && (
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-text-light-muted dark:text-text-muted">Location</span>
+                      <span className="text-text-light-muted dark:text-text-muted">{t('economy.shops.labels.location')}</span>
                       <span className="text-text-light-primary dark:text-text-primary font-mono text-xs">
                         {shop.location.x}, {shop.location.y}, {shop.location.z}
                       </span>
                     </div>
                   )}
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-text-light-muted dark:text-text-muted">Owner</span>
+                    <span className="text-text-light-muted dark:text-text-muted">{t('economy.shops.labels.owner')}</span>
                     <span className="text-text-light-primary dark:text-text-primary">{shop.owner}</span>
                   </div>
                 </div>
 
                 {/* Sample Items */}
                 <div className="mb-4">
-                  <p className="text-xs text-text-light-muted dark:text-text-muted mb-2">Sample Items:</p>
+                  <p className="text-xs text-text-light-muted dark:text-text-muted mb-2">{t('economy.shops.sample_items')}</p>
                   <div className="space-y-1">
                     {shop.items.slice(0, 3).map((item) => (
                       <div key={item.itemId} className="flex items-center justify-between text-sm p-2 rounded bg-white dark:bg-primary-bg">
                         <span className="text-text-light-primary dark:text-text-primary">{item.itemName}</span>
                         <div className="flex items-center gap-2">
                           {item.buyPrice && (
-                            <Badge variant="success" size="sm">
-                              Buy: ${item.buyPrice}
+                          <Badge variant="success" size="sm">
+                              {t('economy.shops.badges.buy', { price: item.buyPrice })}
                             </Badge>
                           )}
                           {item.sellPrice && (
-                            <Badge variant="info" size="sm">
-                              Sell: ${item.sellPrice}
+                          <Badge variant="info" size="sm">
+                              {t('economy.shops.badges.sell', { price: item.sellPrice })}
                             </Badge>
                           )}
                         </div>
                       </div>
                     ))}
                     {shop.items.length > 3 && (
-                      <p className="text-xs text-text-light-muted dark:text-text-muted text-center pt-1">
-                        +{shop.items.length - 3} more items
+                    <p className="text-xs text-text-light-muted dark:text-text-muted text-center pt-1">
+                        {t('economy.shops.more_items', { count: shop.items.length - 3 })}
                       </p>
                     )}
                   </div>
@@ -248,10 +250,10 @@ export const EconomyPage = () => {
 
                 <div className="flex gap-2">
                   <Button variant="secondary" size="sm" icon={<Edit size={14} />} className="flex-1">
-                    Edit
+                    {t('economy.actions.edit')}
                   </Button>
                   <Button variant="danger" size="sm" icon={<Trash2 size={14} />} onClick={() => handleDeleteShop(shop.id)}>
-                    Delete
+                    {t('economy.actions.delete')}
                   </Button>
                 </div>
               </div>
@@ -263,40 +265,40 @@ export const EconomyPage = () => {
       {/* Create Shop Modal */}
       <Modal isOpen={isCreateShopOpen} onClose={() => setIsCreateShopOpen(false)}>
         <div className="p-6">
-          <h2 className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary mb-4">Create Shop</h2>
+          <h2 className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary mb-4">{t('economy.modal.title')}</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">Shop Name</label>
+              <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">{t('economy.modal.labels.name')}</label>
               <Input placeholder="e.g., General Store" />
             </div>
             <div>
-              <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">Description</label>
+              <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">{t('economy.modal.labels.description')}</label>
               <Input placeholder="e.g., Buy and sell general items" />
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">X Coordinate</label>
+                <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">{t('economy.modal.labels.x')}</label>
                 <Input type="number" placeholder="0" />
               </div>
               <div>
-                <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">Y Coordinate</label>
+                <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">{t('economy.modal.labels.y')}</label>
                 <Input type="number" placeholder="64" />
               </div>
               <div>
-                <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">Z Coordinate</label>
+                <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">{t('economy.modal.labels.z')}</label>
                 <Input type="number" placeholder="0" />
               </div>
             </div>
             <div>
-              <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">World</label>
+              <label className="block text-sm text-text-light-muted dark:text-text-muted mb-2">{t('economy.modal.labels.world')}</label>
               <Input placeholder="e.g., Orbis" />
             </div>
             <div className="flex gap-2 pt-4">
               <Button variant="ghost" onClick={() => setIsCreateShopOpen(false)} className="flex-1">
-                Cancel
+                {t('economy.modal.actions.cancel')}
               </Button>
               <Button variant="primary" onClick={handleCreateShop} className="flex-1">
-                Create Shop
+                {t('economy.modal.actions.submit')}
               </Button>
             </div>
           </div>

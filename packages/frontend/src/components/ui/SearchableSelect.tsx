@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, X, Search, Check } from 'lucide-react';
 
 interface SearchableSelectProps {
@@ -15,11 +16,12 @@ export const SearchableSelect = ({
   options,
   value,
   onChange,
-  placeholder: _placeholder = 'Select...',
-  searchPlaceholder = 'Search...',
+  placeholder: _placeholder,
+  searchPlaceholder,
   multiple = false,
-  allLabel = 'All',
+  allLabel,
 }: SearchableSelectProps) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -56,11 +58,11 @@ export const SearchableSelect = ({
   const getDisplayText = () => {
     if (multiple) {
       const selectedValues = value as string[];
-      if (selectedValues.length === 0) return allLabel;
+      if (selectedValues.length === 0) return allLabel ?? t('ui.searchable_select.all');
       if (selectedValues.length === 1) return selectedValues[0];
-      return `${selectedValues.length} selected`;
+      return t('ui.searchable_select.selected_count', { count: selectedValues.length });
     } else {
-      return (value as string) === 'all' ? allLabel : (value as string);
+      return (value as string) === 'all' ? (allLabel ?? t('ui.searchable_select.all')) : (value as string);
     }
   };
 
@@ -152,7 +154,7 @@ export const SearchableSelect = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={searchPlaceholder}
+                placeholder={searchPlaceholder ?? t('ui.searchable_select.search')}
                 className="w-full pl-9 pr-3 py-2 bg-gray-100 dark:bg-gray-900 border-0 rounded-md text-sm text-text-light-primary dark:text-text-primary placeholder-text-light-muted dark:placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/50"
               />
             </div>
@@ -168,7 +170,7 @@ export const SearchableSelect = ({
                 !hasSelection ? 'bg-accent-primary/10 text-accent-primary' : 'text-text-light-primary dark:text-text-primary'
               }`}
             >
-              <span>{allLabel}</span>
+              <span>{allLabel ?? t('ui.searchable_select.all')}</span>
               {!hasSelection && <Check size={16} />}
             </button>
 
@@ -189,7 +191,7 @@ export const SearchableSelect = ({
               ))
             ) : (
               <div className="px-4 py-3 text-sm text-text-light-muted dark:text-text-muted text-center">
-                No results found
+                {t('ui.searchable_select.no_results')}
               </div>
             )}
           </div>
@@ -197,7 +199,7 @@ export const SearchableSelect = ({
           {/* Selected count for multi-select */}
           {multiple && (value as string[]).length > 0 && (
             <div className="p-2 border-t border-gray-200 dark:border-gray-700 text-xs text-text-light-muted dark:text-text-muted">
-              {(value as string[]).length} selected
+              {t('ui.searchable_select.selected_count', { count: (value as string[]).length })}
             </div>
           )}
         </div>

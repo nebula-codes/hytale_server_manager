@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   useHytaleDownloaderStore,
   useHytaleDownloaderDownload,
@@ -25,6 +26,7 @@ export const HytaleDownloadProgress = ({
   onError,
   showCancel = true,
 }: HytaleDownloadProgressProps) => {
+  const { t } = useTranslation();
   const { cancelDownload } = useHytaleDownloaderStore();
   const downloadSession = useHytaleDownloaderDownload();
 
@@ -62,37 +64,37 @@ export const HytaleDownloadProgress = ({
       case 'downloading':
         return {
           icon: <Download className="w-5 h-5 text-accent-primary" />,
-          label: 'Downloading',
+          label: t('hytale_downloader.progress.downloading'),
           color: 'bg-accent-primary',
         };
       case 'extracting':
         return {
           icon: <Archive className="w-5 h-5 text-yellow-500" />,
-          label: 'Extracting',
+          label: t('hytale_downloader.progress.extracting'),
           color: 'bg-yellow-500',
         };
       case 'validating':
         return {
           icon: <Shield className="w-5 h-5 text-blue-500" />,
-          label: 'Validating',
+          label: t('hytale_downloader.progress.validating'),
           color: 'bg-blue-500',
         };
       case 'complete':
         return {
           icon: <CheckCircle className="w-5 h-5 text-green-500" />,
-          label: 'Complete',
+          label: t('hytale_downloader.progress.complete'),
           color: 'bg-green-500',
         };
       case 'failed':
         return {
           icon: <XCircle className="w-5 h-5 text-red-500" />,
-          label: 'Failed',
+          label: t('hytale_downloader.progress.failed'),
           color: 'bg-red-500',
         };
       default:
         return {
           icon: <Loader2 className="w-5 h-5 text-gray-500 animate-spin" />,
-          label: 'Processing',
+          label: t('hytale_downloader.progress.processing'),
           color: 'bg-gray-500',
         };
     }
@@ -165,7 +167,7 @@ export const HytaleDownloadProgress = ({
       {downloadSession.status === 'complete' && (
         <div className="mt-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
           <p className="text-sm text-green-500">
-            Server files downloaded successfully to:
+            {t('hytale_downloader.progress.success')}
           </p>
           <p className="text-xs text-green-400 mt-1 font-mono break-all">
             {downloadSession.destinationPath}
@@ -181,6 +183,7 @@ export const HytaleDownloadProgress = ({
  */
 export const HytaleDownloadProgressInline = () => {
   const downloadSession = useHytaleDownloaderDownload();
+  const { t } = useTranslation();
 
   if (!downloadSession) {
     return null;
@@ -196,9 +199,10 @@ export const HytaleDownloadProgressInline = () => {
     <div className="flex items-center gap-2 text-sm text-text-light-muted dark:text-text-muted">
       <Loader2 size={14} className="animate-spin" />
       <span>
-        {downloadSession.status === 'downloading' && `Downloading ${downloadSession.progress.toFixed(0)}%`}
-        {downloadSession.status === 'extracting' && 'Extracting...'}
-        {downloadSession.status === 'validating' && 'Validating...'}
+        {downloadSession.status === 'downloading' &&
+          t('hytale_downloader.progress.inline.downloading', { percent: downloadSession.progress.toFixed(0) })}
+        {downloadSession.status === 'extracting' && t('hytale_downloader.progress.inline.extracting')}
+        {downloadSession.status === 'validating' && t('hytale_downloader.progress.inline.validating')}
       </span>
     </div>
   );

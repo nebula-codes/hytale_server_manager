@@ -1,4 +1,5 @@
 import { Badge } from './Badge';
+import { useTranslation } from 'react-i18next';
 
 interface TokenExpiryBadgeProps {
   expiresIn: number | null; // seconds remaining
@@ -41,9 +42,10 @@ export const TokenExpiryBadge = ({
   isExpired,
   warningThreshold = 300, // 5 minutes default
 }: TokenExpiryBadgeProps) => {
+  const { t } = useTranslation();
   // Determine badge variant and text
   if (isExpired || expiresIn === null || expiresIn <= 0) {
-    return <Badge variant="danger" size="sm">Expired</Badge>;
+    return <Badge variant="danger" size="sm">{t('ui.token_expiry.expired')}</Badge>;
   }
 
   if (expiresIn < warningThreshold) {

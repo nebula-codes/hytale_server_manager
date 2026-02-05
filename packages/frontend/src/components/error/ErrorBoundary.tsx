@@ -10,6 +10,7 @@
 import { Component, type ReactNode, type ErrorInfo } from 'react';
 import { AlertTriangle, RefreshCw, Home, Bug, Copy, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { logger, env } from '../../config';
 
 /**
@@ -187,20 +188,21 @@ interface DefaultErrorFallbackProps {
  * Displays a user-friendly error message with recovery options.
  */
 function DefaultErrorFallback({ error, onReset, showDetails }: DefaultErrorFallbackProps) {
+  const { t } = useTranslation();
   const [copied, setCopied] = React.useState(false);
 
   const copyErrorDetails = async () => {
     const details = `
-Error: ${error.message}
-Time: ${error.timestamp.toISOString()}
+${t('error.error')}: ${error.message}
+${t('error.time')}: ${error.timestamp.toISOString()}
 URL: ${error.url}
-User Agent: ${error.userAgent}
+${t('error.user_agent')}: ${error.userAgent}
 
-Stack Trace:
-${error.stack || 'Not available'}
+${t('error.stack_trace')}:
+${error.stack || t('error.not_available')}
 
-Component Stack:
-${error.componentStack || 'Not available'}
+${t('error.component_stack')}:
+${error.componentStack || t('error.not_available')}
     `.trim();
 
     try {
@@ -238,7 +240,7 @@ ${error.componentStack || 'Not available'}
           </motion.div>
 
           <h2 className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary mb-2">
-            Something went wrong
+            {t('error.title')}
           </h2>
           <p className="text-text-light-muted dark:text-text-muted">
             {error.message}
@@ -252,7 +254,7 @@ ${error.componentStack || 'Not available'}
             className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-accent-primary text-black font-medium rounded-lg hover:bg-accent-primary/90 transition-colors"
           >
             <RefreshCw size={18} />
-            Try Again
+            {t('error.actions.try_again')}
           </button>
 
           <button
@@ -260,7 +262,7 @@ ${error.componentStack || 'Not available'}
             className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-primary-bg-secondary text-text-light-primary dark:text-text-primary font-medium rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             <RefreshCw size={18} />
-            Refresh Page
+            {t('error.actions.refresh')}
           </button>
 
           <button
@@ -268,7 +270,7 @@ ${error.componentStack || 'Not available'}
             className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-primary-bg-secondary text-text-light-primary dark:text-text-primary font-medium rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             <Home size={18} />
-            Go Home
+            {t('error.actions.home')}
           </button>
         </div>
 
@@ -282,14 +284,14 @@ ${error.componentStack || 'Not available'}
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2 text-sm text-text-light-muted dark:text-text-muted">
                 <Bug size={16} />
-                <span>Error Details (Development)</span>
+                <span>{t('error.details_title')}</span>
               </div>
               <button
                 onClick={copyErrorDetails}
                 className="inline-flex items-center gap-1 text-sm text-accent-primary hover:text-accent-primary/80 transition-colors"
               >
                 {copied ? <Check size={14} /> : <Copy size={14} />}
-                {copied ? 'Copied!' : 'Copy'}
+                {copied ? t('error.copied') : t('error.copy')}
               </button>
             </div>
 

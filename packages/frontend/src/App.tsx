@@ -9,6 +9,7 @@
 
 import { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from './stores/authStore';
 import { LoginPage } from './pages/auth/LoginPage';
 import { DashboardLayout } from './components/layout/DashboardLayout';
@@ -43,16 +44,19 @@ const EconomyPage = lazy(() => import('./pages/economy/EconomyPage').then(m => (
 const AlertsPage = lazy(() => import('./pages/alerts/AlertsPage').then(m => ({ default: m.AlertsPage })));
 const UsersPage = lazy(() => import('./pages/users/UsersPage').then(m => ({ default: m.UsersPage })));
 const ActivityLogPage = lazy(() => import('./pages/activity/ActivityLogPage').then(m => ({ default: m.ActivityLogPage })));
+const HSMLogsPage = lazy(() => import('./pages/hsm-logs/HSMLogsPage').then(m => ({ default: m.HSMLogsPage })));
 
 /**
  * Page loading fallback component
  */
 function PageLoader() {
+  const { t } = useTranslation();
+
   return (
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="flex flex-col items-center gap-4">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-accent-primary" />
-        <p className="text-text-light-muted dark:text-text-muted text-sm">Loading...</p>
+        <p className="text-text-light-muted dark:text-text-muted text-sm">{t('app.loading')}</p>
       </div>
     </div>
   );
@@ -66,6 +70,7 @@ function PageLoader() {
  */
 function ProtectedRoute({ children, pageName }: { children: React.ReactNode; pageName?: string }) {
   const { isAuthenticated, isInitializing } = useAuthStore();
+  const { t } = useTranslation();
 
   // Show loading while initializing auth state
   if (isInitializing) {
@@ -73,7 +78,7 @@ function ProtectedRoute({ children, pageName }: { children: React.ReactNode; pag
       <div className="min-h-screen flex items-center justify-center bg-primary-light-bg dark:bg-primary-bg">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-primary" />
-          <p className="text-text-light-muted dark:text-text-muted">Initializing...</p>
+          <p className="text-text-light-muted dark:text-text-muted">{t('app.initializing')}</p>
         </div>
       </div>
     );
@@ -114,6 +119,7 @@ function handleGlobalError(error: Error, errorInfo: React.ErrorInfo): void {
  */
 function App() {
   const initialize = useAuthStore((state) => state.initialize);
+  const { t } = useTranslation();
 
   // Initialize authentication on app load
   useEffect(() => {
@@ -147,10 +153,10 @@ function App() {
             </div>
 
             <h1 className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary mb-2">
-              Application Error
+              {t('app.error.title')}
             </h1>
             <p className="text-text-light-muted dark:text-text-muted mb-6">
-              {error.message || 'An unexpected error occurred'}
+              {error.message || t('app.error.unexpected')}
             </p>
 
             <div className="flex flex-col gap-3">
@@ -158,13 +164,13 @@ function App() {
                 onClick={reset}
                 className="w-full px-4 py-3 bg-accent-primary text-black font-medium rounded-lg hover:bg-accent-primary/90 transition-colors"
               >
-                Try Again
+                {t('app.error.try_again')}
               </button>
               <button
                 onClick={() => window.location.reload()}
                 className="w-full px-4 py-3 bg-white dark:bg-primary-bg-secondary text-text-light-primary dark:text-text-primary font-medium rounded-lg border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
-                Reload Application
+                {t('app.error.reload')}
               </button>
             </div>
 
@@ -428,6 +434,17 @@ function App() {
                   <ProtectedRoute pageName="Activity Log">
                     <RequirePermission permission={PERMISSIONS.ACTIVITY_VIEW}>
                       <ActivityLogPage />
+                    </RequirePermission>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="hsm-logs"
+                element={
+                  <ProtectedRoute pageName="HSM Logs">
+                    <RequirePermission permission={PERMISSIONS.SETTINGS_VIEW}>
+                      <HSMLogsPage />
                     </RequirePermission>
                   </ProtectedRoute>
                 }

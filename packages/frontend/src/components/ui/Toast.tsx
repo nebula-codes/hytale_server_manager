@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { useToastStore, type Toast as ToastType } from '../../stores/toastStore';
+import { useTranslation } from 'react-i18next';
 
 const Toast = ({ toast }: { toast: ToastType }) => {
+  const { t } = useTranslation();
   const removeToast = useToastStore((state) => state.removeToast);
   const [progress, setProgress] = useState(100);
 
@@ -70,7 +72,7 @@ const Toast = ({ toast }: { toast: ToastType }) => {
       <button
         onClick={() => removeToast(toast.id)}
         className="flex-shrink-0 text-text-muted hover:text-text-primary transition-colors"
-        aria-label="Close notification"
+        aria-label={t('ui.toast.close_aria')}
       >
         <X size={16} />
       </button>

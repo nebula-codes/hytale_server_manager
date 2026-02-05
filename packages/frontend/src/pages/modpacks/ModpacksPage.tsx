@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Badge, DataTable, SearchableSelect } from '../../components/ui';
 import type { Column } from '../../components/ui';
 import { Download, AlertCircle, Settings, Search, X, ExternalLink, Grid, List, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -15,6 +16,7 @@ import api from '../../services/api';
 export const ModpacksPage = () => {
   const navigate = useNavigate();
   const toast = useToast();
+  const { t } = useTranslation();
   const {
     selectedProvider,
     providers,
@@ -210,8 +212,8 @@ export const ModpacksPage = () => {
     updateStatus(queueId, 'downloading');
 
     toast.success(
-      'Installing...',
-      `${selectedProject.title} is being installed to ${server.name}`
+      t('modpacks.toast.installing.title'),
+      t('modpacks.toast.installing.description', { title: selectedProject.title, server: server.name })
     );
 
     // Call backend API to actually install the modpack
@@ -229,14 +231,17 @@ export const ModpacksPage = () => {
         fileName: version?.fileName,
       });
       updateStatus(queueId, 'completed');
-      toast.success('Installation complete', `${selectedProject.title} has been installed`);
+      toast.success(
+        t('modpacks.toast.completed.title'),
+        t('modpacks.toast.completed.description', { title: selectedProject.title })
+      );
 
       // Remove from queue after a short delay so user can see completion
       setTimeout(() => removeFromQueue(queueId), 2000);
     } catch (error: any) {
       console.error('Error installing modpack:', error);
       updateStatus(queueId, 'failed', error.message);
-      toast.error('Installation failed', error.message);
+      toast.error(t('modpacks.toast.failed.title'), error.message || t('modpacks.toast.failed.description'));
 
       // Remove failed items after showing error
       setTimeout(() => removeFromQueue(queueId), 5000);
@@ -247,7 +252,7 @@ export const ModpacksPage = () => {
   const columns: Column<UnifiedProject>[] = [
     {
       key: 'title',
-      label: 'Modpack',
+      label: t('modpacks.columns.modpack'),
       sortable: true,
       render: (modpack) => (
         <div className="flex items-center gap-3">
@@ -268,7 +273,7 @@ export const ModpacksPage = () => {
     },
     {
       key: 'author',
-      label: 'Author',
+      label: t('modpacks.columns.author'),
       sortable: true,
       render: (modpack) => (
         <span className="whitespace-nowrap">{modpack.author.username}</span>
@@ -276,7 +281,7 @@ export const ModpacksPage = () => {
     },
     {
       key: 'categories',
-      label: 'Categories',
+      label: t('modpacks.columns.categories'),
       sortable: false,
       className: 'hidden md:table-cell',
       render: (modpack) => (
@@ -296,7 +301,7 @@ export const ModpacksPage = () => {
     },
     {
       key: 'downloads',
-      label: 'Downloads',
+      label: t('modpacks.columns.downloads'),
       sortable: true,
       className: 'text-right',
       render: (modpack) => (
@@ -305,7 +310,7 @@ export const ModpacksPage = () => {
     },
     {
       key: 'rating',
-      label: 'Rating',
+      label: t('modpacks.columns.rating'),
       sortable: true,
       className: 'text-right',
       render: (modpack) => (
@@ -314,7 +319,7 @@ export const ModpacksPage = () => {
     },
     {
       key: 'actions',
-      label: 'Actions',
+      label: t('modpacks.columns.actions'),
       sortable: false,
       className: 'text-right',
       render: (modpack) => (
@@ -325,7 +330,7 @@ export const ModpacksPage = () => {
             icon={<Download size={14} />}
             onClick={() => handleInstallClick(modpack)}
           >
-            Install
+            {t('modpacks.actions.install')}
           </Button>
           <Button
             variant="ghost"
@@ -333,7 +338,7 @@ export const ModpacksPage = () => {
             icon={<ExternalLink size={14} />}
             onClick={() => window.open(getProjectUrl(modpack), '_blank')}
           >
-            View
+            {t('modpacks.actions.view')}
           </Button>
         </div>
       ),
@@ -345,9 +350,12 @@ export const ModpacksPage = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">Modpacks</h1>
+          <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">{t('modpacks.title')}</h1>
           <p className="text-text-light-muted dark:text-text-muted mt-1">
-            Pre-configured mod collections for quick setup {totalResults > 0 && `(${totalResults.toLocaleString()} available)`}
+            {t('modpacks.subtitle', {
+              count: totalResults,
+              available: totalResults > 0 ? `(${totalResults.toLocaleString()} ${t('modpacks.available')})` : '',
+            })}
           </p>
         </div>
         <ProviderSelector />
@@ -360,10 +368,10 @@ export const ModpacksPage = () => {
             <div className="flex flex-col gap-4">
               {/* Search Bar */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-light-muted dark:text-text-muted" size={20} />
+                <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-light-muted dark:text-text-muted" />
                 <Input
                   type="text"
-                  placeholder="Search modpacks..."
+                  placeholder={t('modpacks.search.placeholder')}
                   value={localSearchQuery}
                   onChange={(e) => setLocalSearchQuery(e.target.value)}
                   onKeyPress={handleKeyPress}
@@ -373,6 +381,7 @@ export const ModpacksPage = () => {
                   <button
                     onClick={() => setLocalSearchQuery('')}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary"
+                    title={t('modpacks.search.clear')}
                   >
                     <X size={20} />
                   </button>
@@ -387,10 +396,10 @@ export const ModpacksPage = () => {
                     options={uniqueTags}
                     value={filterTags}
                     onChange={(value) => setFilterTags(value as string[])}
-                    placeholder="All Categories"
-                    searchPlaceholder="Search categories..."
+                    placeholder={t('modpacks.filters.categories')}
+                    searchPlaceholder={t('modpacks.filters.search_categories')}
                     multiple={true}
-                    allLabel="All Categories"
+                    allLabel={t('modpacks.filters.all_categories')}
                   />
                 </div>
 
@@ -400,10 +409,10 @@ export const ModpacksPage = () => {
                     options={uniqueAuthors}
                     value={filterAuthor}
                     onChange={(value) => setFilterAuthor(value as string)}
-                    placeholder="All Authors"
-                    searchPlaceholder="Search authors..."
+                    placeholder={t('modpacks.filters.authors')}
+                    searchPlaceholder={t('modpacks.filters.search_authors')}
                     multiple={false}
-                    allLabel="All Authors"
+                    allLabel={t('modpacks.filters.all_authors')}
                   />
                 </div>
 
@@ -414,9 +423,9 @@ export const ModpacksPage = () => {
                     onChange={(e) => setSortBy(e.target.value as 'downloads' | 'rating' | 'updated')}
                     className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-text-light-primary dark:text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary"
                   >
-                    <option value="downloads">Most Downloads</option>
-                    <option value="rating">Highest Rated</option>
-                    <option value="updated">Recently Updated</option>
+                    <option value="downloads">{t('modpacks.sort.downloads')}</option>
+                    <option value="rating">{t('modpacks.sort.rating')}</option>
+                    <option value="updated">{t('modpacks.sort.updated')}</option>
                   </select>
                 </div>
 
@@ -424,23 +433,21 @@ export const ModpacksPage = () => {
                 <div className="flex gap-2 md:ml-auto">
                   <button
                     onClick={() => setViewMode('card')}
-                    className={`p-2 rounded-lg border transition-colors ${
-                      viewMode === 'card'
-                        ? 'bg-accent-primary text-white border-accent-primary'
-                        : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary'
-                    }`}
-                    title="Card view"
+                    className={`p-2 rounded-lg border transition-colors ${viewMode === 'card'
+                      ? 'bg-accent-primary text-white border-accent-primary'
+                      : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary'
+                      }`}
+                    title={t('modpacks.view_modes.card')}
                   >
                     <Grid size={20} />
                   </button>
                   <button
                     onClick={() => setViewMode('table')}
-                    className={`p-2 rounded-lg border transition-colors ${
-                      viewMode === 'table'
-                        ? 'bg-accent-primary text-white border-accent-primary'
-                        : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary'
-                    }`}
-                    title="Table view"
+                    className={`p-2 rounded-lg border transition-colors ${viewMode === 'table'
+                      ? 'bg-accent-primary text-white border-accent-primary'
+                      : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary'
+                      }`}
+                    title={t('modpacks.view_modes.table')}
                   >
                     <List size={20} />
                   </button>
@@ -460,11 +467,13 @@ export const ModpacksPage = () => {
               <div className="flex-1">
                 <h3 className="font-heading font-semibold text-text-light-primary dark:text-text-primary">
                   {selectedProvider === 'all'
-                    ? 'No Mod Providers Configured'
-                    : `${providers.find(p => p.id === selectedProvider)?.displayName || 'Provider'} Not Configured`}
+                    ? t('modpacks.no_providers')
+                    : t('modpacks.provider_not_configured', {
+                      provider: providers.find(p => p.id === selectedProvider)?.displayName || t('modpacks.provider'),
+                    })}
                 </h3>
                 <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
-                  Configure API keys for mod providers in settings to browse and install modpacks.
+                  {t('modpacks.configure_hint')}
                 </p>
               </div>
               <Button
@@ -472,7 +481,7 @@ export const ModpacksPage = () => {
                 icon={<Settings size={18} />}
                 onClick={() => navigate('/settings')}
               >
-                Configure Providers
+                {t('modpacks.actions.configure_providers')}
               </Button>
             </div>
           </CardContent>
@@ -483,7 +492,7 @@ export const ModpacksPage = () => {
       {searchLoading && (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-accent-primary border-t-transparent"></div>
-          <p className="text-text-light-muted dark:text-text-muted mt-4">Loading modpacks...</p>
+          <p className="text-text-light-muted dark:text-text-muted mt-4">{t('modpacks.loading')}</p>
         </div>
       )}
 
@@ -495,12 +504,12 @@ export const ModpacksPage = () => {
               <AlertCircle size={32} className="text-danger" />
               <div className="flex-1">
                 <h3 className="font-heading font-semibold text-text-light-primary dark:text-text-primary">
-                  Failed to Load Modpacks
+                  {t('modpacks.error.title')}
                 </h3>
                 <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">{searchError}</p>
               </div>
               <Button variant="secondary" onClick={() => search()}>
-                Retry
+                {t('modpacks.actions.retry')}
               </Button>
             </div>
           </CardContent>
@@ -515,72 +524,72 @@ export const ModpacksPage = () => {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {paginatedModpacks.map((modpack) => (
-                <Card key={`${modpack.providerId}-${modpack.id}`} variant="glass" hover>
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={modpack.iconUrl || `https://via.placeholder.com/48/6366f1/ffffff?text=${modpack.title[0]}`}
-                        alt={modpack.title}
-                        className="w-12 h-12 rounded-lg object-cover"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <CardTitle className="truncate">{modpack.title}</CardTitle>
-                          {selectedProvider === 'all' && <ProviderBadge providerId={modpack.providerId} />}
+                  <Card key={`${modpack.providerId}-${modpack.id}`} variant="glass" hover>
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={modpack.iconUrl || `https://via.placeholder.com/48/6366f1/ffffff?text=${modpack.title[0]}`}
+                          alt={modpack.title}
+                          className="w-12 h-12 rounded-lg object-cover"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <CardTitle className="truncate">{modpack.title}</CardTitle>
+                            {selectedProvider === 'all' && <ProviderBadge providerId={modpack.providerId} />}
+                          </div>
+                          <CardDescription className="truncate">{modpack.author.username}</CardDescription>
                         </div>
-                        <CardDescription className="truncate">{modpack.author.username}</CardDescription>
                       </div>
-                    </div>
-                  </CardHeader>
+                    </CardHeader>
 
-                  <CardContent className="space-y-3">
-                    <p className="text-sm text-text-light-muted dark:text-text-muted line-clamp-2">{modpack.description}</p>
+                    <CardContent className="space-y-3">
+                      <p className="text-sm text-text-light-muted dark:text-text-muted line-clamp-2">{modpack.description}</p>
 
-                    {/* Categories */}
-                    {modpack.categories && modpack.categories.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {modpack.categories.slice(0, 3).map((cat) => (
-                          <Badge key={cat.id} size="sm" variant="info">
-                            {cat.name}
-                          </Badge>
-                        ))}
-                        {modpack.categories.length > 3 && (
-                          <Badge size="sm" variant="default">
-                            +{modpack.categories.length - 3}
-                          </Badge>
-                        )}
+                      {/* Categories */}
+                      {modpack.categories && modpack.categories.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {modpack.categories.slice(0, 3).map((cat) => (
+                            <Badge key={cat.id} size="sm" variant="info">
+                              {cat.name}
+                            </Badge>
+                          ))}
+                          {modpack.categories.length > 3 && (
+                            <Badge size="sm" variant="default">
+                              {t('modpacks.more_categories', { count: modpack.categories.length - 3 })}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-text-light-muted dark:text-text-muted">
+                          {modpack.rating?.toFixed(1) || '-'}
+                        </span>
+                        <span className="text-text-light-muted dark:text-text-muted">
+                          {t('modpacks.downloads', { downloads: modpack.downloads.toLocaleString() })}
+                        </span>
                       </div>
-                    )}
-
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-text-light-muted dark:text-text-muted">
-                        {modpack.rating?.toFixed(1) || '-'}
-                      </span>
-                      <span className="text-text-light-muted dark:text-text-muted">
-                        {modpack.downloads.toLocaleString()} downloads
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        icon={<Download size={14} />}
-                        className="flex-1"
-                        onClick={() => handleInstallClick(modpack)}
-                      >
-                        Install
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={<ExternalLink size={14} />}
-                        onClick={() => window.open(getProjectUrl(modpack), '_blank')}
-                      >
-                        View
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          icon={<Download size={14} />}
+                          className="flex-1"
+                          onClick={() => handleInstallClick(modpack)}
+                        >
+                          {t('modpacks.actions.install')}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<ExternalLink size={14} />}
+                          onClick={() => window.open(getProjectUrl(modpack), '_blank')}
+                        >
+                          {t('modpacks.actions.view')}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
 
@@ -588,8 +597,11 @@ export const ModpacksPage = () => {
               {totalCardPages > 1 && (
                 <div className="flex items-center justify-between mt-6 px-2">
                   <span className="text-sm text-text-light-muted dark:text-text-muted">
-                    Showing {(cardPage - 1) * CARD_PAGE_SIZE + 1} to{' '}
-                    {Math.min(cardPage * CARD_PAGE_SIZE, filteredModpacks.length)} of {filteredModpacks.length} modpacks
+                    {t('table.pagination.showing', {
+                      start: (cardPage - 1) * CARD_PAGE_SIZE + 1,
+                      end: Math.min(cardPage * CARD_PAGE_SIZE, filteredModpacks.length),
+                      total: filteredModpacks.length,
+                    })}
                   </span>
                   <div className="flex items-center gap-2">
                     <Button
@@ -599,10 +611,10 @@ export const ModpacksPage = () => {
                       onClick={() => setSearchPage(Math.max(1, cardPage - 1))}
                       disabled={cardPage === 1}
                     >
-                      Previous
+                      {t('table.pagination.previous')}
                     </Button>
                     <span className="text-sm text-text-light-muted dark:text-text-muted px-2">
-                      Page {cardPage} of {totalCardPages}
+                      {t('table.pagination.page_of', { page: cardPage, total: totalCardPages })}
                     </span>
                     <Button
                       variant="ghost"
@@ -611,7 +623,7 @@ export const ModpacksPage = () => {
                       onClick={() => setSearchPage(Math.min(totalCardPages, cardPage + 1))}
                       disabled={cardPage === totalCardPages}
                     >
-                      Next
+                      {t('table.pagination.next')}
                     </Button>
                   </div>
                 </div>
@@ -633,7 +645,7 @@ export const ModpacksPage = () => {
 
           {filteredModpacks.length === 0 && (
             <div className="text-center py-12">
-              <p className="text-text-light-muted dark:text-text-muted">No modpacks found matching your criteria</p>
+              <p className="text-text-light-muted dark:text-text-muted">{t('modpacks.empty')}</p>
             </div>
           )}
         </div>

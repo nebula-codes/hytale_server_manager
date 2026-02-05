@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge, StatusIndicator } from '../../components/ui';
 import { ArrowLeft, Play, Square, RotateCw, Settings, Users, Activity, Terminal, Database, Package, Trash2, ExternalLink, Plus, RefreshCw, Globe, ArrowUp, History } from 'lucide-react';
 import { useToast } from '../../stores/toastStore';
@@ -78,6 +79,7 @@ export const ServerDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const toast = useToast();
+  const { t } = useTranslation();
 
   const [server, setServer] = useState<Server | null>(null);
   const [_status, setStatus] = useState<ServerStatus | null>(null);
@@ -149,7 +151,7 @@ export const ServerDetailPage = () => {
     } catch (err: any) {
       console.error('Error fetching server:', err);
       setError(err.message || 'Failed to load server');
-      toast.error('Failed to load server', err.message);
+      toast.error(t('servers.toast.load_failed.title'), err.message);
     } finally {
       setLoading(false);
     }
@@ -180,9 +182,9 @@ export const ServerDetailPage = () => {
     try {
       await api.uninstallMod(id, modId);
       setInstalledMods(prev => prev.filter(m => m.id !== modId));
-      toast.success('Mod uninstalled', `${modName} has been removed`);
+      toast.success(t('servers.toast.mod_uninstalled.title'), t('servers.toast.mod_uninstalled.description', { mod: modName }));
     } catch (err: any) {
-      toast.error('Failed to uninstall mod', err.message);
+      toast.error(t('servers.toast.mod_uninstalled_failed.title'), err.message);
     } finally {
       setUninstallingMod(null);
     }
@@ -193,10 +195,10 @@ export const ServerDetailPage = () => {
 
     try {
       await api.startServer(id);
-      toast.success('Server starting', `${server?.name} is starting up...`);
+      toast.success(t('servers.toast.starting.title'), t('servers.toast.starting.description', { name: server?.name }));
       setServer(prev => prev ? { ...prev, status: 'starting' } : null);
     } catch (err: any) {
-      toast.error('Failed to start server', err.message);
+      toast.error(t('servers.toast.start_failed.title'), err.message);
     }
   };
 
@@ -205,10 +207,10 @@ export const ServerDetailPage = () => {
 
     try {
       await api.stopServer(id);
-      toast.warning('Server stopping', `${server?.name} is shutting down...`);
+      toast.warning(t('servers.toast.stopping.title'), t('servers.toast.stopping.description', { name: server?.name }));
       setServer(prev => prev ? { ...prev, status: 'stopping' } : null);
     } catch (err: any) {
-      toast.error('Failed to stop server', err.message);
+      toast.error(t('servers.toast.stop_failed.title'), err.message);
     }
   };
 
@@ -217,9 +219,9 @@ export const ServerDetailPage = () => {
 
     try {
       await api.restartServer(id);
-      toast.info('Server restarting', `${server?.name} is restarting...`);
+      toast.info(t('servers.toast.restarting.title'), t('servers.toast.restarting.description', { name: server?.name }));
     } catch (err: any) {
-      toast.error('Failed to restart server', err.message);
+      toast.error(t('servers.toast.restart_failed.title'), err.message);
     }
   };
 
@@ -233,7 +235,9 @@ export const ServerDetailPage = () => {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <h2 className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary">Loading...</h2>
+          <h2 className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary">
+            {t('common.loading')}
+          </h2>
         </div>
       </div>
     );
@@ -244,10 +248,10 @@ export const ServerDetailPage = () => {
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
           <h2 className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary">
-            {error || 'Server Not Found'}
+            {error || t('servers.detail.errors.not_found')}
           </h2>
           <Link to="/servers" className="text-accent-primary hover:underline mt-4 inline-block">
-            ← Back to Servers
+            ← {t('servers.detail.back_to_servers')}
           </Link>
         </div>
       </div>
@@ -267,7 +271,7 @@ export const ServerDetailPage = () => {
         <div className="flex items-center gap-3 sm:gap-4">
           <Link to="/servers">
             <Button variant="ghost" icon={<ArrowLeft size={18} />}>
-              <span className="hidden sm:inline">Back</span>
+              <span className="hidden sm:inline">{t('common.back')}</span>
             </Button>
           </Link>
           <div className="flex-1 min-w-0">
@@ -286,26 +290,26 @@ export const ServerDetailPage = () => {
           {server.status === 'running' ? (
             <div className="flex gap-2">
               <Button variant="danger" icon={<Square size={18} />} className="flex-1 sm:flex-initial" onClick={handleStop}>
-                Stop
+                {t('servers.detail.actions.stop')}
               </Button>
               <Button variant="secondary" icon={<RotateCw size={18} />} className="flex-1 sm:flex-initial" onClick={handleRestart}>
-                Restart
+                {t('servers.detail.actions.restart')}
               </Button>
             </div>
           ) : server.status === 'stopped' ? (
             <Button variant="success" icon={<Play size={18} />} className="w-full sm:w-auto" onClick={handleStart}>
-              Start
+              {t('servers.detail.actions.start')}
             </Button>
           ) : (
             <Button variant="ghost" className="w-full sm:w-auto" disabled>
-              {server.status}...
+              {t(`servers.status.${server.status}`, { defaultValue: server.status })}...
             </Button>
           )}
           <Button variant="ghost" icon={<Globe size={18} />} className="w-full sm:w-auto" onClick={() => navigate(`/servers/${id}/worlds`)}>
-            Worlds
+            {t('servers.detail.actions.worlds')}
           </Button>
           <Button variant="ghost" icon={<Settings size={18} />} className="w-full sm:w-auto" onClick={() => navigate(`/servers/${id}/settings`)}>
-            Settings
+            {t('servers.detail.actions.settings')}
           </Button>
         </div>
       </div>
@@ -315,11 +319,11 @@ export const ServerDetailPage = () => {
         <Card variant="glass" className="opacity-50">
           <CardContent className="flex items-center justify-between">
             <div>
-              <p className="text-text-light-muted dark:text-text-muted text-sm">Players</p>
+              <p className="text-text-light-muted dark:text-text-muted text-sm">{t('servers.detail.stats.players')}</p>
               <p className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary">
                 - / -
               </p>
-              <p className="text-xs text-text-light-muted dark:text-text-muted">Coming Soon</p>
+              <p className="text-xs text-text-light-muted dark:text-text-muted">{t('common.coming_soon')}</p>
             </div>
             <Users size={32} className="text-text-muted" />
           </CardContent>
@@ -328,7 +332,7 @@ export const ServerDetailPage = () => {
         <Card variant="glass">
           <CardContent className="flex items-center justify-between">
             <div>
-              <p className="text-text-light-muted dark:text-text-muted text-sm">TPS</p>
+              <p className="text-text-light-muted dark:text-text-muted text-sm">{t('servers.detail.stats.tps')}</p>
               <p className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary">
                 {server.status === 'running' ? currentTps.toFixed(1) : '-'}
               </p>
@@ -340,7 +344,7 @@ export const ServerDetailPage = () => {
         <Card variant="glass">
           <CardContent className="flex items-center justify-between">
             <div>
-              <p className="text-text-light-muted dark:text-text-muted text-sm">Memory</p>
+              <p className="text-text-light-muted dark:text-text-muted text-sm">{t('servers.detail.stats.memory')}</p>
               <p className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary">
                 {server.status === 'running' ? `${Math.round(currentMemory)} MB` : '-'}
               </p>
@@ -352,9 +356,9 @@ export const ServerDetailPage = () => {
         <Card variant="glass">
           <CardContent className="flex items-center justify-between">
             <div>
-              <p className="text-text-light-muted dark:text-text-muted text-sm">Uptime</p>
+              <p className="text-text-light-muted dark:text-text-muted text-sm">{t('servers.detail.stats.uptime')}</p>
               <p className="text-2xl font-heading font-bold text-text-light-primary dark:text-text-primary">
-                {server.status === 'running' ? formatUptime(currentUptime) : 'Offline'}
+                {server.status === 'running' ? formatUptime(currentUptime) : t('servers.detail.stats.offline')}
               </p>
             </div>
             <Database size={32} className="text-success" />
@@ -366,11 +370,11 @@ export const ServerDetailPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         <Card variant="glass">
           <CardHeader>
-            <CardTitle>Server Information</CardTitle>
+            <CardTitle>{t('servers.detail.info.title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-text-light-muted dark:text-text-muted">Version:</span>
+              <span className="text-text-light-muted dark:text-text-muted">{t('servers.detail.info.version')}</span>
               <div className="flex items-center gap-2">
                 <Badge variant="info">{server.version}</Badge>
                 <ServerUpdateBadge
@@ -382,17 +386,17 @@ export const ServerDetailPage = () => {
               </div>
             </div>
             <div className="flex justify-between">
-              <span className="text-text-light-muted dark:text-text-muted">Game Mode:</span>
+              <span className="text-text-light-muted dark:text-text-muted">{t('servers.detail.info.game_mode')}</span>
               <Badge variant="default">{server.gameMode}</Badge>
             </div>
             <div className="flex justify-between">
-              <span className="text-text-light-muted dark:text-text-muted">Adapter Type:</span>
+              <span className="text-text-light-muted dark:text-text-muted">{t('servers.detail.info.adapter_type')}</span>
               <Badge variant="default">
-                {server.adapterType === 'java' ? 'Java JAR' : server.adapterType}
+                {server.adapterType === 'java' ? t('servers.detail.info.adapter_java') : server.adapterType}
               </Badge>
             </div>
             <div className="flex justify-between">
-              <span className="text-text-light-muted dark:text-text-muted">Created:</span>
+              <span className="text-text-light-muted dark:text-text-muted">{t('servers.detail.info.created')}</span>
               <span className="text-text-light-primary dark:text-text-primary">
                 {new Date(server.createdAt).toLocaleString()}
               </span>
@@ -402,12 +406,12 @@ export const ServerDetailPage = () => {
 
         <Card variant="glass">
           <CardHeader>
-            <CardTitle>Resource Usage</CardTitle>
+            <CardTitle>{t('servers.detail.resources.title')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
               <div className="flex justify-between mb-2">
-                <span className="text-text-light-muted dark:text-text-muted text-sm">CPU Usage</span>
+                <span className="text-text-light-muted dark:text-text-muted text-sm">{t('servers.detail.resources.cpu')}</span>
                 <span className="text-text-light-primary dark:text-text-primary font-medium">
                   {server.status === 'running' ? `${currentCpu.toFixed(1)}%` : '-'}
                 </span>
@@ -426,7 +430,7 @@ export const ServerDetailPage = () => {
 
             <div>
               <div className="flex justify-between mb-2">
-                <span className="text-text-light-muted dark:text-text-muted text-sm">Memory Usage</span>
+                <span className="text-text-light-muted dark:text-text-muted text-sm">{t('servers.detail.resources.memory')}</span>
                 <span className="text-text-light-primary dark:text-text-primary font-medium">
                   {server.status === 'running' ? `${Math.round(currentMemory)} / ${Math.round(totalMemory)} MB` : '-'}
                 </span>
@@ -443,9 +447,9 @@ export const ServerDetailPage = () => {
 
             <div className="opacity-50">
               <div className="flex justify-between mb-2">
-                <span className="text-text-light-muted dark:text-text-muted text-sm">Player Slots</span>
+                <span className="text-text-light-muted dark:text-text-muted text-sm">{t('servers.detail.resources.slots')}</span>
                 <span className="text-text-light-primary dark:text-text-primary font-medium">
-                  - / - <span className="text-xs">(Coming Soon)</span>
+                  - / - <span className="text-xs">({t('common.coming_soon')})</span>
                 </span>
               </div>
               <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
@@ -466,12 +470,12 @@ export const ServerDetailPage = () => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Package size={20} />
-                Installed Mods
+                {t('servers.detail.mods.title')}
                 {installedMods.length > 0 && (
                   <Badge variant="info" size="sm">{installedMods.length}</Badge>
                 )}
               </CardTitle>
-              <CardDescription>Mods and modpacks installed on this server</CardDescription>
+              <CardDescription>{t('servers.detail.mods.subtitle')}</CardDescription>
             </div>
             <div className="flex gap-2">
               <Button
@@ -481,7 +485,7 @@ export const ServerDetailPage = () => {
                 onClick={fetchMods}
                 disabled={modsLoading}
               >
-                Refresh
+                {t('common.refresh')}
               </Button>
               <Button
                 variant="primary"
@@ -489,7 +493,7 @@ export const ServerDetailPage = () => {
                 icon={<Plus size={16} />}
                 onClick={() => navigate('/mods')}
               >
-                Browse Mods
+                {t('servers.detail.mods.browse')}
               </Button>
             </div>
           </div>
@@ -502,13 +506,13 @@ export const ServerDetailPage = () => {
           ) : installedMods.length === 0 ? (
             <div className="text-center py-8">
               <Package size={48} className="mx-auto text-text-light-muted dark:text-text-muted mb-3 opacity-50" />
-              <p className="text-text-light-muted dark:text-text-muted mb-4">No mods installed on this server</p>
+              <p className="text-text-light-muted dark:text-text-muted mb-4">{t('servers.detail.mods.empty')}</p>
               <Button
                 variant="secondary"
                 icon={<Plus size={16} />}
                 onClick={() => navigate('/mods')}
               >
-                Browse & Install Mods
+                {t('servers.detail.mods.browse_install')}
               </Button>
             </div>
           ) : (
@@ -539,7 +543,7 @@ export const ServerDetailPage = () => {
                           {mod.classification}
                         </Badge>
                         {!mod.enabled && (
-                          <Badge size="sm" variant="warning">Disabled</Badge>
+                          <Badge size="sm" variant="warning">{t('servers.detail.mods.disabled')}</Badge>
                         )}
                       </div>
                       <div className="flex items-center gap-3 text-sm text-text-light-muted dark:text-text-muted">
@@ -547,7 +551,7 @@ export const ServerDetailPage = () => {
                         <span>•</span>
                         <span>{(getModDisplaySize(mod) / 1024).toFixed(1)} KB</span>
                         <span>•</span>
-                        <span>Installed {new Date(mod.installedAt).toLocaleDateString()}</span>
+                        <span>{t('servers.detail.mods.installed_on', { date: new Date(mod.installedAt).toLocaleDateString() })}</span>
                       </div>
                     </div>
 
@@ -573,7 +577,11 @@ export const ServerDetailPage = () => {
                             window.open(`https://modtale.net/${type}/${slug}-${mod.projectId}`, '_blank');
                           }
                         }}
-                        title={`View on ${mod.providerId === 'curseforge' ? 'CurseForge' : 'Modtale'}`}
+                        title={
+                          mod.providerId === 'curseforge'
+                            ? t('servers.detail.mods.view_curseforge')
+                            : t('servers.detail.mods.view_modtale')
+                        }
                       />
                       <Button
                         variant="danger"
@@ -581,9 +589,9 @@ export const ServerDetailPage = () => {
                         icon={<Trash2 size={14} />}
                         onClick={() => handleUninstallMod(mod.id, mod.projectTitle)}
                         disabled={uninstallingMod === mod.id}
-                        title="Uninstall mod"
+                        title={t('servers.detail.mods.uninstall_title')}
                       >
-                        {uninstallingMod === mod.id ? 'Removing...' : 'Remove'}
+                        {uninstallingMod === mod.id ? t('servers.detail.mods.removing') : t('servers.detail.mods.remove')}
                       </Button>
                     </div>
                   </motion.div>
@@ -597,31 +605,31 @@ export const ServerDetailPage = () => {
       {/* Quick Actions */}
       <Card variant="glass">
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Common server management tasks</CardDescription>
+          <CardTitle>{t('servers.detail.quick.title')}</CardTitle>
+          <CardDescription>{t('servers.detail.quick.subtitle')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
             <Button variant="secondary" icon={<Terminal size={18} />} className="w-full" onClick={() => navigate('/console')}>
-              Console
+              {t('servers.detail.quick.console')}
             </Button>
             <Button variant="secondary" icon={<Globe size={18} />} className="w-full" onClick={() => navigate(`/servers/${id}/worlds`)}>
-              Worlds
+              {t('servers.detail.quick.worlds')}
             </Button>
             <Button variant="secondary" icon={<Database size={18} />} className="w-full" onClick={() => navigate('/backups')}>
-              Backups
+              {t('servers.detail.quick.backups')}
             </Button>
             <Button variant="secondary" icon={<Package size={18} />} className="w-full" onClick={() => navigate('/mods')}>
-              Mods
+              {t('servers.detail.quick.mods')}
             </Button>
             <Button variant="secondary" icon={<Users size={18} />} className="w-full" onClick={() => navigate('/players')}>
-              Players
+              {t('servers.detail.quick.players')}
             </Button>
             <Button variant="secondary" icon={<ArrowUp size={18} />} className="w-full" onClick={() => setShowUpdateModal(true)}>
-              Update
+              {t('servers.detail.quick.update')}
             </Button>
             <Button variant="secondary" icon={<History size={18} />} className="w-full" onClick={() => setShowHistoryModal(true)}>
-              History
+              {t('servers.detail.quick.history')}
             </Button>
           </div>
         </CardContent>

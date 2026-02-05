@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, ModalFooter, Button, Input } from '../../components/ui';
 import { Clock } from 'lucide-react';
 
@@ -28,20 +29,23 @@ interface CreateTaskModalProps {
   editTask?: ScheduledTask | null;
 }
 
-const CRON_PRESETS = [
-  { label: 'Every 5 minutes', value: '*/5 * * * *' },
-  { label: 'Every 15 minutes', value: '*/15 * * * *' },
-  { label: 'Every 30 minutes', value: '*/30 * * * *' },
-  { label: 'Every hour', value: '0 * * * *' },
-  { label: 'Every 6 hours', value: '0 */6 * * *' },
-  { label: 'Daily at midnight', value: '0 0 * * *' },
-  { label: 'Daily at noon', value: '0 12 * * *' },
-  { label: 'Weekly on Sunday', value: '0 0 * * 0' },
-  { label: 'Weekly on Monday', value: '0 0 * * 1' },
-  { label: 'Custom', value: 'custom' },
-];
-
 export const CreateTaskModal = ({ isOpen, onClose, onSubmit, onUpdate, servers, editTask }: CreateTaskModalProps) => {
+  const { t } = useTranslation();
+  const CRON_PRESETS = useMemo(
+    () => [
+      { label: t('automation.cron.every_5_minutes'), value: '*/5 * * * *' },
+      { label: t('automation.cron.every_15_minutes'), value: '*/15 * * * *' },
+      { label: t('automation.cron.every_30_minutes'), value: '*/30 * * * *' },
+      { label: t('automation.cron.every_hour'), value: '0 * * * *' },
+      { label: t('automation.cron.every_6_hours'), value: '0 */6 * * *' },
+      { label: t('automation.cron.daily_midnight'), value: '0 0 * * *' },
+      { label: t('automation.cron.daily_noon'), value: '0 12 * * *' },
+      { label: t('automation.cron.weekly_sunday'), value: '0 0 * * 0' },
+      { label: t('automation.cron.weekly_monday'), value: '0 0 * * 1' },
+      { label: t('automation.cron.custom'), value: 'custom' },
+    ],
+    [t]
+  );
   const [serverId, setServerId] = useState('');
   const [name, setName] = useState('');
   const [type, setType] = useState<'backup' | 'restart' | 'start' | 'stop' | 'command'>('backup');
@@ -88,24 +92,24 @@ export const CreateTaskModal = ({ isOpen, onClose, onSubmit, onUpdate, servers, 
 
   const handleSubmit = async () => {
     if (!serverId) {
-      setError('Please select a server');
+      setError(t('automation.modals.create_task.errors.select_server'));
       return;
     }
 
     if (!name.trim()) {
-      setError('Please enter a task name');
+      setError(t('automation.modals.create_task.errors.name'));
       return;
     }
 
     const cronExpression = cronPreset === 'custom' ? customCron : cronPreset;
 
     if (!cronExpression || !isValidCron(cronExpression)) {
-      setError('Please enter a valid cron expression');
+      setError(t('automation.modals.create_task.errors.cron'));
       return;
     }
 
     if (type === 'command' && !command.trim()) {
-      setError('Please enter a command');
+      setError(t('automation.modals.create_task.errors.command'));
       return;
     }
 
@@ -144,7 +148,7 @@ export const CreateTaskModal = ({ isOpen, onClose, onSubmit, onUpdate, servers, 
       handleClose();
     } catch (err: any) {
       console.error(isEditMode ? 'Error updating task:' : 'Error creating task:', err);
-      setError(err.message || (isEditMode ? 'Failed to update task' : 'Failed to create task'));
+      setError(err.message || t(isEditMode ? 'automation.modals.create_task.errors.update' : 'automation.modals.create_task.errors.create'));
     } finally {
       setLoading(false);
     }
@@ -172,12 +176,17 @@ export const CreateTaskModal = ({ isOpen, onClose, onSubmit, onUpdate, servers, 
   const selectedServer = servers.find(s => s.id === serverId);
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title={isEditMode ? "Edit Scheduled Task" : "Create Scheduled Task"} size="lg">
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={isEditMode ? t('automation.modals.create_task.title_edit') : t('automation.modals.create_task.title_create')}
+      size="lg"
+    >
       <div className="space-y-4">
         {/* Server Selection */}
         <div>
           <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-            Server *
+            {t('automation.modals.create_task.server_label')}
           </label>
           <select
             value={serverId}
@@ -185,7 +194,7 @@ export const CreateTaskModal = ({ isOpen, onClose, onSubmit, onUpdate, servers, 
             disabled={isEditMode}
             className={`w-full px-3 py-2 bg-white dark:bg-primary-bg-secondary border border-gray-300 dark:border-gray-700 rounded-lg text-text-light-primary dark:text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary ${isEditMode ? 'opacity-60 cursor-not-allowed' : ''}`}
           >
-            <option value="">Select a server...</option>
+            <option value="">{t('automation.modals.create_task.server_placeholder')}</option>
             {servers.map((server) => (
               <option key={server.id} value={server.id}>
                 {server.name} ({server.status})
@@ -194,7 +203,7 @@ export const CreateTaskModal = ({ isOpen, onClose, onSubmit, onUpdate, servers, 
           </select>
           {isEditMode && (
             <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
-              Server cannot be changed when editing a task
+              {t('automation.modals.create_task.server_edit_helper')}
             </p>
           )}
         </div>
@@ -202,12 +211,12 @@ export const CreateTaskModal = ({ isOpen, onClose, onSubmit, onUpdate, servers, 
         {/* Task Name */}
         <div>
           <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-            Task Name *
+            {t('automation.modals.create_task.name_label')}
           </label>
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g., Daily Backup, Restart Server..."
+            placeholder={t('automation.modals.create_task.name_placeholder')}
             className="w-full"
           />
         </div>
@@ -215,7 +224,7 @@ export const CreateTaskModal = ({ isOpen, onClose, onSubmit, onUpdate, servers, 
         {/* Task Type */}
         <div>
           <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-            Task Type *
+            {t('automation.modals.create_task.type_label')}
           </label>
           <select
             value={type}
@@ -223,15 +232,15 @@ export const CreateTaskModal = ({ isOpen, onClose, onSubmit, onUpdate, servers, 
             disabled={isEditMode}
             className={`w-full px-3 py-2 bg-white dark:bg-primary-bg-secondary border border-gray-300 dark:border-gray-700 rounded-lg text-text-light-primary dark:text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary ${isEditMode ? 'opacity-60 cursor-not-allowed' : ''}`}
           >
-            <option value="backup">Create Backup</option>
-            <option value="restart">Restart Server</option>
-            <option value="start">Start Server</option>
-            <option value="stop">Stop Server</option>
-            <option value="command">Execute Command</option>
+            <option value="backup">{t('automation.modals.create_task.type_options.backup')}</option>
+            <option value="restart">{t('automation.modals.create_task.type_options.restart')}</option>
+            <option value="start">{t('automation.modals.create_task.type_options.start')}</option>
+            <option value="stop">{t('automation.modals.create_task.type_options.stop')}</option>
+            <option value="command">{t('automation.modals.create_task.type_options.command')}</option>
           </select>
           {isEditMode && (
             <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
-              Task type cannot be changed when editing a task
+              {t('automation.modals.create_task.type_edit_helper')}
             </p>
           )}
         </div>
@@ -240,16 +249,16 @@ export const CreateTaskModal = ({ isOpen, onClose, onSubmit, onUpdate, servers, 
         {type === 'command' && (
           <div>
             <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-              Command *
+              {t('automation.modals.create_task.command_label')}
             </label>
             <Input
               value={command}
               onChange={(e) => setCommand(e.target.value)}
-              placeholder="/say Server restart in 5 minutes"
+              placeholder={t('automation.modals.create_task.command_placeholder')}
               className="w-full font-mono"
             />
             <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
-              Enter the command to execute on the server console
+              {t('automation.modals.create_task.command_helper')}
             </p>
           </div>
         )}
@@ -258,12 +267,12 @@ export const CreateTaskModal = ({ isOpen, onClose, onSubmit, onUpdate, servers, 
         {type === 'backup' && (
           <div>
             <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-              Backup Description (Optional)
+              {t('automation.modals.create_task.description_label')}
             </label>
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g., Daily automated backup"
+              placeholder={t('automation.modals.create_task.description_placeholder')}
               className="w-full"
             />
           </div>
@@ -273,7 +282,7 @@ export const CreateTaskModal = ({ isOpen, onClose, onSubmit, onUpdate, servers, 
         {type === 'backup' && (
           <div>
             <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-              Backup Limit
+              {t('automation.modals.create_task.backup_limit_label')}
             </label>
             <Input
               type="number"
@@ -283,8 +292,7 @@ export const CreateTaskModal = ({ isOpen, onClose, onSubmit, onUpdate, servers, 
               className="w-full"
             />
             <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
-              Maximum number of backups to keep from this task. Oldest backups will be deleted when limit is exceeded.
-              Set to 0 for unlimited backups.
+              {t('automation.modals.create_task.backup_limit_helper')}
             </p>
           </div>
         )}
@@ -292,7 +300,7 @@ export const CreateTaskModal = ({ isOpen, onClose, onSubmit, onUpdate, servers, 
         {/* Schedule Preset */}
         <div>
           <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-            Schedule *
+            {t('automation.modals.create_task.schedule_label')}
           </label>
           <select
             value={cronPreset}
@@ -311,16 +319,16 @@ export const CreateTaskModal = ({ isOpen, onClose, onSubmit, onUpdate, servers, 
         {cronPreset === 'custom' && (
           <div>
             <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-              Custom Cron Expression *
+              {t('automation.modals.create_task.custom_cron_label')}
             </label>
             <Input
               value={customCron}
               onChange={(e) => setCustomCron(e.target.value)}
-              placeholder="* * * * *"
+              placeholder={t('automation.modals.create_task.custom_cron_placeholder')}
               className="w-full font-mono"
             />
             <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
-              Format: minute hour day month weekday (e.g., "0 2 * * *" = 2 AM daily)
+              {t('automation.modals.create_task.custom_cron_helper')}
             </p>
           </div>
         )}
@@ -332,23 +340,27 @@ export const CreateTaskModal = ({ isOpen, onClose, onSubmit, onUpdate, servers, 
               <Clock className="text-accent-primary flex-shrink-0 mt-0.5" size={20} />
               <div className="flex-1">
                 <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">
-                  Task Preview
+                  {t('automation.modals.create_task.preview.title')}
                 </p>
                 <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
-                  Server: {selectedServer.name}
+                  {t('automation.modals.create_task.preview.server', { server: selectedServer.name })}
                 </p>
                 <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
-                  Name: {name}
+                  {t('automation.modals.create_task.preview.name', { name })}
                 </p>
                 <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
-                  Type: {type}
+                  {t('automation.modals.create_task.preview.type', {
+                    type: t(`automation.modals.create_task.type_options.${type}`),
+                  })}
                 </p>
                 <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
-                  Schedule: {cronPreset === 'custom' ? customCron : CRON_PRESETS.find(p => p.value === cronPreset)?.label}
+                  {t('automation.modals.create_task.preview.schedule', {
+                    schedule: cronPreset === 'custom' ? customCron : CRON_PRESETS.find(p => p.value === cronPreset)?.label,
+                  })}
                 </p>
                 {type === 'command' && command && (
                   <p className="text-sm text-text-light-muted dark:text-text-muted mt-1 font-mono">
-                    Command: {command}
+                    {t('automation.modals.create_task.preview.command', { command })}
                   </p>
                 )}
               </div>
@@ -366,10 +378,16 @@ export const CreateTaskModal = ({ isOpen, onClose, onSubmit, onUpdate, servers, 
 
       <ModalFooter>
         <Button variant="ghost" onClick={handleClose} disabled={loading}>
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button variant="primary" onClick={handleSubmit} loading={loading} disabled={loading || !serverId || !name}>
-          {loading ? (isEditMode ? 'Saving...' : 'Creating...') : (isEditMode ? 'Save Changes' : 'Create Task')}
+          {loading
+            ? isEditMode
+              ? t('common.saving')
+              : t('common.creating')
+            : isEditMode
+            ? t('common.save_changes')
+            : t('automation.modals.create_task.submit')}
         </Button>
       </ModalFooter>
     </Modal>

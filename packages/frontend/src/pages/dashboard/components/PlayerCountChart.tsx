@@ -7,6 +7,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui';
 import { format } from 'date-fns';
 
@@ -20,6 +21,7 @@ interface PlayerCountChartProps {
 }
 
 export const PlayerCountChart = ({ data, range, loading }: PlayerCountChartProps) => {
+  const { t } = useTranslation();
   const chartData = data.timestamps.map((timestamp, index) => ({
     time: timestamp,
     players: data.players[index],
@@ -46,16 +48,16 @@ export const PlayerCountChart = ({ data, range, loading }: PlayerCountChartProps
   return (
     <Card variant="glass">
       <CardHeader>
-        <CardTitle>Player Activity</CardTitle>
+        <CardTitle>{t('dashboard.charts.player_activity_title')}</CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
           <div className="h-48 flex items-center justify-center text-text-light-muted dark:text-text-muted">
-            Loading chart data...
+            {t('dashboard.charts.loading')}
           </div>
         ) : chartData.length === 0 ? (
           <div className="h-48 flex items-center justify-center text-text-light-muted dark:text-text-muted">
-            No player data available
+            {t('dashboard.charts.player_activity_empty')}
           </div>
         ) : (
           <div className="h-48">
@@ -90,7 +92,10 @@ export const PlayerCountChart = ({ data, range, loading }: PlayerCountChartProps
                     color: '#F9FAFB',
                   }}
                   labelFormatter={(value) => format(new Date(value), 'PPp')}
-                  formatter={(value) => [`${Number(value)} players`, 'Players']}
+                  formatter={(value) => [
+                    t('dashboard.charts.player_activity_tooltip_value', { count: Number(value) }),
+                    t('dashboard.charts.player_activity_series'),
+                  ]}
                 />
                 <Area
                   type="monotone"

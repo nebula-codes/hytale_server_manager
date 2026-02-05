@@ -7,15 +7,42 @@ interface Props {
   title: string;
   description?: string;
   image?: string;
+  isHome?: boolean;
 }
 
 const {
   title,
-  description = 'Self-hosted Hytale server management dashboard. Monitor, manage, and scale your servers with real-time insights, automated backups, and mod marketplace integration.',
+  description = 'HytalePanel is a free, open-source, self-hosted Hytale server management dashboard. Monitor servers in real-time, automate backups, install mods, manage players, and scale your Hytale community.',
   image = '/hytale_server_manager/og-image.png',
+  isHome = false,
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const fullTitle = isHome
+  ? 'HytalePanel - Open-Source Hytale Server Manager | Self-Hosted Dashboard'
+  : `${title} | HytalePanel - Hytale Server Manager`;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'HytalePanel',
+  alternateName: 'Hytale Server Manager',
+  description: 'Free, open-source, self-hosted Hytale server management dashboard with real-time monitoring, mod marketplace, automated backups, and task automation.',
+  url: 'https://nebula-codes.github.io/hytale_server_manager/',
+  applicationCategory: 'GameApplication',
+  operatingSystem: 'Windows, Linux',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD',
+  },
+  softwareHelp: {
+    '@type': 'WebPage',
+    url: 'https://github.com/nebula-codes/hytale_server_manager',
+  },
+  isAccessibleForFree: true,
+  license: 'https://opensource.org/licenses/MIT',
+};
 ---
 
 <!doctype html>
@@ -27,23 +54,31 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <link rel="canonical" href={canonicalURL} />
 
     <!-- Primary Meta Tags -->
-    <title>{title} | Hytale Server Manager</title>
-    <meta name="title" content={`${title} | Hytale Server Manager`} />
+    <title>{fullTitle}</title>
+    <meta name="title" content={fullTitle} />
     <meta name="description" content={description} />
+    <meta name="keywords" content="hytale, hytale server, hytale server manager, hytale panel, hytale hosting, hytale mods, hytale server dashboard, hytale admin panel, self-hosted, open source, server management, game server" />
+    <meta name="author" content="Nebula Codes" />
+    <meta name="robots" content="index, follow" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalURL} />
-    <meta property="og:title" content={`${title} | Hytale Server Manager`} />
+    <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={image} />
+    <meta property="og:site_name" content="HytalePanel" />
+    <meta property="og:locale" content="en_US" />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content={canonicalURL} />
-    <meta property="twitter:title" content={`${title} | Hytale Server Manager`} />
+    <meta property="twitter:title" content={fullTitle} />
     <meta property="twitter:description" content={description} />
     <meta property="twitter:image" content={image} />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
     <!-- Theme -->
     <script is:inline>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ChevronDown,
   ChevronRight,
@@ -58,6 +59,7 @@ export const NetworkCard = ({
   onServerAction,
   isLoading,
 }: NetworkCardProps) => {
+  const { t } = useTranslation();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const networkStatus = status?.status || 'stopped';
@@ -84,17 +86,17 @@ export const NetworkCard = ({
   const getStatusBadge = () => {
     switch (networkStatus) {
       case 'running':
-        return <Badge variant="success">Running</Badge>;
+        return <Badge variant="success">{t('networks.card.status.running')}</Badge>;
       case 'stopped':
-        return <Badge variant="default">Stopped</Badge>;
+        return <Badge variant="default">{t('networks.card.status.stopped')}</Badge>;
       case 'starting':
-        return <Badge variant="warning">Starting</Badge>;
+        return <Badge variant="warning">{t('networks.card.status.starting')}</Badge>;
       case 'stopping':
-        return <Badge variant="warning">Stopping</Badge>;
+        return <Badge variant="warning">{t('networks.card.status.stopping')}</Badge>;
       case 'partial':
-        return <Badge variant="info">Partial</Badge>;
+        return <Badge variant="info">{t('networks.card.status.partial')}</Badge>;
       default:
-        return <Badge variant="default">Unknown</Badge>;
+        return <Badge variant="default">{t('networks.card.status.unknown')}</Badge>;
     }
   };
 
@@ -137,7 +139,9 @@ export const NetworkCard = ({
                 {getStatusBadge()}
               </div>
               <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
-                {network.members.length} server{network.members.length !== 1 ? 's' : ''}
+                {t('networks.card.member_count', {
+                  count: network.members.length
+                })}
                 {network.description && ` - ${network.description}`}
               </p>
             </div>
@@ -153,7 +157,7 @@ export const NetworkCard = ({
                   {metrics?.totalPlayers ?? 0}
                 </span>
               </div>
-              <p className="text-xs text-text-light-muted dark:text-text-muted">Players</p>
+              <p className="text-xs text-text-light-muted dark:text-text-muted">{t('networks.card.stats.players')}</p>
             </div>
 
             {/* Average CPU */}
@@ -164,7 +168,7 @@ export const NetworkCard = ({
                   {metrics?.averageCpuUsage?.toFixed(1) ?? '0'}%
                 </span>
               </div>
-              <p className="text-xs text-text-light-muted dark:text-text-muted">Avg CPU</p>
+              <p className="text-xs text-text-light-muted dark:text-text-muted">{t('networks.card.stats.avg_cpu')}</p>
             </div>
 
             {/* Total Memory */}
@@ -175,7 +179,7 @@ export const NetworkCard = ({
                   {formatMemory(metrics?.totalMemoryUsage ?? 0)}
                 </span>
               </div>
-              <p className="text-xs text-text-light-muted dark:text-text-muted">Memory</p>
+              <p className="text-xs text-text-light-muted dark:text-text-muted">{t('networks.card.stats.memory')}</p>
             </div>
 
             {/* Server Status Summary */}
@@ -186,7 +190,7 @@ export const NetworkCard = ({
                   {status?.runningServers ?? 0}/{status?.totalServers ?? network.members.length}
                 </span>
               </div>
-              <p className="text-xs text-text-light-muted dark:text-text-muted">Online</p>
+              <p className="text-xs text-text-light-muted dark:text-text-muted">{t('networks.card.stats.online')}</p>
             </div>
           </div>
 
@@ -199,7 +203,7 @@ export const NetworkCard = ({
                 icon={<Play size={16} />}
                 onClick={() => onStartNetwork(network.id)}
                 disabled={isLoading}
-                title="Start All"
+                title={t('networks.card.actions.start_all')}
               />
             ) : null}
             {isRunning || isPartial ? (
@@ -209,7 +213,7 @@ export const NetworkCard = ({
                 icon={<Square size={16} />}
                 onClick={() => onStopNetwork(network.id)}
                 disabled={isLoading}
-                title="Stop All"
+                title={t('networks.card.actions.stop_all')}
               />
             ) : null}
             <Button
@@ -218,14 +222,14 @@ export const NetworkCard = ({
               icon={<RotateCw size={16} />}
               onClick={() => onRestartNetwork(network.id)}
               disabled={isLoading || isStopped}
-              title="Restart All"
+              title={t('networks.card.actions.restart_all')}
             />
             <Button
               variant="ghost"
               size="sm"
               icon={<Settings size={16} />}
               onClick={() => onManageServers(network)}
-              title="Manage Servers"
+              title={t('networks.card.actions.manage')}
             />
             <Button
               variant="ghost"
@@ -233,7 +237,7 @@ export const NetworkCard = ({
               icon={<Trash2 size={16} />}
               onClick={() => setShowDeleteConfirm(true)}
               className="text-danger hover:bg-danger/10"
-              title="Delete Network"
+              title={t('networks.card.actions.delete')}
             />
           </div>
         </div>
@@ -251,7 +255,7 @@ export const NetworkCard = ({
               <span className="text-sm font-bold text-text-light-primary dark:text-text-primary">
                 {metrics?.averageCpuUsage?.toFixed(1) ?? '0'}%
               </span>
-              <p className="text-xs text-text-light-muted dark:text-text-muted">CPU</p>
+              <p className="text-xs text-text-light-muted dark:text-text-muted">{t('networks.card.stats.cpu')}</p>
             </div>
             <div className="text-center">
               <span className="text-sm font-bold text-text-light-primary dark:text-text-primary">
@@ -267,7 +271,7 @@ export const NetworkCard = ({
           <div className="border-t border-gray-800">
             {network.members.length === 0 ? (
               <div className="p-4 text-center text-text-light-muted dark:text-text-muted">
-                No servers in this network
+                {t('networks.card.empty')}
               </div>
             ) : (
               network.members.map((member, index) => (
@@ -293,9 +297,9 @@ export const NetworkCard = ({
           onDeleteNetwork(network.id);
           setShowDeleteConfirm(false);
         }}
-        title="Delete Network"
-        message={`Are you sure you want to delete "${network.name}"? This will only remove the network grouping, not the servers themselves.`}
-        confirmLabel="Delete Network"
+        title={t('networks.card.confirm.title')}
+        message={t('networks.card.confirm.message', { name: network.name })}
+        confirmLabel={t('networks.card.confirm.confirm')}
         variant="danger"
       />
     </>

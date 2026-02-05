@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, ModalFooter, Button } from '../../components/ui';
 import { Save } from 'lucide-react';
 import { api } from '../../services/api';
@@ -22,6 +23,7 @@ interface FileEditorModalProps {
 }
 
 export const FileEditorModal = ({ isOpen, onClose, onSave, serverId, file }: FileEditorModalProps) => {
+  const { t } = useTranslation();
   const [content, setContent] = useState('');
   const [originalContent, setOriginalContent] = useState('');
   const [loading, setLoading] = useState(false);
@@ -49,7 +51,7 @@ export const FileEditorModal = ({ isOpen, onClose, onSave, serverId, file }: Fil
       setOriginalContent(response.content);
     } catch (err: any) {
       console.error('Error reading file:', err);
-      setError(err.message || 'Failed to load file');
+      setError(err.message || t('files.editor.load_error'));
     } finally {
       setLoading(false);
     }
@@ -66,7 +68,7 @@ export const FileEditorModal = ({ isOpen, onClose, onSave, serverId, file }: Fil
       handleClose();
     } catch (err: any) {
       console.error('Error saving file:', err);
-      setError(err.message || 'Failed to save file');
+      setError(err.message || t('files.editor.save_error'));
     } finally {
       setSaving(false);
     }
@@ -107,7 +109,7 @@ export const FileEditorModal = ({ isOpen, onClose, onSave, serverId, file }: Fil
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title={`Edit File: ${file.name}`} size="xl">
+    <Modal isOpen={isOpen} onClose={handleClose} title={t('files.editor.title', { name: file.name })} size="xl">
       <div className="space-y-4">
         {/* File Info */}
         <div className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-900 rounded-lg">
@@ -116,11 +118,11 @@ export const FileEditorModal = ({ isOpen, onClose, onSave, serverId, file }: Fil
               {file.name}
             </p>
             <p className="text-xs text-text-light-muted dark:text-text-muted">
-              {getFileLanguage()} • {(file.size / 1024).toFixed(2)} KB
+              {t('files.editor.meta', { lang: getFileLanguage(), size: (file.size / 1024).toFixed(2) })}
             </p>
           </div>
           {hasChanges && (
-            <span className="text-xs text-warning font-medium">● Unsaved changes</span>
+            <span className="text-xs text-warning font-medium">● {t('files.editor.unsaved')}</span>
           )}
         </div>
 
@@ -134,7 +136,7 @@ export const FileEditorModal = ({ isOpen, onClose, onSave, serverId, file }: Fil
         {/* Editor */}
         {loading ? (
           <div className="flex items-center justify-center h-96">
-            <p className="text-text-light-muted dark:text-text-muted">Loading file...</p>
+            <p className="text-text-light-muted dark:text-text-muted">{t('files.editor.loading')}</p>
           </div>
         ) : (
           <textarea
@@ -142,20 +144,20 @@ export const FileEditorModal = ({ isOpen, onClose, onSave, serverId, file }: Fil
             onChange={(e) => setContent(e.target.value)}
             className="w-full h-[500px] bg-white dark:bg-primary-bg-secondary text-text-light-primary dark:text-text-primary font-mono text-sm p-4 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-accent-primary resize-none"
             spellCheck={false}
-            placeholder="File content..."
+            placeholder={t('files.editor.placeholder')}
           />
         )}
 
         {/* Line Count */}
         <div className="flex justify-between text-xs text-text-light-muted dark:text-text-muted">
-          <span>{content.split('\n').length} lines</span>
-          <span>{content.length} characters</span>
+          <span>{t('files.editor.lines', { count: content.split('\n').length })}</span>
+          <span>{t('files.editor.characters', { count: content.length })}</span>
         </div>
       </div>
 
       <ModalFooter>
         <Button variant="ghost" onClick={handleClose} disabled={saving}>
-          Cancel
+          {t('common.cancel', { defaultValue: 'Cancel' })}
         </Button>
         <Button
           variant="primary"
@@ -164,7 +166,7 @@ export const FileEditorModal = ({ isOpen, onClose, onSave, serverId, file }: Fil
           loading={saving}
           disabled={saving || !hasChanges || loading}
         >
-          {saving ? 'Saving...' : 'Save Changes'}
+          {saving ? t('common.saving', { defaultValue: 'Saving...' }) : t('files.editor.save')}
         </Button>
       </ModalFooter>
     </Modal>

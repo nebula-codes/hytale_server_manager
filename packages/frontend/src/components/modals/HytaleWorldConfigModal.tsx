@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, ModalFooter, Button, Input } from '../ui';
+import { useTranslation } from 'react-i18next';
 import {
   ChevronDown,
   ChevronRight,
@@ -183,6 +184,7 @@ export const HytaleWorldConfigModal = ({
   onClose,
   onSaved,
 }: HytaleWorldConfigModalProps) => {
+  const { t } = useTranslation();
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -213,7 +215,7 @@ export const HytaleWorldConfigModal = ({
       setJsonText(JSON.stringify(data, null, 2));
       setHasChanges(false);
     } catch (err: any) {
-      setError(err.message || 'Failed to load world config');
+      setError(err.message || t('servers.world_config.toast.load_failed'));
     } finally {
       setLoading(false);
     }
@@ -228,7 +230,7 @@ export const HytaleWorldConfigModal = ({
         setJsonError(null);
         setViewMode('form');
       } catch (err: any) {
-        setJsonError('Invalid JSON: ' + err.message);
+        setJsonError(t('servers.world_config.json.invalid', { error: err.message }));
       }
     }
   };
@@ -286,7 +288,7 @@ export const HytaleWorldConfigModal = ({
         configToSave = JSON.parse(jsonText);
         setJsonError(null);
       } catch (err: any) {
-        setJsonError('Invalid JSON: ' + err.message);
+        setJsonError(t('servers.world_config.json.invalid', { error: err.message }));
         return;
       }
     }
@@ -296,27 +298,27 @@ export const HytaleWorldConfigModal = ({
     setSaving(true);
     try {
       await api.updateWorldConfig(world.serverId, world.id, configToSave);
-      toast.success('Config saved', 'World configuration has been updated');
+      toast.success(t('servers.world_config.toast.saved.title'), t('servers.world_config.toast.saved.description'));
       setHasChanges(false);
       onSaved?.();
       onClose();
     } catch (err: any) {
-      toast.error('Failed to save config', err.message || 'An error occurred');
+      toast.error(t('servers.world_config.toast.save_failed.title'), err.message || t('common.error'));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`World Config - ${world.name}`} size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('servers.world_config.title', { name: world.name })} size="lg">
       {/* Server Running Warning */}
       {isServerRunning && (
         <div className="flex items-center gap-3 p-4 mb-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
           <AlertTriangle className="text-amber-500 flex-shrink-0" size={20} />
           <div>
-            <p className="text-sm font-medium text-amber-500">Server is running</p>
+            <p className="text-sm font-medium text-amber-500">{t('servers.world_config.running.title')}</p>
             <p className="text-xs text-amber-500/80">
-              Stop the server to edit world configuration
+              {t('servers.world_config.running.subtitle')}
             </p>
           </div>
         </div>
@@ -334,7 +336,7 @@ export const HytaleWorldConfigModal = ({
             }`}
           >
             <SlidersHorizontal size={16} />
-            Form
+            {t('servers.world_config.view.form')}
           </button>
           <button
             onClick={switchToJsonView}
@@ -345,7 +347,7 @@ export const HytaleWorldConfigModal = ({
             }`}
           >
             <Code size={16} />
-            JSON
+            {t('servers.world_config.view.json')}
           </button>
         </div>
       )}
@@ -367,7 +369,7 @@ export const HytaleWorldConfigModal = ({
         <div className="text-center py-12">
           <p className="text-red-500 mb-4">{error}</p>
           <Button variant="secondary" onClick={loadConfig}>
-            Retry
+            {t('common.retry')}
           </Button>
         </div>
       ) : config && viewMode === 'json' ? (
@@ -382,53 +384,53 @@ export const HytaleWorldConfigModal = ({
         </div>
       ) : config ? (
         <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-          {/* Gameplay Section */}
-          <CollapsibleSection title="Gameplay" icon={<Swords size={18} />}>
+         {/* Gameplay Section */}
+          <CollapsibleSection title={t('servers.world_config.sections.gameplay')} icon={<Swords size={18} />}>
             <ToggleSetting
-              label="PvP Enabled"
-              description="Allow players to damage each other"
+              label={t('servers.world_config.gameplay.pvp')}
+              description={t('servers.world_config.gameplay.pvp_desc')}
               checked={config.IsPvpEnabled ?? true}
               onChange={(v) => updateConfig('IsPvpEnabled', v)}
               disabled={isDisabled}
             />
             <ToggleSetting
-              label="Fall Damage"
-              description="Players take damage from falling"
+              label={t('servers.world_config.gameplay.fall_damage')}
+              description={t('servers.world_config.gameplay.fall_damage_desc')}
               checked={config.IsFallDamageEnabled ?? true}
               onChange={(v) => updateConfig('IsFallDamageEnabled', v)}
               disabled={isDisabled}
             />
             <ToggleSetting
-              label="NPC Spawning"
-              description="Allow NPCs to spawn in the world"
+              label={t('servers.world_config.gameplay.npc_spawning')}
+              description={t('servers.world_config.gameplay.npc_spawning_desc')}
               checked={config.IsSpawningNPC ?? true}
               onChange={(v) => updateConfig('IsSpawningNPC', v)}
               disabled={isDisabled}
             />
             <ToggleSetting
-              label="Freeze All NPCs"
-              description="Prevent all NPCs from moving"
+              label={t('servers.world_config.gameplay.freeze_npc')}
+              description={t('servers.world_config.gameplay.freeze_npc_desc')}
               checked={config.IsAllNPCFrozen ?? false}
               onChange={(v) => updateConfig('IsAllNPCFrozen', v)}
               disabled={isDisabled}
             />
             <ToggleSetting
-              label="Spawn Markers"
-              description="Show spawn point markers"
+              label={t('servers.world_config.gameplay.spawn_markers')}
+              description={t('servers.world_config.gameplay.spawn_markers_desc')}
               checked={config.IsSpawnMarkersEnabled ?? true}
               onChange={(v) => updateConfig('IsSpawnMarkersEnabled', v)}
               disabled={isDisabled}
             />
             <ToggleSetting
-              label="Objective Markers"
-              description="Show objective markers on HUD"
+              label={t('servers.world_config.gameplay.objective_markers')}
+              description={t('servers.world_config.gameplay.objective_markers_desc')}
               checked={config.IsObjectiveMarkersEnabled ?? true}
               onChange={(v) => updateConfig('IsObjectiveMarkersEnabled', v)}
               disabled={isDisabled}
             />
             <ToggleSetting
-              label="Compass Updating"
-              description="Allow compass to update direction"
+              label={t('servers.world_config.gameplay.compass')}
+              description={t('servers.world_config.gameplay.compass_desc')}
               checked={config.IsCompassUpdating ?? true}
               onChange={(v) => updateConfig('IsCompassUpdating', v)}
               disabled={isDisabled}
@@ -436,10 +438,10 @@ export const HytaleWorldConfigModal = ({
           </CollapsibleSection>
 
           {/* Time & Effects Section */}
-          <CollapsibleSection title="Time & Effects" icon={<Clock size={18} />}>
+          <CollapsibleSection title={t('servers.world_config.sections.time')} icon={<Clock size={18} />}>
             <ToggleSetting
-              label="Game Time Paused"
-              description="Freeze the day/night cycle"
+              label={t('servers.world_config.time.paused')}
+              description={t('servers.world_config.time.paused_desc')}
               checked={config.IsGameTimePaused ?? false}
               onChange={(v) => updateConfig('IsGameTimePaused', v)}
               disabled={isDisabled}
@@ -447,8 +449,8 @@ export const HytaleWorldConfigModal = ({
             {config.ClientEffects && (
               <>
                 <NumberSetting
-                  label="Sun Height %"
-                  description="Vertical position of the sun (0-100%)"
+                  label={t('servers.world_config.time.sun_height')}
+                  description={t('servers.world_config.time.sun_height_desc')}
                   value={config.ClientEffects.SunHeightPercent ?? 100}
                   onChange={(v) => updateClientEffect('SunHeightPercent', v)}
                   disabled={isDisabled}
@@ -457,8 +459,8 @@ export const HytaleWorldConfigModal = ({
                   step={1}
                 />
                 <NumberSetting
-                  label="Sun Angle"
-                  description="Rotation angle of the sun in degrees"
+                  label={t('servers.world_config.time.sun_angle')}
+                  description={t('servers.world_config.time.sun_angle_desc')}
                   value={config.ClientEffects.SunAngleDegrees ?? 0}
                   onChange={(v) => updateClientEffect('SunAngleDegrees', v)}
                   disabled={isDisabled}
@@ -467,8 +469,8 @@ export const HytaleWorldConfigModal = ({
                   step={1}
                 />
                 <NumberSetting
-                  label="Sun Intensity"
-                  description="Brightness of the sun"
+                  label={t('servers.world_config.time.sun_intensity')}
+                  description={t('servers.world_config.time.sun_intensity_desc')}
                   value={config.ClientEffects.SunIntensity ?? 0.25}
                   onChange={(v) => updateClientEffect('SunIntensity', v)}
                   disabled={isDisabled}
@@ -476,8 +478,8 @@ export const HytaleWorldConfigModal = ({
                   max={2}
                 />
                 <NumberSetting
-                  label="Bloom Intensity"
-                  description="Post-processing bloom effect"
+                  label={t('servers.world_config.time.bloom_intensity')}
+                  description={t('servers.world_config.time.bloom_intensity_desc')}
                   value={config.ClientEffects.BloomIntensity ?? 0.3}
                   onChange={(v) => updateClientEffect('BloomIntensity', v)}
                   disabled={isDisabled}
@@ -485,8 +487,8 @@ export const HytaleWorldConfigModal = ({
                   max={2}
                 />
                 <NumberSetting
-                  label="Bloom Power"
-                  description="Bloom effect power"
+                  label={t('servers.world_config.time.bloom_power')}
+                  description={t('servers.world_config.time.bloom_power_desc')}
                   value={config.ClientEffects.BloomPower ?? 8}
                   onChange={(v) => updateClientEffect('BloomPower', v)}
                   disabled={isDisabled}
@@ -499,59 +501,59 @@ export const HytaleWorldConfigModal = ({
           </CollapsibleSection>
 
           {/* World Management Section */}
-          <CollapsibleSection title="World Management" icon={<Settings size={18} />}>
+          <CollapsibleSection title={t('servers.world_config.sections.management')} icon={<Settings size={18} />}>
             <ToggleSetting
-              label="World Ticking"
-              description="Enable world simulation updates"
+              label={t('servers.world_config.management.world_ticking')}
+              description={t('servers.world_config.management.world_ticking_desc')}
               checked={config.IsTicking ?? true}
               onChange={(v) => updateConfig('IsTicking', v)}
               disabled={isDisabled}
             />
             <ToggleSetting
-              label="Block Ticking"
-              description="Enable random block updates"
+              label={t('servers.world_config.management.block_ticking')}
+              description={t('servers.world_config.management.block_ticking_desc')}
               checked={config.IsBlockTicking ?? true}
               onChange={(v) => updateConfig('IsBlockTicking', v)}
               disabled={isDisabled}
             />
             <ToggleSetting
-              label="Save Players"
-              description="Persist player data to disk"
+              label={t('servers.world_config.management.save_players')}
+              description={t('servers.world_config.management.save_players_desc')}
               checked={config.IsSavingPlayers ?? true}
               onChange={(v) => updateConfig('IsSavingPlayers', v)}
               disabled={isDisabled}
             />
             <ToggleSetting
-              label="Save Chunks"
-              description="Persist chunk data to disk"
+              label={t('servers.world_config.management.save_chunks')}
+              description={t('servers.world_config.management.save_chunks_desc')}
               checked={config.IsSavingChunks ?? true}
               onChange={(v) => updateConfig('IsSavingChunks', v)}
               disabled={isDisabled}
             />
             <ToggleSetting
-              label="Save New Chunks"
-              description="Save newly generated chunks"
+              label={t('servers.world_config.management.save_new_chunks')}
+              description={t('servers.world_config.management.save_new_chunks_desc')}
               checked={config.SaveNewChunks ?? true}
               onChange={(v) => updateConfig('SaveNewChunks', v)}
               disabled={isDisabled}
             />
             <ToggleSetting
-              label="Unload Chunks"
-              description="Unload inactive chunks from memory"
+              label={t('servers.world_config.management.unload_chunks')}
+              description={t('servers.world_config.management.unload_chunks_desc')}
               checked={config.IsUnloadingChunks ?? true}
               onChange={(v) => updateConfig('IsUnloadingChunks', v)}
               disabled={isDisabled}
             />
             <ToggleSetting
-              label="Delete on Universe Start"
-              description="Remove world when universe starts"
+              label={t('servers.world_config.management.delete_on_start')}
+              description={t('servers.world_config.management.delete_on_start_desc')}
               checked={config.DeleteOnUniverseStart ?? false}
               onChange={(v) => updateConfig('DeleteOnUniverseStart', v)}
               disabled={isDisabled}
             />
             <ToggleSetting
-              label="Delete on Remove"
-              description="Delete world files when removed"
+              label={t('servers.world_config.management.delete_on_remove')}
+              description={t('servers.world_config.management.delete_on_remove_desc')}
               checked={config.DeleteOnRemove ?? false}
               onChange={(v) => updateConfig('DeleteOnRemove', v)}
               disabled={isDisabled}
@@ -559,25 +561,25 @@ export const HytaleWorldConfigModal = ({
           </CollapsibleSection>
 
           {/* Info Section (Read-only) */}
-          <CollapsibleSection title="Info (Read-only)" icon={<Info size={18} />} defaultOpen={false}>
-            <ReadOnlyField label="Version" value={config.Version} />
-            <ReadOnlyField label="Seed" value={config.Seed} />
-            <ReadOnlyField label="World Generator" value={config.WorldGen?.Name} />
-            <ReadOnlyField label="Gameplay Config" value={config.GameplayConfig} />
+          <CollapsibleSection title={t('servers.world_config.sections.info')} icon={<Info size={18} />} defaultOpen={false}>
+            <ReadOnlyField label={t('servers.world_config.info.version')} value={config.Version} />
+            <ReadOnlyField label={t('servers.world_config.info.seed')} value={config.Seed} />
+            <ReadOnlyField label={t('servers.world_config.info.generator')} value={config.WorldGen?.Name} />
+            <ReadOnlyField label={t('servers.world_config.info.gameplay')} value={config.GameplayConfig} />
           </CollapsibleSection>
         </div>
       ) : null}
 
       <ModalFooter>
         <Button variant="ghost" onClick={onClose}>
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button
           variant="primary"
           onClick={handleSave}
           disabled={isDisabled || saving || !hasChanges}
         >
-          {saving ? 'Saving...' : 'Save Changes'}
+          {saving ? t('common.saving') : t('common.save_changes')}
         </Button>
       </ModalFooter>
     </Modal>

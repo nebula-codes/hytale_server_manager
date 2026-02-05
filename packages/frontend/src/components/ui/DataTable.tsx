@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronUp, ChevronsUpDown, Download, Eye, Search } from 'lucide-react';
 import { Button } from './Button';
 import { Input } from './Input';
@@ -39,6 +40,7 @@ export function DataTable<T extends Record<string, any>>({
   onSelectionChange,
   bulkActions,
 }: DataTableProps<T>) {
+  const { t } = useTranslation();
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [searchQuery, setSearchQuery] = useState('');
@@ -202,7 +204,7 @@ export function DataTable<T extends Record<string, any>>({
         {searchable && (
           <div className="flex-1 max-w-sm">
             <Input
-              placeholder="Search..."
+              placeholder={t('table.search')}
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -216,7 +218,7 @@ export function DataTable<T extends Record<string, any>>({
           {/* Column Visibility */}
           <div className="relative group">
             <Button variant="ghost" size="sm" icon={<Eye size={16} />}>
-              Columns
+              {t('table.columns')}
             </Button>
             <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-primary-bg-secondary border border-gray-300 dark:border-gray-800 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
               <div className="p-2 space-y-1">
@@ -241,7 +243,7 @@ export function DataTable<T extends Record<string, any>>({
           {/* Export */}
           {exportable && (
             <Button variant="ghost" size="sm" icon={<Download size={16} />} onClick={exportToCSV}>
-              Export CSV
+              {t('table.export')}
             </Button>
           )}
         </div>
@@ -251,12 +253,12 @@ export function DataTable<T extends Record<string, any>>({
       {selectable && selectedIds.size > 0 && (
         <div className="flex items-center justify-between bg-accent-primary/10 border border-accent-primary/30 rounded-lg px-4 py-2">
           <span className="text-sm text-text-light-primary dark:text-text-primary">
-            {selectedIds.size} item{selectedIds.size !== 1 ? 's' : ''} selected
+            {t('table.selection.count', { count: selectedIds.size })}
           </span>
           <div className="flex items-center gap-2">
             {bulkActions}
             <Button variant="ghost" size="sm" onClick={clearSelection}>
-              Clear selection
+              {t('table.selection.clear')}
             </Button>
           </div>
         </div>
@@ -317,7 +319,7 @@ export function DataTable<T extends Record<string, any>>({
                   colSpan={visibleColumns.length + (selectable ? 1 : 0)}
                   className="px-4 py-12 text-center text-text-light-muted dark:text-text-muted"
                 >
-                  No data found
+                  {t('table.no_data')}
                 </td>
               </tr>
             ) : (
@@ -329,9 +331,8 @@ export function DataTable<T extends Record<string, any>>({
                   <tr
                     key={itemId}
                     onClick={() => onRowClick?.(item)}
-                    className={`border-t border-gray-800/50 dark:border-gray-800/50 ${
-                      onRowClick ? 'cursor-pointer hover:bg-primary-bg/50 dark:hover:bg-primary-bg/50' : ''
-                    } ${isSelected ? 'bg-accent-primary/5' : ''} transition-colors`}
+                    className={`border-t border-gray-800/50 dark:border-gray-800/50 ${onRowClick ? 'cursor-pointer hover:bg-primary-bg/50 dark:hover:bg-primary-bg/50' : ''
+                      } ${isSelected ? 'bg-accent-primary/5' : ''} transition-colors`}
                   >
                     {selectable && (
                       <td className="w-12 px-4 py-3">
@@ -369,11 +370,14 @@ export function DataTable<T extends Record<string, any>>({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <p className="text-sm text-text-light-muted dark:text-text-muted">
-            Showing {sortedData.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} to{' '}
-            {Math.min(currentPage * pageSize, sortedData.length)} of {sortedData.length} results
+            {t('table.pagination.showing', {
+              start: sortedData.length > 0 ? (currentPage - 1) * pageSize + 1 : 0,
+              end: Math.min(currentPage * pageSize, sortedData.length),
+              total: sortedData.length
+            })}
           </p>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-text-light-muted dark:text-text-muted">Per page:</span>
+            <span className="text-sm text-text-light-muted dark:text-text-muted">{t('table.pagination.per_page')}</span>
             <select
               value={pageSize}
               onChange={(e) => {
@@ -398,7 +402,7 @@ export function DataTable<T extends Record<string, any>>({
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
             >
-              Previous
+              {t('table.pagination.previous')}
             </Button>
             <div className="flex items-center gap-1">
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -417,11 +421,10 @@ export function DataTable<T extends Record<string, any>>({
                   <button
                     key={pageNum}
                     onClick={() => setCurrentPage(pageNum)}
-                    className={`px-3 py-1 rounded text-sm transition-colors ${
-                      currentPage === pageNum
-                        ? 'bg-accent-primary text-black font-medium'
-                        : 'text-text-light-muted dark:text-text-muted hover:text-text-primary dark:hover:text-text-primary hover:bg-primary-bg dark:hover:bg-primary-bg'
-                    }`}
+                    className={`px-3 py-1 rounded text-sm transition-colors ${currentPage === pageNum
+                      ? 'bg-accent-primary text-black font-medium'
+                      : 'text-text-light-muted dark:text-text-muted hover:text-text-primary dark:hover:text-text-primary hover:bg-primary-bg dark:hover:bg-primary-bg'
+                      }`}
                   >
                     {pageNum}
                   </button>
@@ -434,7 +437,7 @@ export function DataTable<T extends Record<string, any>>({
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
             >
-              Next
+              {t('table.pagination.next')}
             </Button>
           </div>
         )}

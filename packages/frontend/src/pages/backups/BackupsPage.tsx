@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge, DataTable, type Column } from '../../components/ui';
 import { Database, RotateCcw, Plus, Calendar, Trash2, AlertCircle, X } from 'lucide-react';
 import { useToast } from '../../stores/toastStore';
@@ -35,6 +36,7 @@ interface Server {
 export const BackupsPage = () => {
   const navigate = useNavigate();
   const toast = useToast();
+  const { t } = useTranslation();
   const [servers, setServers] = useState<Server[]>([]);
   const [selectedServer, setSelectedServer] = useState<string>('all');
   const [backups, setBackups] = useState<Backup[]>([]);
@@ -77,7 +79,7 @@ export const BackupsPage = () => {
       setServers(data.map((s: any) => ({ id: s.id, name: s.name, status: s.status })));
     } catch (error) {
       console.error('Error fetching servers:', error);
-      toast.error('Failed to load servers', 'Please try again later');
+      toast.error(t('backups.toast.load_servers.title'), t('backups.toast.load_servers.description'));
     }
   };
 
@@ -117,7 +119,7 @@ export const BackupsPage = () => {
       }
     } catch (error: any) {
       console.error('Error fetching backups:', error);
-      toast.error('Failed to load backups', error.message);
+      toast.error(t('backups.toast.load_backups.title'), error.message || t('backups.toast.generic_error'));
     } finally {
       setLoading(false);
     }
@@ -126,22 +128,28 @@ export const BackupsPage = () => {
   const handleCreateBackup = async (serverId: string, description: string) => {
     try {
       const backup = await api.createBackup<Backup>(serverId, description);
-      toast.success('Backup started', `${backup.server.name} backup is being created in the background`);
+      toast.success(
+        t('backups.toast.backup_started.title'),
+        t('backups.toast.backup_started.description', { server: backup.server.name })
+      );
       await fetchBackups();
     } catch (error: any) {
-      toast.error('Failed to create backup', error.message);
+      toast.error(t('backups.toast.create_failed.title'), error.message || t('backups.toast.generic_error'));
       throw error;
     }
   };
 
   const handleRestore = async (backup: Backup) => {
-    if (!confirm(`Are you sure you want to restore ${backup.server.name} from this backup? This will replace all current server files.`)) {
+    if (!confirm(t('backups.confirm.restore', { server: backup.server.name }))) {
       return;
     }
 
     try {
       await api.restoreBackup(backup.id);
-      toast.success('Backup restored', `${backup.server.name} has been restored from backup`);
+      toast.success(
+        t('backups.toast.restored.title'),
+        t('backups.toast.restored.description', { server: backup.server.name })
+      );
       await fetchBackups();
     } catch (error: any) {
       toast.error('Failed to restore backup', error.message);
@@ -149,23 +157,23 @@ export const BackupsPage = () => {
   };
 
   const handleDelete = async (backup: Backup) => {
-    if (!confirm(`Are you sure you want to delete this backup? This action cannot be undone.`)) {
+    if (!confirm(t('backups.confirm.delete_backup'))) {
       return;
     }
 
     try {
       await api.deleteBackup(backup.id);
-      toast.success('Backup deleted', 'Backup has been removed');
+      toast.success(t('backups.toast.deleted.title'), t('backups.toast.deleted.description'));
       await fetchBackups();
     } catch (error: any) {
-      toast.error('Failed to delete backup', error.message);
+      toast.error(t('backups.toast.delete_failed.title'), error.message || t('backups.toast.generic_error'));
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedBackups.length === 0) return;
 
-    if (!confirm(`Are you sure you want to delete ${selectedBackups.length} backup(s)? This action cannot be undone.`)) {
+    if (!confirm(t('backups.confirm.bulk_delete', { count: selectedBackups.length }))) {
       return;
     }
 
@@ -176,13 +184,16 @@ export const BackupsPage = () => {
 
       if (result.deleted > 0) {
         toast.success(
-          `Deleted ${result.deleted} backup(s)`,
-          result.failed > 0 ? `${result.failed} backup(s) failed to delete` : undefined
+          t('backups.toast.bulk_deleted.title', { count: result.deleted }),
+          result.failed > 0 ? t('backups.toast.bulk_deleted.description', { failed: result.failed }) : undefined
         );
       }
 
       if (result.failed > 0) {
-        toast.warning('Some backups failed to delete', result.errors?.join(', ') || 'Unknown error');
+        toast.warning(
+          t('backups.toast.bulk_failed.title'),
+          result.errors?.join(', ') || t('backups.toast.generic_error')
+        );
       }
 
       await fetchBackups();
@@ -202,10 +213,13 @@ export const BackupsPage = () => {
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   };
 
+  const getStatusLabel = (status: string) =>
+    t(`backups.statuses.${status}`, { defaultValue: status });
+
   const columns: Column<Backup>[] = [
     {
       key: 'serverName',
-      label: 'Server',
+      label: t('backups.columns.server'),
       render: (backup) => (
         <div>
           <button
@@ -223,19 +237,19 @@ export const BackupsPage = () => {
     },
     {
       key: 'name',
-      label: 'Name',
+      label: t('backups.columns.name'),
       render: (backup) => (
         <span className="text-sm font-mono text-text-light-primary dark:text-text-primary">{backup.name}</span>
       ),
     },
     {
       key: 'fileSize',
-      label: 'Size',
+      label: t('backups.columns.size'),
       render: (backup) => <span>{formatBytes(backup.fileSize)}</span>,
     },
     {
       key: 'files',
-      label: 'Files',
+      label: t('backups.columns.files'),
       render: (backup) => {
         if (backup.totalFiles === null) {
           return <span className="text-text-light-muted dark:text-text-muted">-</span>;
@@ -253,7 +267,7 @@ export const BackupsPage = () => {
                 className="!p-1"
                 icon={<AlertCircle size={14} className="text-warning" />}
                 onClick={() => setViewingSkippedFiles(backup)}
-                title={`${skippedCount} files skipped`}
+                title={t('backups.tooltips.files_skipped', { count: skippedCount })}
               />
             )}
           </div>
@@ -262,7 +276,7 @@ export const BackupsPage = () => {
     },
     {
       key: 'createdAt',
-      label: 'Created',
+      label: t('backups.columns.created'),
       render: (backup) => (
         <div>
           <p>{new Date(backup.createdAt).toLocaleDateString()}</p>
@@ -274,27 +288,27 @@ export const BackupsPage = () => {
     },
     {
       key: 'status',
-      label: 'Status',
+      label: t('backups.columns.status'),
       render: (backup) => (
         <Badge
           variant={
             backup.status === 'completed'
               ? 'success'
               : backup.status === 'creating'
-              ? 'info'
-              : backup.status === 'failed'
-              ? 'danger'
-              : 'warning'
+                ? 'info'
+                : backup.status === 'failed'
+                  ? 'danger'
+                  : 'warning'
           }
           size="sm"
         >
-          {backup.status}
+          {getStatusLabel(backup.status)}
         </Badge>
       ),
     },
     {
       key: 'actions',
-      label: 'Actions',
+      label: t('backups.columns.actions'),
       sortable: false,
       render: (backup) => (
         <div className="flex gap-2">
@@ -306,7 +320,7 @@ export const BackupsPage = () => {
                 icon={<RotateCcw size={14} />}
                 onClick={() => handleRestore(backup)}
               >
-                Restore
+                {t('backups.actions.restore')}
               </Button>
             </>
           )}
@@ -316,7 +330,7 @@ export const BackupsPage = () => {
             icon={<Trash2 size={14} />}
             onClick={() => handleDelete(backup)}
           >
-            Delete
+            {t('backups.actions.delete')}
           </Button>
         </div>
       ),
@@ -329,37 +343,35 @@ export const BackupsPage = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">
-            Backups
+            {t('backups.title')}
           </h1>
-          <p className="text-text-light-muted dark:text-text-muted mt-1">Manage server backups and schedules</p>
+          <p className="text-text-light-muted dark:text-text-muted mt-1">{t('backups.subtitle')}</p>
         </div>
         <Button variant="primary" icon={<Plus size={18} />} onClick={() => setShowCreateModal(true)}>
-          Create Backup
+          {t('backups.actions.create_backup')}
         </Button>
       </div>
 
       {/* Server Selector */}
       <div className="flex flex-wrap gap-2 items-center">
-        <span className="text-sm text-text-light-muted dark:text-text-muted">Server:</span>
+        <span className="text-sm text-text-light-muted dark:text-text-muted">{t('backups.server_selector.label')}</span>
         <button
           onClick={() => setSelectedServer('all')}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            selectedServer === 'all'
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedServer === 'all'
               ? 'bg-accent-primary text-black'
               : 'bg-white dark:bg-primary-bg-secondary text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary'
-          }`}
+            }`}
         >
-          All Servers
+          {t('backups.server_selector.all_servers')}
         </button>
         {servers.map((server) => (
           <button
             key={server.id}
             onClick={() => setSelectedServer(server.id)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              selectedServer === server.id
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedServer === server.id
                 ? 'bg-accent-primary text-black'
                 : 'bg-white dark:bg-primary-bg-secondary text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary'
-            }`}
+              }`}
           >
             {server.name}
           </button>
@@ -372,12 +384,12 @@ export const BackupsPage = () => {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-text-light-muted dark:text-text-muted text-sm">Total Backups</p>
+                <p className="text-text-light-muted dark:text-text-muted text-sm">{t('backups.stats.total')}</p>
                 <p className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary mt-1">
                   {stats.totalBackups}
                 </p>
                 <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
-                  {stats.completedBackups} completed, {stats.failedBackups} failed
+                  {t('backups.stats.completed_failed', { completed: stats.completedBackups, failed: stats.failedBackups })}
                 </p>
               </div>
               <Database size={32} className="text-accent-primary" />
@@ -388,7 +400,7 @@ export const BackupsPage = () => {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-text-light-muted dark:text-text-muted text-sm">Storage Used</p>
+                <p className="text-text-light-muted dark:text-text-muted text-sm">{t('backups.stats.storage_used')}</p>
                 <p className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary mt-1">
                   {formatBytes(stats.totalSize)}
                 </p>
@@ -401,7 +413,7 @@ export const BackupsPage = () => {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-text-light-muted dark:text-text-muted text-sm">Avg Backup Size</p>
+                <p className="text-text-light-muted dark:text-text-muted text-sm">{t('backups.stats.avg_size')}</p>
                 <p className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary mt-1">
                   {stats.totalBackups > 0 ? formatBytes(stats.totalSize / stats.totalBackups) : '0 Bytes'}
                 </p>
@@ -416,18 +428,20 @@ export const BackupsPage = () => {
       <Card variant="glass">
         <CardHeader>
           <CardTitle>
-            {selectedServer === 'all' ? 'All Backups' : `${servers.find(s => s.id === selectedServer)?.name} Backups`}
-            {loading && ' (Loading...)'}
+            {selectedServer === 'all'
+              ? t('backups.cards.all_backups')
+              : t('backups.cards.server_backups', { server: servers.find(s => s.id === selectedServer)?.name })}
+            {loading ? ` (${t('common.loading')})` : ''}
           </CardTitle>
-          <CardDescription>All server backups with advanced filtering and sorting</CardDescription>
+          <CardDescription>{t('backups.cards.description')}</CardDescription>
         </CardHeader>
         <CardContent>
           {backups.length === 0 && !loading ? (
             <div className="text-center py-12 text-text-light-muted dark:text-text-muted">
               <Database size={48} className="mx-auto mb-4 opacity-50" />
-              <p>No backups found</p>
+              <p>{t('backups.empty.title')}</p>
               <Button variant="primary" className="mt-4" onClick={() => setShowCreateModal(true)}>
-                Create Your First Backup
+                {t('backups.empty.button')}
               </Button>
             </div>
           ) : (
@@ -449,7 +463,7 @@ export const BackupsPage = () => {
                   loading={deletingMultiple}
                   disabled={deletingMultiple}
                 >
-                  Delete Selected
+                  {t('backups.actions.delete_selected')}
                 </Button>
               }
             />
@@ -471,7 +485,7 @@ export const BackupsPage = () => {
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
               <div>
                 <h2 className="text-lg font-heading font-bold text-text-light-primary dark:text-text-primary">
-                  Skipped Files
+                  {t('backups.skipped.title')}
                 </h2>
                 <p className="text-sm text-text-light-muted dark:text-text-muted">
                   {viewingSkippedFiles.name}
@@ -493,7 +507,7 @@ export const BackupsPage = () => {
                 if (skippedFiles.length === 0) {
                   return (
                     <p className="text-text-light-muted dark:text-text-muted text-center py-8">
-                      No files were skipped during this backup.
+                      {t('backups.skipped.none')}
                     </p>
                   );
                 }
@@ -507,13 +521,13 @@ export const BackupsPage = () => {
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 text-sm text-text-light-muted dark:text-text-muted">
                       <AlertCircle size={16} className="text-warning" />
-                      <span>{skippedFiles.length} file(s) were skipped during backup</span>
+                      <span>{t('backups.skipped.summary', { count: skippedFiles.length })}</span>
                     </div>
 
                     {byPattern.length > 0 && (
                       <div>
                         <h3 className="text-sm font-semibold text-text-light-primary dark:text-text-primary mb-2">
-                          Excluded by Pattern ({byPattern.length})
+                          {t('backups.skipped.excluded', { count: byPattern.length })}
                         </h3>
                         <div className="bg-gray-100 dark:bg-primary-bg rounded-lg p-3 max-h-40 overflow-y-auto">
                           <ul className="space-y-1">
@@ -530,7 +544,7 @@ export const BackupsPage = () => {
                     {byLocked.length > 0 && (
                       <div>
                         <h3 className="text-sm font-semibold text-text-light-primary dark:text-text-primary mb-2">
-                          Locked/Inaccessible ({byLocked.length})
+                          {t('backups.skipped.locked', { count: byLocked.length })}
                         </h3>
                         <div className="bg-gray-100 dark:bg-primary-bg rounded-lg p-3 max-h-40 overflow-y-auto">
                           <ul className="space-y-1">
@@ -547,7 +561,7 @@ export const BackupsPage = () => {
                     {other.length > 0 && (
                       <div>
                         <h3 className="text-sm font-semibold text-text-light-primary dark:text-text-primary mb-2">
-                          Other ({other.length})
+                          {t('backups.skipped.other', { count: other.length })}
                         </h3>
                         <div className="bg-gray-100 dark:bg-primary-bg rounded-lg p-3 max-h-40 overflow-y-auto">
                           <ul className="space-y-1">
@@ -570,7 +584,7 @@ export const BackupsPage = () => {
                 className="w-full"
                 onClick={() => setViewingSkippedFiles(null)}
               >
-                Close
+                {t('backups.skipped.close')}
               </Button>
             </div>
           </div>

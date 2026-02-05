@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, Input, Button, Badge } from '../ui';
 import type { World } from '../../types';
 
@@ -10,6 +11,7 @@ interface WorldSettingsModalProps {
 }
 
 export const WorldSettingsModal = ({ world, isOpen, onClose, onSave }: WorldSettingsModalProps) => {
+  const { t } = useTranslation();
   const [editedWorld, setEditedWorld] = useState<World>(world);
   const [activeTab, setActiveTab] = useState<'basic' | 'gamerules' | 'border'>('basic');
 
@@ -45,7 +47,7 @@ export const WorldSettingsModal = ({ world, isOpen, onClose, onSave }: WorldSett
     <Modal isOpen={isOpen} onClose={onClose} size="lg">
       <div className="p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl sm:text-2xl font-heading font-bold text-text-primary mb-4">
-          World Settings - {world.name}
+          {t('servers.world_settings.title', { name: world.name })}
         </h2>
 
         {/* Tabs */}
@@ -58,7 +60,7 @@ export const WorldSettingsModal = ({ world, isOpen, onClose, onSave }: WorldSett
                 : 'bg-primary-bg-secondary text-text-muted hover:bg-gray-800'
             }`}
           >
-            Basic Settings
+            {t('servers.world_settings.tabs.basic')}
           </button>
           <button
             onClick={() => setActiveTab('gamerules')}
@@ -68,7 +70,7 @@ export const WorldSettingsModal = ({ world, isOpen, onClose, onSave }: WorldSett
                 : 'bg-primary-bg-secondary text-text-muted hover:bg-gray-800'
             }`}
           >
-            Game Rules
+            {t('servers.world_settings.tabs.gamerules')}
           </button>
           <button
             onClick={() => setActiveTab('border')}
@@ -78,7 +80,7 @@ export const WorldSettingsModal = ({ world, isOpen, onClose, onSave }: WorldSett
                 : 'bg-primary-bg-secondary text-text-muted hover:bg-gray-800'
             }`}
           >
-            World Border
+            {t('servers.world_settings.tabs.border')}
           </button>
         </div>
 
@@ -86,7 +88,7 @@ export const WorldSettingsModal = ({ world, isOpen, onClose, onSave }: WorldSett
         {activeTab === 'basic' && (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-text-muted mb-2">World Name</label>
+              <label className="block text-sm text-text-muted mb-2">{t('servers.world_settings.basic.name')}</label>
               <Input
                 value={editedWorld.name}
                 onChange={(e) => setEditedWorld({ ...editedWorld, name: e.target.value })}
@@ -94,42 +96,42 @@ export const WorldSettingsModal = ({ world, isOpen, onClose, onSave }: WorldSett
             </div>
 
             <div>
-              <label className="block text-sm text-text-muted mb-2">Difficulty</label>
+              <label className="block text-sm text-text-muted mb-2">{t('servers.world_settings.basic.difficulty')}</label>
               <select
                 value={editedWorld.difficulty}
                 onChange={(e) => setEditedWorld({ ...editedWorld, difficulty: e.target.value as any })}
                 className="w-full bg-primary-bg border border-gray-700 rounded-lg px-3 py-2 text-text-primary focus:outline-none focus:border-accent-primary"
               >
-                <option value="peaceful">Peaceful</option>
-                <option value="easy">Easy</option>
-                <option value="normal">Normal</option>
-                <option value="hard">Hard</option>
+                <option value="peaceful">{t('servers.world_settings.basic.difficulty_peaceful')}</option>
+                <option value="easy">{t('servers.world_settings.basic.difficulty_easy')}</option>
+                <option value="normal">{t('servers.world_settings.basic.difficulty_normal')}</option>
+                <option value="hard">{t('servers.world_settings.basic.difficulty_hard')}</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-sm text-text-muted mb-2">Environment Type</label>
+              <label className="block text-sm text-text-muted mb-2">{t('servers.world_settings.basic.environment')}</label>
               <select
                 value={editedWorld.type}
                 onChange={(e) => setEditedWorld({ ...editedWorld, type: e.target.value as any })}
                 className="w-full bg-primary-bg border border-gray-700 rounded-lg px-3 py-2 text-text-primary focus:outline-none focus:border-accent-primary"
               >
-                <option value="normal">Normal (Overworld)</option>
-                <option value="nether">Nether</option>
-                <option value="end">The End</option>
-                <option value="custom">Custom</option>
+                <option value="normal">{t('servers.world_settings.basic.env_normal')}</option>
+                <option value="nether">{t('servers.world_settings.basic.env_nether')}</option>
+                <option value="end">{t('servers.world_settings.basic.env_end')}</option>
+                <option value="custom">{t('servers.world_settings.basic.env_custom')}</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-sm text-text-muted mb-2">Seed (read-only)</label>
+              <label className="block text-sm text-text-muted mb-2">{t('servers.world_settings.basic.seed')}</label>
               <Input value={editedWorld.seed} disabled />
-              <p className="text-xs text-text-muted mt-1">World seed cannot be changed after creation</p>
+              <p className="text-xs text-text-muted mt-1">{t('servers.world_settings.basic.seed_helper')}</p>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm text-text-muted mb-2">Spawn X</label>
+                <label className="block text-sm text-text-muted mb-2">{t('servers.world_settings.basic.spawn_x')}</label>
                 <Input
                   type="number"
                   value={editedWorld.spawn.x}
@@ -142,7 +144,7 @@ export const WorldSettingsModal = ({ world, isOpen, onClose, onSave }: WorldSett
                 />
               </div>
               <div>
-                <label className="block text-sm text-text-muted mb-2">Spawn Y</label>
+                <label className="block text-sm text-text-muted mb-2">{t('servers.world_settings.basic.spawn_y')}</label>
                 <Input
                   type="number"
                   value={editedWorld.spawn.y}
@@ -155,7 +157,7 @@ export const WorldSettingsModal = ({ world, isOpen, onClose, onSave }: WorldSett
                 />
               </div>
               <div>
-                <label className="block text-sm text-text-muted mb-2">Spawn Z</label>
+                <label className="block text-sm text-text-muted mb-2">{t('servers.world_settings.basic.spawn_z')}</label>
                 <Input
                   type="number"
                   value={editedWorld.spawn.z}
@@ -177,7 +179,7 @@ export const WorldSettingsModal = ({ world, isOpen, onClose, onSave }: WorldSett
                   onChange={(e) => setEditedWorld({ ...editedWorld, loaded: e.target.checked })}
                   className="w-4 h-4 accent-accent-primary"
                 />
-                <span className="text-sm text-text-primary">Load world on server start</span>
+                <span className="text-sm text-text-primary">{t('servers.world_settings.basic.loaded')}</span>
               </label>
             </div>
           </div>
@@ -187,11 +189,11 @@ export const WorldSettingsModal = ({ world, isOpen, onClose, onSave }: WorldSett
         {activeTab === 'gamerules' && (
           <div className="space-y-4 max-h-96 overflow-y-auto">
             <p className="text-sm text-text-muted mb-4">
-              Configure game rules that affect gameplay mechanics in this world
+              {t('servers.world_settings.rules.helper')}
             </p>
             {commonGameRules.map((rule) => (
               <div key={rule.key} className="flex items-center justify-between p-3 rounded-lg bg-primary-bg">
-                <span className="text-sm text-text-primary">{rule.label}</span>
+                <span className="text-sm text-text-primary">{t(`servers.world_settings.rules.items.${rule.key}`, rule.label)}</span>
                 {rule.type === 'boolean' ? (
                   <input
                     type="checkbox"
@@ -212,7 +214,9 @@ export const WorldSettingsModal = ({ world, isOpen, onClose, onSave }: WorldSett
 
             {/* Show additional game rules */}
             <div className="pt-4 border-t border-gray-800">
-              <p className="text-xs text-text-muted mb-2">Additional Game Rules ({Object.keys(editedWorld.gameRules).length} total)</p>
+              <p className="text-xs text-text-muted mb-2">
+                {t('servers.world_settings.rules.additional', { count: Object.keys(editedWorld.gameRules).length })}
+              </p>
               <div className="flex flex-wrap gap-2">
                 {Object.keys(editedWorld.gameRules)
                   .filter((key) => !commonGameRules.find((r) => r.key === key))
@@ -230,11 +234,11 @@ export const WorldSettingsModal = ({ world, isOpen, onClose, onSave }: WorldSett
         {activeTab === 'border' && (
           <div className="space-y-4">
             <p className="text-sm text-text-muted mb-4">
-              Configure the world border to limit the playable area
+              {t('servers.world_settings.border.helper')}
             </p>
 
             <div>
-              <label className="block text-sm text-text-muted mb-2">Border Size (blocks)</label>
+              <label className="block text-sm text-text-muted mb-2">{t('servers.world_settings.border.size')}</label>
               <Input
                 type="number"
                 value={editedWorld.border.size}
@@ -245,12 +249,12 @@ export const WorldSettingsModal = ({ world, isOpen, onClose, onSave }: WorldSett
                   })
                 }
               />
-              <p className="text-xs text-text-muted mt-1">Diameter of the world border (default: 60,000,000)</p>
+              <p className="text-xs text-text-muted mt-1">{t('servers.world_settings.border.size_helper')}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-text-muted mb-2">Center X</label>
+                <label className="block text-sm text-text-muted mb-2">{t('servers.world_settings.border.center_x')}</label>
                 <Input
                   type="number"
                   value={editedWorld.border.center.x}
@@ -266,7 +270,7 @@ export const WorldSettingsModal = ({ world, isOpen, onClose, onSave }: WorldSett
                 />
               </div>
               <div>
-                <label className="block text-sm text-text-muted mb-2">Center Z</label>
+                <label className="block text-sm text-text-muted mb-2">{t('servers.world_settings.border.center_z')}</label>
                 <Input
                   type="number"
                   value={editedWorld.border.center.z}
@@ -284,11 +288,11 @@ export const WorldSettingsModal = ({ world, isOpen, onClose, onSave }: WorldSett
             </div>
 
             <div className="p-4 bg-primary-bg rounded-lg border border-gray-700">
-              <h4 className="text-sm font-semibold text-text-primary mb-2">Border Info</h4>
+              <h4 className="text-sm font-semibold text-text-primary mb-2">{t('servers.world_settings.border.info_title')}</h4>
               <div className="space-y-1 text-sm text-text-muted">
-                <p>• Border radius: {(editedWorld.border.size / 2).toLocaleString()} blocks</p>
-                <p>• Total area: {((editedWorld.border.size / 1000) ** 2).toFixed(2)}M blocks²</p>
-                <p>• Center point: ({editedWorld.border.center.x}, {editedWorld.border.center.z})</p>
+                <p>• {t('servers.world_settings.border.info_radius', { radius: (editedWorld.border.size / 2).toLocaleString() })}</p>
+                <p>• {t('servers.world_settings.border.info_area', { area: ((editedWorld.border.size / 1000) ** 2).toFixed(2) })}</p>
+                <p>• {t('servers.world_settings.border.info_center', { x: editedWorld.border.center.x, z: editedWorld.border.center.z })}</p>
               </div>
             </div>
           </div>
@@ -297,10 +301,10 @@ export const WorldSettingsModal = ({ world, isOpen, onClose, onSave }: WorldSett
         {/* Footer Actions */}
         <div className="flex flex-col sm:flex-row gap-2 mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-800">
           <Button variant="ghost" onClick={onClose} className="w-full">
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button variant="primary" onClick={handleSave} className="w-full">
-            Save Changes
+            {t('common.save_changes')}
           </Button>
         </div>
       </div>

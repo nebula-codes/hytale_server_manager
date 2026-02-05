@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent, Button } from '../../../components/ui';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 interface CpuMemoryChartProps {
   data: {
@@ -23,6 +24,7 @@ interface CpuMemoryChartProps {
 }
 
 export const CpuMemoryChart = ({ data, range, onRangeChange, loading }: CpuMemoryChartProps) => {
+  const { t } = useTranslation();
   const chartData = data.timestamps.map((timestamp, index) => ({
     time: timestamp,
     cpu: data.cpu[index],
@@ -56,7 +58,7 @@ export const CpuMemoryChart = ({ data, range, onRangeChange, loading }: CpuMemor
     <Card variant="glass">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>CPU & Memory Usage</CardTitle>
+          <CardTitle>{t('dashboard.charts.cpu_memory_title')}</CardTitle>
           <div className="flex gap-1">
             {ranges.map((r) => (
               <Button
@@ -74,11 +76,11 @@ export const CpuMemoryChart = ({ data, range, onRangeChange, loading }: CpuMemor
       <CardContent>
         {loading ? (
           <div className="h-64 flex items-center justify-center text-text-light-muted dark:text-text-muted">
-            Loading chart data...
+            {t('dashboard.charts.loading')}
           </div>
         ) : chartData.length === 0 ? (
           <div className="h-64 flex items-center justify-center text-text-light-muted dark:text-text-muted">
-            No data available for this time range
+            {t('dashboard.charts.no_data')}
           </div>
         ) : (
           <div className="h-64">
@@ -113,7 +115,7 @@ export const CpuMemoryChart = ({ data, range, onRangeChange, loading }: CpuMemor
                   ]}
                 />
                 <Legend
-                  formatter={(value) => (value === 'cpu' ? 'CPU Usage' : 'Memory Usage')}
+                  formatter={(value) => (value === 'cpu' ? t('dashboard.charts.cpu_legend') : t('dashboard.charts.memory_legend'))}
                 />
                 <Line
                   type="monotone"

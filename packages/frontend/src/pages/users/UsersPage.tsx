@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input } from '../../components/ui';
 import { Users, Plus, Pencil, Trash2, X, Check, Shield, Eye, UserCog } from 'lucide-react';
 import { api } from '../../services/api';
@@ -33,6 +34,7 @@ const ROLE_COLORS = {
 };
 
 export const UsersPage = () => {
+  const { t } = useTranslation();
   const { user: currentUser } = useAuthStore();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,7 +68,7 @@ export const UsersPage = () => {
       const data = await api.getUsers<User>();
       setUsers(data);
     } catch (err: any) {
-      setError(err.message || 'Failed to load users');
+      setError(err.message || t('users.errors.load'));
     } finally {
       setLoading(false);
     }
@@ -114,21 +116,21 @@ export const UsersPage = () => {
           updateData.password = formData.password;
         }
         await api.updateUser(editingUser.id, updateData);
-        setSuccess('User updated successfully');
+        setSuccess(t('users.toast.updated'));
       } else {
         // Create user
         if (!formData.password) {
-          setFormError('Password is required for new users');
+          setFormError(t('users.form.password_required'));
           setSaving(false);
           return;
         }
         await api.createUser(formData);
-        setSuccess('User created successfully');
+        setSuccess(t('users.toast.created'));
       }
       closeModal();
       fetchUsers();
     } catch (err: any) {
-      setFormError(err.message || 'Failed to save user');
+      setFormError(err.message || t('users.errors.save'));
     } finally {
       setSaving(false);
     }
@@ -138,25 +140,19 @@ export const UsersPage = () => {
     setDeleting(true);
     try {
       await api.deleteUser(userId);
-      setSuccess('User deleted successfully');
+      setSuccess(t('users.toast.deleted'));
       setDeleteConfirm(null);
       fetchUsers();
     } catch (err: any) {
-      setError(err.message || 'Failed to delete user');
+      setError(err.message || t('users.errors.delete'));
     } finally {
       setDeleting(false);
     }
   };
 
   const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Never';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    if (!dateString) return t('users.never');
+    return new Date(dateString).toLocaleString();
   };
 
   // Check if current user is admin
@@ -166,8 +162,8 @@ export const UsersPage = () => {
         <Card>
           <CardContent className="py-12 text-center">
             <Shield size={48} className="mx-auto text-text-secondary mb-4" />
-            <h2 className="text-xl font-semibold text-text-primary mb-2">Access Denied</h2>
-            <p className="text-text-secondary">You need admin privileges to manage users.</p>
+            <h2 className="text-xl font-semibold text-text-primary mb-2">{t('users.access_denied.title')}</h2>
+            <p className="text-text-secondary">{t('users.access_denied.description')}</p>
           </CardContent>
         </Card>
       </div>
@@ -178,12 +174,12 @@ export const UsersPage = () => {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-text-primary">User Management</h1>
-          <p className="text-text-secondary mt-1">Manage user accounts and permissions</p>
+          <h1 className="text-3xl font-bold text-text-primary">{t('users.title')}</h1>
+          <p className="text-text-secondary mt-1">{t('users.subtitle')}</p>
         </div>
         <Button variant="primary" onClick={openCreateModal}>
           <Plus size={16} className="mr-2" />
-          Add User
+          {t('users.actions.add')}
         </Button>
       </div>
 
@@ -212,25 +208,25 @@ export const UsersPage = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users size={20} />
-            Users ({users.length})
+            {t('users.list.title', { count: users.length })}
           </CardTitle>
-          <CardDescription>All registered users in the system</CardDescription>
+          <CardDescription>{t('users.list.subtitle')}</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-text-secondary">Loading users...</div>
+            <div className="text-center py-8 text-text-secondary">{t('users.list.loading')}</div>
           ) : users.length === 0 ? (
-            <div className="text-center py-8 text-text-secondary">No users found</div>
+            <div className="text-center py-8 text-text-secondary">{t('users.list.empty')}</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-700">
-                    <th className="text-left py-3 px-4 text-text-secondary font-medium">User</th>
-                    <th className="text-left py-3 px-4 text-text-secondary font-medium">Role</th>
-                    <th className="text-left py-3 px-4 text-text-secondary font-medium">Created</th>
-                    <th className="text-left py-3 px-4 text-text-secondary font-medium">Last Login</th>
-                    <th className="text-right py-3 px-4 text-text-secondary font-medium">Actions</th>
+                    <th className="text-left py-3 px-4 text-text-secondary font-medium">{t('users.table.user')}</th>
+                    <th className="text-left py-3 px-4 text-text-secondary font-medium">{t('users.table.role')}</th>
+                    <th className="text-left py-3 px-4 text-text-secondary font-medium">{t('users.table.created')}</th>
+                    <th className="text-left py-3 px-4 text-text-secondary font-medium">{t('users.table.last_login')}</th>
+                    <th className="text-right py-3 px-4 text-text-secondary font-medium">{t('users.table.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -247,7 +243,7 @@ export const UsersPage = () => {
                         <td className="py-3 px-4">
                           <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-sm ${ROLE_COLORS[user.role]}`}>
                             <RoleIcon size={14} />
-                            {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                            {t(`users.roles.${user.role}`)}
                           </span>
                         </td>
                         <td className="py-3 px-4 text-text-secondary text-sm">
@@ -312,7 +308,7 @@ export const UsersPage = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-primary-bg-secondary rounded-lg p-6 w-full max-w-md mx-4">
             <h2 className="text-xl font-bold text-text-primary mb-4">
-              {editingUser ? 'Edit User' : 'Create User'}
+              {editingUser ? t('users.modal.edit_title') : t('users.modal.create_title')}
             </h2>
 
             {formError && (
@@ -323,12 +319,12 @@ export const UsersPage = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Username</label>
+                <label className="block text-sm font-medium mb-2">{t('users.form.username')}</label>
                 <Input
                   type="text"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  placeholder="Enter username"
+                  placeholder={t('users.form.username_placeholder')}
                   required
                   minLength={3}
                   maxLength={32}
@@ -336,40 +332,41 @@ export const UsersPage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Email</label>
+                <label className="block text-sm font-medium mb-2">{t('users.form.email')}</label>
                 <Input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="Enter email"
+                  placeholder={t('users.form.email_placeholder')}
                   required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Password {editingUser && <span className="text-text-secondary">(leave blank to keep current)</span>}
+                  {t('users.form.password')}
+                  {editingUser && <span className="text-text-secondary"> ({t('users.form.password_optional')})</span>}
                 </label>
                 <Input
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder={editingUser ? 'Enter new password' : 'Enter password'}
+                  placeholder={editingUser ? t('users.form.password_new_placeholder') : t('users.form.password_placeholder')}
                   required={!editingUser}
                   minLength={8}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Role</label>
+                <label className="block text-sm font-medium mb-2">{t('users.form.role')}</label>
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'moderator' | 'viewer' })}
                   className="w-full px-3 py-2 bg-primary-bg border border-gray-700 rounded text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary"
                 >
-                  <option value="viewer">Viewer - Read-only access</option>
-                  <option value="moderator">Moderator - Can manage servers</option>
-                  <option value="admin">Admin - Full access</option>
+                  <option value="viewer">{t('users.roles.viewer_option')}</option>
+                  <option value="moderator">{t('users.roles.moderator_option')}</option>
+                  <option value="admin">{t('users.roles.admin_option')}</option>
                 </select>
               </div>
 
@@ -380,7 +377,7 @@ export const UsersPage = () => {
                   disabled={saving}
                   className="flex-1"
                 >
-                  {saving ? 'Saving...' : (editingUser ? 'Update User' : 'Create User')}
+                  {saving ? t('users.form.saving') : (editingUser ? t('users.form.update') : t('users.form.create'))}
                 </Button>
                 <Button
                   type="button"
@@ -388,7 +385,7 @@ export const UsersPage = () => {
                   onClick={closeModal}
                   disabled={saving}
                 >
-                  Cancel
+                  {t('users.form.cancel')}
                 </Button>
               </div>
             </form>

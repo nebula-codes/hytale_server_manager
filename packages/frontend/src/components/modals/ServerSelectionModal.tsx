@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, ModalFooter, Button, Badge, StatusIndicator } from '../ui';
 import { Server as ServerIcon, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import * as modProviderApi from '../../services/modProviderApi';
@@ -13,6 +14,7 @@ interface ServerSelectionModalProps {
 }
 
 export const ServerSelectionModal = ({ isOpen, onClose, project, onInstall }: ServerSelectionModalProps) => {
+  const { t } = useTranslation();
   const [servers, setServers] = useState<any[]>([]);
   const [selectedServer, setSelectedServer] = useState<string | null>(null);
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
@@ -63,7 +65,7 @@ export const ServerSelectionModal = ({ isOpen, onClose, project, onInstall }: Se
       const deps = await modProviderApi.getVersionDependencies(project.providerId, project.id, selectedVersion);
       setDependencies(deps);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch dependencies';
+      const errorMessage = err instanceof Error ? err.message : t('mods.server_select.deps_error');
       setDepsError(errorMessage);
       setDependencies([]);
     } finally {
@@ -89,7 +91,7 @@ export const ServerSelectionModal = ({ isOpen, onClose, project, onInstall }: Se
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Install ${project.title}`}
+      title={t('mods.server_select.title', { name: project.title })}
       size="lg"
     >
       <div className="space-y-6">
@@ -105,12 +107,12 @@ export const ServerSelectionModal = ({ isOpen, onClose, project, onInstall }: Se
               {project.title}
             </h3>
             <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
-              by {project.author.username}
+              {t('mods.server_select.by_author', { author: project.author.username })}
             </p>
             <div className="flex gap-2 mt-2">
               <Badge size="sm" variant="info">{project.classification}</Badge>
               <Badge size="sm" variant="default">
-                {project.downloads.toLocaleString()} downloads
+                {t('mods.server_select.downloads', { count: project.downloads })}
               </Badge>
             </div>
           </div>
@@ -119,7 +121,7 @@ export const ServerSelectionModal = ({ isOpen, onClose, project, onInstall }: Se
         {/* Version Selection */}
         <div>
           <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-            Select Version
+            {t('mods.server_select.version_label')}
           </label>
           <select
             value={selectedVersion || ''}
@@ -129,14 +131,17 @@ export const ServerSelectionModal = ({ isOpen, onClose, project, onInstall }: Se
             {project.versions?.map((version) => {
               const dateStr = version.releaseDate;
               const dateDisplay = dateStr ? new Date(dateStr).toLocaleDateString() : '';
+              const translationKey = dateDisplay
+                ? 'mods.server_select.version_option_with_date'
+                : 'mods.server_select.version_option';
               return (
                 <option key={version.id} value={version.id}>
-                  {version.version}{dateDisplay ? ` - ${dateDisplay}` : ''}
+                  {t(translationKey, { version: version.version, date: dateDisplay })}
                 </option>
               );
             }) || (
               <option value={project.latestVersion?.id}>
-                {project.latestVersion?.version || 'Latest'}
+                {project.latestVersion?.version || t('mods.server_select.latest')}
               </option>
             )}
           </select>
@@ -146,7 +151,7 @@ export const ServerSelectionModal = ({ isOpen, onClose, project, onInstall }: Se
         {loadingDeps && (
           <div className="flex items-center gap-2 text-text-light-muted dark:text-text-muted">
             <Loader2 size={16} className="animate-spin" />
-            <span className="text-sm">Checking dependencies...</span>
+            <span className="text-sm">{t('mods.server_select.deps_checking')}</span>
           </div>
         )}
 
@@ -160,7 +165,7 @@ export const ServerSelectionModal = ({ isOpen, onClose, project, onInstall }: Se
         {!loadingDeps && dependencies.length > 0 && (
           <div>
             <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-              Dependencies {hasRequiredDependencies && <span className="text-danger">*</span>}
+              {t('mods.server_select.deps_label')} {hasRequiredDependencies && <span className="text-danger">*</span>}
             </label>
             <div className="space-y-2 max-h-40 overflow-y-auto">
               {dependencies.map((dep, idx) => (
@@ -173,21 +178,21 @@ export const ServerSelectionModal = ({ isOpen, onClose, project, onInstall }: Se
                       {dep.projectName}
                     </p>
                     <p className="text-xs text-text-light-muted dark:text-text-muted">
-                      Version: {dep.versionId || 'Any'}
+                      {t('mods.server_select.deps_version', { version: dep.versionId || t('mods.server_select.any') })}
                     </p>
                   </div>
                   <Badge
                     size="sm"
                     variant={dep.required ? 'danger' : 'default'}
                   >
-                    {dep.required ? 'Required' : 'Optional'}
+                    {dep.required ? t('mods.server_select.required') : t('mods.server_select.optional')}
                   </Badge>
                 </div>
               ))}
             </div>
             {hasRequiredDependencies && (
               <p className="text-xs text-warning mt-2">
-                ⚠️ Required dependencies will be installed automatically
+                ⚠️ {t('mods.server_select.deps_notice')}
               </p>
             )}
           </div>
@@ -196,7 +201,7 @@ export const ServerSelectionModal = ({ isOpen, onClose, project, onInstall }: Se
         {/* Server Selection */}
         <div>
           <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-            Select Target Server
+            {t('mods.server_select.server_label')}
           </label>
           <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto">
             {servers.map((server) => (
@@ -216,18 +221,18 @@ export const ServerSelectionModal = ({ isOpen, onClose, project, onInstall }: Se
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-medium text-text-light-primary dark:text-text-primary truncate">
-                        {server.name}
-                      </h4>
-                      <StatusIndicator status={server.status} />
-                    </div>
-                    <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
-                      {server.address}:{server.port} • v{server.version}
-                    </p>
-                    <div className="flex gap-3 mt-2 text-xs text-text-light-muted dark:text-text-muted">
-                      <span>0/{server.maxPlayers} players</span>
-                    </div>
-                  </div>
+                     <h4 className="font-medium text-text-light-primary dark:text-text-primary truncate">
+                       {server.name}
+                     </h4>
+                     <StatusIndicator status={server.status} />
+                   </div>
+                   <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
+                      {t('mods.server_select.server_meta', { address: server.address, port: server.port, version: server.version })}
+                   </p>
+                   <div className="flex gap-3 mt-2 text-xs text-text-light-muted dark:text-text-muted">
+                      <span>{t('mods.server_select.players', { current: 0, max: server.maxPlayers })}</span>
+                   </div>
+                 </div>
                   {selectedServer === server.id && (
                     <CheckCircle2 size={20} className="text-accent-primary flex-shrink-0" />
                   )}
@@ -241,7 +246,7 @@ export const ServerSelectionModal = ({ isOpen, onClose, project, onInstall }: Se
         {selectedServerData && (
           <div className="p-3 bg-success/10 border border-success/30 rounded-lg">
             <p className="text-sm text-success">
-              ✓ {project.title} will be installed to <strong>{selectedServerData.name}</strong>
+              {t('mods.server_select.summary', { project: project.title, server: selectedServerData.name })}
             </p>
           </div>
         )}
@@ -249,14 +254,14 @@ export const ServerSelectionModal = ({ isOpen, onClose, project, onInstall }: Se
 
       <ModalFooter>
         <Button variant="ghost" onClick={onClose}>
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button
           variant="primary"
           onClick={handleInstall}
           disabled={!canInstall}
         >
-          {loadingDeps ? 'Checking...' : 'Install'}
+          {loadingDeps ? t('mods.server_select.deps_checking') : t('mods.server_select.install')}
         </Button>
       </ModalFooter>
     </Modal>

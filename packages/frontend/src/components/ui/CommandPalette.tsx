@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Server, Users, Settings, FileText, Package, Database, DollarSign, Shield, Activity, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useSearchStore } from '../../stores/searchStore';
 import { mockServers, mockPlayers } from '../../data/mockData';
 
@@ -15,6 +16,7 @@ interface SearchResult {
 }
 
 export const CommandPalette = () => {
+  const { t } = useTranslation();
   const { isOpen, closeSearch } = useSearchStore();
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -26,20 +28,20 @@ export const CommandPalette = () => {
 
     // Pages
     items.push(
-      { id: 'dashboard', title: 'Dashboard', description: 'Overview and statistics', category: 'page', icon: <Activity size={18} />, path: '/dashboard' },
-      { id: 'servers', title: 'Servers', description: 'Manage your servers', category: 'page', icon: <Server size={18} />, path: '/servers' },
-      { id: 'players', title: 'Players', description: 'View and manage players', category: 'page', icon: <Users size={18} />, path: '/players' },
-      { id: 'mods', title: 'Mods', description: 'Browse and install mods', category: 'page', icon: <Package size={18} />, path: '/mods' },
-      { id: 'modpacks', title: 'Modpacks', description: 'Pre-configured mod collections', category: 'page', icon: <Package size={18} />, path: '/modpacks' },
-      { id: 'backups', title: 'Backups', description: 'Manage server backups', category: 'page', icon: <Database size={18} />, path: '/backups' },
-      { id: 'console', title: 'Console', description: 'Server console and logs', category: 'page', icon: <FileText size={18} />, path: '/console' },
-      { id: 'automation', title: 'Automation', description: 'Scheduled tasks', category: 'page', icon: <Activity size={18} />, path: '/automation' },
-      { id: 'analytics', title: 'Analytics', description: 'Performance metrics', category: 'page', icon: <Activity size={18} />, path: '/analytics' },
-      { id: 'files', title: 'File Manager', description: 'Browse server files', category: 'page', icon: <FileText size={18} />, path: '/files' },
-      { id: 'permissions', title: 'Permissions', description: 'Manage user permissions', category: 'page', icon: <Shield size={18} />, path: '/permissions' },
-      { id: 'economy', title: 'Economy', description: 'Manage server economy', category: 'page', icon: <DollarSign size={18} />, path: '/economy' },
-      { id: 'bridge', title: 'Hytale Bridge', description: 'In-game integration', category: 'page', icon: <Activity size={18} />, path: '/bridge' },
-      { id: 'settings', title: 'Settings', description: 'Panel configuration', category: 'page', icon: <Settings size={18} />, path: '/settings' }
+      { id: 'dashboard', title: t('nav.dashboard'), description: t('ui.command.pages.dashboard'), category: 'page', icon: <Activity size={18} />, path: '/dashboard' },
+      { id: 'servers', title: t('nav.servers'), description: t('ui.command.pages.servers'), category: 'page', icon: <Server size={18} />, path: '/servers' },
+      { id: 'players', title: t('nav.players'), description: t('ui.command.pages.players'), category: 'page', icon: <Users size={18} />, path: '/players' },
+      { id: 'mods', title: t('nav.mods', { defaultValue: 'Mods' }), description: t('ui.command.pages.mods'), category: 'page', icon: <Package size={18} />, path: '/mods' },
+      { id: 'modpacks', title: t('nav.modpacks'), description: t('ui.command.pages.modpacks'), category: 'page', icon: <Package size={18} />, path: '/modpacks' },
+      { id: 'backups', title: t('nav.backups'), description: t('ui.command.pages.backups'), category: 'page', icon: <Database size={18} />, path: '/backups' },
+      { id: 'console', title: t('nav.console'), description: t('ui.command.pages.console'), category: 'page', icon: <FileText size={18} />, path: '/console' },
+      { id: 'automation', title: t('nav.automation'), description: t('ui.command.pages.automation'), category: 'page', icon: <Activity size={18} />, path: '/automation' },
+      { id: 'analytics', title: t('nav.analytics'), description: t('ui.command.pages.analytics'), category: 'page', icon: <Activity size={18} />, path: '/analytics' },
+      { id: 'files', title: t('nav.files'), description: t('ui.command.pages.files'), category: 'page', icon: <FileText size={18} />, path: '/files' },
+      { id: 'permissions', title: t('nav.permissions'), description: t('ui.command.pages.permissions'), category: 'page', icon: <Shield size={18} />, path: '/permissions' },
+      { id: 'economy', title: t('nav.economy', { defaultValue: 'Economy' }), description: t('ui.command.pages.economy'), category: 'page', icon: <DollarSign size={18} />, path: '/economy' },
+      { id: 'bridge', title: t('nav.bridge', { defaultValue: 'Hytale Bridge' }), description: t('ui.command.pages.bridge'), category: 'page', icon: <Activity size={18} />, path: '/bridge' },
+      { id: 'settings', title: t('nav.settings'), description: t('ui.command.pages.settings'), category: 'page', icon: <Settings size={18} />, path: '/settings' }
     );
 
     // Servers
@@ -47,7 +49,11 @@ export const CommandPalette = () => {
       items.push({
         id: `server-${server.id}`,
         title: server.name,
-        description: `${server.version} • ${server.currentPlayers}/${server.maxPlayers} players`,
+        description: t('ui.command.server_desc', {
+          version: server.version,
+          current: server.currentPlayers,
+          max: server.maxPlayers,
+        }),
         category: 'server',
         icon: <Server size={18} />,
         path: `/servers/${server.id}`,
@@ -59,7 +65,10 @@ export const CommandPalette = () => {
       items.push({
         id: `player-${player.uuid}`,
         title: player.username,
-        description: `${player.role} • ${player.status}`,
+        description: t('ui.command.player_desc', {
+          role: player.role,
+          status: player.status,
+        }),
         category: 'player',
         icon: <Users size={18} />,
         path: `/players/${player.uuid}`,
@@ -67,7 +76,7 @@ export const CommandPalette = () => {
     });
 
     return items;
-  }, []);
+  }, [t]);
 
   // Filter results based on query
   const results = useMemo(() => {
@@ -161,7 +170,7 @@ export const CommandPalette = () => {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search servers, players, pages..."
+              placeholder={t('ui.command.placeholder')}
               className="flex-1 bg-transparent text-text-light-primary dark:text-text-primary placeholder-text-muted dark:placeholder-text-muted outline-none text-lg"
               autoFocus
             />
@@ -177,7 +186,7 @@ export const CommandPalette = () => {
           <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
             {results.length === 0 ? (
               <div className="px-4 py-12 text-center">
-                <p className="text-text-light-muted dark:text-text-muted">No results found</p>
+                <p className="text-text-light-muted dark:text-text-muted">{t('ui.command.no_results')}</p>
               </div>
             ) : (
               <div className="py-2">
@@ -204,7 +213,7 @@ export const CommandPalette = () => {
                       </p>
                     </div>
                     <span className="text-xs text-text-light-muted dark:text-text-muted capitalize px-2 py-1 rounded bg-gray-800/50 dark:bg-gray-800/50">
-                      {result.category}
+                      {t(`ui.command.categories.${result.category}`)}
                     </span>
                   </button>
                 ))}
@@ -215,13 +224,13 @@ export const CommandPalette = () => {
           {/* Footer */}
           <div className="px-4 py-3 border-t border-gray-300 dark:border-gray-800 flex items-center justify-between text-xs text-text-light-muted dark:text-text-muted">
             <div className="flex items-center gap-4">
-              <span>↑↓ Navigate</span>
-              <span>↵ Select</span>
-              <span>Esc Close</span>
+              <span>{t('ui.command.hints.navigate')}</span>
+              <span>{t('ui.command.hints.select')}</span>
+              <span>{t('ui.command.hints.close')}</span>
             </div>
             <div className="flex items-center gap-1">
               <kbd className="px-2 py-1 rounded bg-gray-800 dark:bg-gray-800 font-mono">⌘K</kbd>
-              <span>to toggle</span>
+              <span>{t('ui.command.hints.toggle')}</span>
             </div>
           </div>
         </motion.div>

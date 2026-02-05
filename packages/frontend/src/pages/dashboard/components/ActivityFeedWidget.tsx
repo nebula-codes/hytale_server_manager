@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent, Badge, Button } from '../../../components/ui';
 import { Activity, ArrowRight, Server, User, Shield, Settings, Play, Square, Download, HardDrive } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import api from '../../../services/api';
 
 interface ActivityItem {
@@ -46,6 +47,7 @@ const formatAction = (action: string): string => {
 };
 
 export const ActivityFeedWidget = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,10 +74,10 @@ export const ActivityFeedWidget = () => {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Activity size={18} />
-            Recent Activity
+            {t('dashboard.activity.title')}
           </CardTitle>
           <Button variant="ghost" size="sm" onClick={() => navigate('/activity')}>
-            View All
+            {t('common.view_all')}
             <ArrowRight size={14} className="ml-1" />
           </Button>
         </div>
@@ -83,11 +85,11 @@ export const ActivityFeedWidget = () => {
       <CardContent>
         {loading ? (
           <div className="text-center py-4 text-text-light-muted dark:text-text-muted">
-            Loading activity...
+            {t('dashboard.activity.loading')}
           </div>
         ) : activities.length === 0 ? (
           <div className="text-center py-4 text-text-light-muted dark:text-text-muted text-sm">
-            No recent activity
+            {t('dashboard.activity.empty')}
           </div>
         ) : (
           <div className="space-y-3">
@@ -116,7 +118,7 @@ export const ActivityFeedWidget = () => {
                     </span>
                     {activity.status === 'failed' && (
                       <Badge variant="danger" size="sm">
-                        Failed
+                        {t('dashboard.activity.failed')}
                       </Badge>
                     )}
                   </div>

@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Download, X } from 'lucide-react';
 import { useUpdateStore } from '../../stores/updateStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const UpdateBadge = () => {
+  const { t } = useTranslation();
   const { updateInfo, isLoading, dismissed, checkForUpdates, dismissUpdate } = useUpdateStore();
 
   useEffect(() => {
@@ -35,10 +37,10 @@ export const UpdateBadge = () => {
         >
           <Download size={16} />
           <span className="text-sm font-medium hidden sm:inline">
-            Update v{updateInfo.latestVersion}
+            {t('updates.banner.version', { version: updateInfo.latestVersion })}
           </span>
           <span className="text-sm font-medium sm:hidden">
-            Update
+            {t('updates.banner.short')}
           </span>
         </Link>
         <button
@@ -48,7 +50,7 @@ export const UpdateBadge = () => {
             dismissUpdate();
           }}
           className="absolute -top-1 -right-1 p-0.5 bg-gray-800 rounded-full hover:bg-gray-700 text-white"
-          aria-label="Dismiss update notification"
+          aria-label={t('updates.banner.dismiss_aria')}
         >
           <X size={12} />
         </button>

@@ -1,8 +1,6 @@
 ---
 const navLinks = [
   { href: '/hytale_server_manager/', label: 'Home' },
-  { href: '/hytale_server_manager/features', label: 'Features' },
-  { href: '/hytale_server_manager/docs', label: 'Docs' },
 ];
 
 const currentPath = Astro.url.pathname;
@@ -119,7 +117,9 @@ const currentPath = Astro.url.pathname;
 
         <!-- CTA Button -->
         <a
-          href="/hytale_server_manager/docs/getting-started/installation"
+          href="https://github.com/nebula-codes/hytale_server_manager"
+          target="_blank"
+          rel="noopener noreferrer"
           class="hidden sm:inline-flex items-center gap-2 px-4 py-2 bg-accent-primary hover:bg-accent-primary/90 text-black font-semibold rounded-lg transition-colors glow-accent"
         >
           Get Started
@@ -171,7 +171,9 @@ const currentPath = Astro.url.pathname;
           ))
         }
         <a
-          href="/hytale_server_manager/docs/getting-started/installation"
+          href="https://github.com/nebula-codes/hytale_server_manager"
+          target="_blank"
+          rel="noopener noreferrer"
           class="mt-2 px-4 py-2 bg-accent-primary hover:bg-accent-primary/90 text-black font-semibold rounded-lg text-center transition-colors"
         >
           Get Started

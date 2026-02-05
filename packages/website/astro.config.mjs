@@ -7,7 +7,9 @@ export default defineConfig({
   base: '/hytale_server_manager',
   integrations: [
     tailwind(),
-    sitemap(),
+    sitemap({
+      filter: (page) => !page.includes('/docs/') && !page.includes('/features'),
+    }),
   ],
   output: 'static',
 });

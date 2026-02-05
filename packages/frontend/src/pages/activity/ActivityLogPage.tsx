@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Card,
   CardHeader,
@@ -28,38 +29,38 @@ import { formatDistanceToNow } from 'date-fns';
  * Human-readable action labels
  */
 const ACTION_LABELS: Record<string, string> = {
-  'auth:login': 'Logged in',
-  'auth:logout': 'Logged out',
-  'auth:password_change': 'Changed password',
-  'auth:login_failed': 'Login failed',
-  'server:create': 'Created server',
-  'server:update': 'Updated server',
-  'server:delete': 'Deleted server',
-  'server:start': 'Started server',
-  'server:stop': 'Stopped server',
-  'server:restart': 'Restarted server',
-  'server:kill': 'Force killed server',
-  'server:command': 'Executed command',
-  'backup:create': 'Created backup',
-  'backup:restore': 'Restored backup',
-  'backup:delete': 'Deleted backup',
-  'player:kick': 'Kicked player',
-  'player:ban': 'Banned player',
-  'player:unban': 'Unbanned player',
-  'mod:install': 'Installed mod',
-  'mod:uninstall': 'Uninstalled mod',
-  'mod:enable': 'Enabled mod',
-  'mod:disable': 'Disabled mod',
-  'world:activate': 'Activated world',
-  'world:delete': 'Deleted world',
-  'automation:create': 'Created automation rule',
-  'automation:delete': 'Deleted automation rule',
-  'automation:execute': 'Executed automation rule',
-  'network:create': 'Created network',
-  'network:delete': 'Deleted network',
-  'settings:update': 'Updated settings',
-  'user:create': 'Created user',
-  'user:delete': 'Deleted user',
+  'auth:login': 'activity.actions.auth_login',
+  'auth:logout': 'activity.actions.auth_logout',
+  'auth:password_change': 'activity.actions.auth_password_change',
+  'auth:login_failed': 'activity.actions.auth_login_failed',
+  'server:create': 'activity.actions.server_create',
+  'server:update': 'activity.actions.server_update',
+  'server:delete': 'activity.actions.server_delete',
+  'server:start': 'activity.actions.server_start',
+  'server:stop': 'activity.actions.server_stop',
+  'server:restart': 'activity.actions.server_restart',
+  'server:kill': 'activity.actions.server_kill',
+  'server:command': 'activity.actions.server_command',
+  'backup:create': 'activity.actions.backup_create',
+  'backup:restore': 'activity.actions.backup_restore',
+  'backup:delete': 'activity.actions.backup_delete',
+  'player:kick': 'activity.actions.player_kick',
+  'player:ban': 'activity.actions.player_ban',
+  'player:unban': 'activity.actions.player_unban',
+  'mod:install': 'activity.actions.mod_install',
+  'mod:uninstall': 'activity.actions.mod_uninstall',
+  'mod:enable': 'activity.actions.mod_enable',
+  'mod:disable': 'activity.actions.mod_disable',
+  'world:activate': 'activity.actions.world_activate',
+  'world:delete': 'activity.actions.world_delete',
+  'automation:create': 'activity.actions.automation_create',
+  'automation:delete': 'activity.actions.automation_delete',
+  'automation:execute': 'activity.actions.automation_execute',
+  'network:create': 'activity.actions.network_create',
+  'network:delete': 'activity.actions.network_delete',
+  'settings:update': 'activity.actions.settings_update',
+  'user:create': 'activity.actions.user_create',
+  'user:delete': 'activity.actions.user_delete',
 };
 
 /**
@@ -81,8 +82,9 @@ const CATEGORY_COLORS: Record<string, 'default' | 'success' | 'warning' | 'dange
 /**
  * Get human-readable action label
  */
-function getActionLabel(action: string): string {
-  return ACTION_LABELS[action] || action.replace(':', ' ').replace(/_/g, ' ');
+function getActionLabel(action: string, translate: (key: string, opts?: Record<string, unknown>) => string): string {
+  const key = ACTION_LABELS[action];
+  return key ? translate(key) : action.replace(':', ' ').replace(/_/g, ' ');
 }
 
 /**
@@ -102,6 +104,7 @@ function getCategoryIcon(category: string) {
 }
 
 export const ActivityLogPage = () => {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState<ActivityLogFilters>({
     page: 1,
     limit: 20,
@@ -131,10 +134,24 @@ export const ActivityLogPage = () => {
     setFilters(prev => ({ ...prev, page }));
   };
 
+  const categories = useMemo(() => ([
+    { value: '', label: t('activity.filters.all_categories') },
+    { value: 'auth', label: t('activity.filters.categories.auth') },
+    { value: 'server', label: t('activity.filters.categories.server') },
+    { value: 'backup', label: t('activity.filters.categories.backup') },
+    { value: 'player', label: t('activity.filters.categories.player') },
+    { value: 'mod', label: t('activity.filters.categories.mod') },
+    { value: 'world', label: t('activity.filters.categories.world') },
+    { value: 'automation', label: t('activity.filters.categories.automation') },
+    { value: 'network', label: t('activity.filters.categories.network') },
+    { value: 'user', label: t('activity.filters.categories.user') },
+    { value: 'settings', label: t('activity.filters.categories.settings') },
+  ]), [t]);
+
   const columns: Column<ActivityLogEntry>[] = [
     {
       key: 'timestamp',
-      label: 'Time',
+      label: t('activity.table.time'),
       sortable: true,
       render: (entry) => (
         <span className="text-text-secondary text-sm">
@@ -144,7 +161,7 @@ export const ActivityLogPage = () => {
     },
     {
       key: 'username',
-      label: 'User',
+      label: t('activity.table.user'),
       sortable: true,
       render: (entry) => (
         <div className="flex items-center gap-2">
@@ -158,23 +175,23 @@ export const ActivityLogPage = () => {
     },
     {
       key: 'action',
-      label: 'Action',
+      label: t('activity.table.action'),
       sortable: true,
       render: (entry) => (
         <div className="flex items-center gap-2">
           <Badge variant={CATEGORY_COLORS[entry.actionCategory] || 'default'}>
             <span className="flex items-center gap-1">
               {getCategoryIcon(entry.actionCategory)}
-              {entry.actionCategory}
+              {categories.find((cat) => cat.value === entry.actionCategory)?.label || entry.actionCategory}
             </span>
           </Badge>
-          <span>{getActionLabel(entry.action)}</span>
+          <span>{getActionLabel(entry.action, t)}</span>
         </div>
       ),
     },
     {
       key: 'resourceName',
-      label: 'Resource',
+      label: t('activity.table.resource'),
       render: (entry) => (
         <span className="text-text-secondary">
           {entry.resourceName || entry.resourceId || '-'}
@@ -183,18 +200,18 @@ export const ActivityLogPage = () => {
     },
     {
       key: 'status',
-      label: 'Status',
+      label: t('activity.table.status'),
       render: (entry) => (
         <div className="flex items-center gap-1">
           {entry.status === 'success' ? (
             <>
               <CheckCircle size={14} className="text-green-500" />
-              <span className="text-green-600">Success</span>
+              <span className="text-green-600">{t('activity.status.success')}</span>
             </>
           ) : (
             <>
               <XCircle size={14} className="text-red-500" />
-              <span className="text-red-600">Failed</span>
+              <span className="text-red-600">{t('activity.status.failed')}</span>
             </>
           )}
         </div>
@@ -202,7 +219,7 @@ export const ActivityLogPage = () => {
     },
     {
       key: 'ipAddress',
-      label: 'IP Address',
+      label: t('activity.table.ip_address'),
       render: (entry) => (
         <span className="text-text-muted text-sm font-mono">
           {entry.ipAddress || '-'}
@@ -211,29 +228,16 @@ export const ActivityLogPage = () => {
     },
   ];
 
-  const categories = [
-    { value: '', label: 'All Categories' },
-    { value: 'auth', label: 'Authentication' },
-    { value: 'server', label: 'Server' },
-    { value: 'backup', label: 'Backup' },
-    { value: 'player', label: 'Player' },
-    { value: 'mod', label: 'Mod' },
-    { value: 'world', label: 'World' },
-    { value: 'automation', label: 'Automation' },
-    { value: 'network', label: 'Network' },
-    { value: 'user', label: 'User' },
-    { value: 'settings', label: 'Settings' },
-  ];
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-text-primary flex items-center gap-2">
           <History className="text-primary" />
-          Activity Log
+          {t('activity.title')}
         </h1>
         <p className="text-text-secondary mt-1">
-          Track and audit all user actions across the system
+          {t('activity.subtitle')}
         </p>
       </div>
 
@@ -241,9 +245,9 @@ export const ActivityLogPage = () => {
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle>Activity History</CardTitle>
+              <CardTitle>{t('activity.history.title')}</CardTitle>
               <CardDescription>
-                {data?.pagination.total || 0} total entries
+                {t('activity.history.total', { count: data?.pagination.total || 0 })}
               </CardDescription>
             </div>
             <Button
@@ -252,7 +256,7 @@ export const ActivityLogPage = () => {
               variant="secondary"
             >
               <RefreshCw className={isFetching ? 'animate-spin' : ''} size={16} />
-              Refresh
+              {t('common.refresh')}
             </Button>
           </div>
         </CardHeader>
@@ -267,14 +271,14 @@ export const ActivityLogPage = () => {
                 />
                 <input
                   type="text"
-                  placeholder="Search by username or resource..."
+                  placeholder={t('activity.filters.search_placeholder')}
                   value={searchValue}
                   onChange={(e) => setSearchValue(e.target.value)}
                   className="pl-9 pr-4 py-2 border border-border rounded-lg bg-background text-text-primary w-64 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
               <Button type="submit" variant="secondary">
-                Search
+                {t('activity.filters.search')}
               </Button>
             </form>
 
@@ -303,9 +307,9 @@ export const ActivityLogPage = () => {
                 }}
                 className="px-3 py-2 border border-border rounded-lg bg-background text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
               >
-                <option value="">All Statuses</option>
-                <option value="success">Success</option>
-                <option value="failed">Failed</option>
+                <option value="">{t('activity.filters.statuses.all')}</option>
+                <option value="success">{t('activity.status.success')}</option>
+                <option value="failed">{t('activity.status.failed')}</option>
               </select>
             </div>
           </div>
@@ -314,7 +318,7 @@ export const ActivityLogPage = () => {
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <RefreshCw className="animate-spin text-primary" size={24} />
-              <span className="ml-2 text-text-secondary">Loading activity...</span>
+              <span className="ml-2 text-text-secondary">{t('activity.loading')}</span>
             </div>
           ) : data?.data && data.data.length > 0 ? (
             <>
@@ -333,10 +337,10 @@ export const ActivityLogPage = () => {
                     onClick={() => handlePageChange(data.pagination.page - 1)}
                     disabled={data.pagination.page <= 1}
                   >
-                    Previous
+                    {t('table.pagination.previous')}
                   </Button>
                   <span className="text-text-secondary px-4">
-                    Page {data.pagination.page} of {data.pagination.totalPages}
+                    {t('table.pagination.page_of', { page: data.pagination.page, total: data.pagination.totalPages })}
                   </span>
                   <Button
                     variant="secondary"
@@ -344,7 +348,7 @@ export const ActivityLogPage = () => {
                     onClick={() => handlePageChange(data.pagination.page + 1)}
                     disabled={data.pagination.page >= data.pagination.totalPages}
                   >
-                    Next
+                    {t('table.pagination.next')}
                   </Button>
                 </div>
               )}
@@ -352,9 +356,9 @@ export const ActivityLogPage = () => {
           ) : (
             <div className="text-center py-12">
               <AlertCircle size={48} className="mx-auto text-text-muted mb-4" />
-              <p className="text-text-secondary">No activity found</p>
+              <p className="text-text-secondary">{t('activity.empty.title')}</p>
               <p className="text-text-muted text-sm mt-1">
-                Activity will appear here as actions are performed
+                {t('activity.empty.subtitle')}
               </p>
             </div>
           )}

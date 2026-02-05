@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge } from '../../components/ui';
 import { Send, Download, Trash2 } from 'lucide-react';
 import { useToast } from '../../stores/toastStore';
@@ -22,6 +23,7 @@ interface Server {
 
 export const ConsolePage = () => {
   const { serverId } = useParams<{ serverId?: string }>();
+  const { t } = useTranslation();
   const toast = useToast();
   const [servers, setServers] = useState<Server[]>([]);
   const [selectedServer, setSelectedServer] = useState<string>('');
@@ -80,9 +82,9 @@ export const ConsolePage = () => {
       onCommandResponse: (data) => {
         // Show command response
         if (data.response.success) {
-          toast.success('Command executed', data.response.output);
+          toast.success(t('console.toast.command_executed'), data.response.output);
         } else {
-          toast.error('Command failed', data.response.error || 'Unknown error');
+          toast.error(t('console.toast.command_failed'), data.response.error || t('console.toast.unknown_error'));
         }
       },
     });
@@ -112,7 +114,7 @@ export const ConsolePage = () => {
       }
     } catch (error) {
       console.error('Error fetching servers:', error);
-      toast.error('Failed to load servers', 'Please try again later');
+      toast.error(t('console.toast.load_servers_failed.title'), t('console.toast.load_servers_failed.description'));
     }
   };
 
@@ -126,7 +128,7 @@ export const ConsolePage = () => {
 
   const handleClearConsole = () => {
     setLogs([]);
-    toast.info('Console cleared');
+    toast.info(t('console.toast.console_cleared'));
   };
 
   const handleDownloadLogs = () => {
@@ -147,7 +149,7 @@ export const ConsolePage = () => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    toast.success('Logs downloaded');
+    toast.success(t('console.toast.logs_downloaded'));
   };
 
   const getLogLevelColor = (level: string) => {
@@ -166,15 +168,15 @@ export const ConsolePage = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">Console</h1>
-          <p className="text-text-light-muted dark:text-text-muted mt-1">Monitor and control your servers</p>
+          <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">{t('console.title')}</h1>
+          <p className="text-text-light-muted dark:text-text-muted mt-1">{t('console.subtitle')}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="ghost" size="sm" icon={<Download size={16} />} onClick={handleDownloadLogs} disabled={logs.length === 0}>
-            Download Logs
+            {t('console.actions.download_logs')}
           </Button>
           <Button variant="ghost" size="sm" icon={<Trash2 size={16} />} onClick={handleClearConsole} disabled={logs.length === 0}>
-            Clear Console
+            {t('console.actions.clear_console')}
           </Button>
         </div>
       </div>
@@ -185,11 +187,10 @@ export const ConsolePage = () => {
           <button
             key={server.id}
             onClick={() => setSelectedServer(server.id)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              selectedServer === server.id
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedServer === server.id
                 ? 'bg-accent-primary text-black'
                 : 'bg-white dark:bg-gray-100 dark:bg-primary-bg-secondary text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:text-text-primary'
-            }`}
+              }`}
           >
             {server.name}
           </button>
@@ -200,10 +201,12 @@ export const ConsolePage = () => {
       <Card variant="glass">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Live Console - {selectedServerData?.name || 'Select a server'}</CardTitle>
+            <CardTitle>
+              {t('console.live_console_title', { server: selectedServerData?.name || t('console.select_server_placeholder') })}
+            </CardTitle>
             {selectedServerData && (
               <Badge variant={selectedServerData.status === 'running' ? 'success' : 'default'}>
-                {selectedServerData.status}
+                {t(`servers.status.${selectedServerData.status}`)}
               </Badge>
             )}
           </div>
@@ -214,8 +217,8 @@ export const ConsolePage = () => {
             {logs.length === 0 ? (
               <div className="text-text-light-muted dark:text-text-muted text-center py-8">
                 {['running', 'starting'].includes(selectedServerData?.status || '')
-                  ? 'Waiting for logs...'
-                  : 'Start the server to see console output'}
+                  ? t('console.waiting_for_logs')
+                  : t('console.start_server_prompt')}
               </div>
             ) : (
               logs.map((log, index) => (
@@ -224,7 +227,7 @@ export const ConsolePage = () => {
                     [{new Date(log.timestamp).toLocaleTimeString()}]
                   </span>
                   <span className={getLogLevelColor(log.level)}>[{log.level.toUpperCase()}]</span>
-                  <span className="text-accent-secondary">[{log.source || 'Server'}]</span>
+                  <span className="text-accent-secondary">[{log.source || t('console.server_default')}]</span>
                   <span className="text-text-light-primary dark:text-text-primary">{formatLogMessage(log.message)}</span>
                 </div>
               ))
@@ -239,7 +242,7 @@ export const ConsolePage = () => {
               value={command}
               onChange={(e) => setCommand(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendCommand()}
-              placeholder="Enter command..."
+              placeholder={t('console.command_placeholder')}
               className="flex-1 px-4 py-2 bg-white dark:bg-primary-bg border border-gray-300 dark:border-gray-700 rounded-lg text-text-light-primary dark:text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary/50 font-mono"
               disabled={!['running', 'starting'].includes(selectedServerData?.status || '')}
             />
@@ -249,12 +252,12 @@ export const ConsolePage = () => {
               onClick={handleSendCommand}
               disabled={!['running', 'starting'].includes(selectedServerData?.status || '') || !command.trim()}
             >
-              Send
+              {t('console.actions.send')}
             </Button>
           </div>
 
           {!['running', 'starting'].includes(selectedServerData?.status || '') && selectedServerData && (
-            <p className="text-warning text-sm mt-2">Server must be running or starting to execute commands</p>
+            <p className="text-warning text-sm mt-2">{t('console.not_running_warning')}</p>
           )}
         </CardContent>
       </Card>

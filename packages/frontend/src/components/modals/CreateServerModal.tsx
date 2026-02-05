@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, ModalFooter, Button, Input } from '../ui';
 import { AlertTriangle, ChevronDown, Server as ServerIcon } from 'lucide-react';
 import { HytaleServerDownloadSection } from '../features/HytaleServerDownloadSection';
@@ -36,6 +37,7 @@ export interface ServerFormData {
 }
 
 export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerModalProps) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<ServerFormData>({
     name: '',
     serverPath: '',
@@ -235,27 +237,27 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
     const newErrors: Partial<Record<keyof ServerFormData, string>> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Server name is required';
+      newErrors.name = t('servers.create.errors.name');
     }
 
     if (!formData.serverPath.trim()) {
-      newErrors.serverPath = 'Server directory path is required';
+      newErrors.serverPath = t('servers.create.errors.server_path');
     }
 
     if (!formData.address.trim()) {
-      newErrors.address = 'Address is required';
+      newErrors.address = t('servers.create.errors.address');
     }
 
     if (formData.port < 1 || formData.port > 65535) {
-      newErrors.port = 'Port must be between 1 and 65535';
+      newErrors.port = t('servers.create.errors.port');
     }
 
     if (!formData.version.trim()) {
-      newErrors.version = 'Server version is required. Download server files first.';
+      newErrors.version = t('servers.create.errors.version');
     }
 
     if (!formData.gameMode.trim()) {
-      newErrors.gameMode = 'Game mode is required';
+      newErrors.gameMode = t('servers.create.errors.game_mode');
     }
 
     setErrors(newErrors);
@@ -353,7 +355,7 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Create New Server"
+      title={t('servers.create.title')}
       size="lg"
     >
       <div className="space-y-4">
@@ -364,10 +366,10 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
           </div>
           <div>
             <h3 className="font-heading font-semibold text-text-light-primary dark:text-text-primary">
-              Configure Your Server
+              {t('servers.create.header')}
             </h3>
             <p className="text-sm text-text-light-muted dark:text-text-muted">
-              Set up a new Hytale server instance
+              {t('servers.create.subtitle')}
             </p>
           </div>
         </div>
@@ -377,11 +379,11 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
           {/* Server Name */}
           <div>
             <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-              Server Name *
+              {t('servers.create.name_label')} *
             </label>
             <Input
               type="text"
-              placeholder="My Awesome Server"
+              placeholder={t('servers.create.name_placeholder')}
               value={formData.name}
               onChange={(e) => updateField('name', e.target.value)}
             />
@@ -393,16 +395,16 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
           {/* Server Directory Path */}
           <div>
             <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-              Server Directory *
+              {t("servers.create.path_label")} *
             </label>
             <Input
               type="text"
-              placeholder="C:\Servers\MyServer"
+              placeholder={t("servers.create.path_placeholder")}
               value={formData.serverPath}
               onChange={(e) => updateField('serverPath', e.target.value)}
             />
             <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
-              Full path to the server directory. This directory will be created if it doesn't exist.
+              {t('servers.create.path_help')}
             </p>
             {errors.serverPath && (
               <p className="text-danger text-sm mt-1">{errors.serverPath}</p>
@@ -423,7 +425,7 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-                Address *
+                {t('servers.create.address_label')} *
               </label>
               <Input
                 type="text"
@@ -438,7 +440,7 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
 
             <div>
               <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-                Port *
+                {t('servers.create.port_label')} *
               </label>
               <Input
                 type="number"
@@ -455,15 +457,15 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
           {/* Game Mode */}
           <div>
             <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-              Game Mode *
+              {t('servers.create.gamemode_label')} *
             </label>
             <select
               value={formData.gameMode}
               onChange={(e) => updateField('gameMode', e.target.value)}
               className="w-full px-4 py-2 bg-white dark:bg-primary-bg border border-gray-300 dark:border-gray-700 rounded-lg text-text-light-primary dark:text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/50"
             >
-              <option value="expedition">Expedition</option>
-              <option value="creative">Creative</option>
+              <option value="expedition">{t('servers.create.gamemodes.expedition')}</option>
+              <option value="creative">{t('servers.create.gamemodes.creative')}</option>
             </select>
             {errors.gameMode && (
               <p className="text-danger text-sm mt-1">{errors.gameMode}</p>
@@ -473,7 +475,7 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
           {/* Adapter Type */}
           <div>
             <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-              Adapter Type
+              {t('servers.create.adapter.label')}
             </label>
             <select
               value={formData.adapterType}
@@ -502,23 +504,23 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
               }}
               className="w-full px-4 py-2 bg-white dark:bg-primary-bg border border-gray-300 dark:border-gray-700 rounded-lg text-text-light-primary dark:text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary/50"
             >
-              <option value="java">Java JAR (Hytale, Minecraft, etc.)</option>
-              <option value="hytale" disabled>Hytale (Coming Soon)</option>
+              <option value="java">{t('servers.create.adapter.java')}</option>
+              <option value="hytale" disabled>{t('servers.create.adapter.hytale')}</option>
             </select>
             <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
-              {formData.adapterType === 'java' && 'Run a Java JAR file (e.g., Minecraft server).'}
+              {formData.adapterType === 'java' && t('servers.create.adapter.java_help')}
             </p>
           </div>
 
           {/* Java Adapter Config */}
           {formData.adapterType === 'java' && (
             <div className="space-y-4 p-4 bg-primary-bg-secondary rounded-lg">
-              <h4 className="font-medium text-text-light-primary dark:text-text-primary">Java Configuration</h4>
+              <h4 className="font-medium text-text-light-primary dark:text-text-primary">{t('servers.create.java.title')}</h4>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-                    JAR File Path
+                    {t('servers.create.java.jar_label')}
                   </label>
                   <Input
                     type="text"
@@ -530,13 +532,13 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
                     }))}
                   />
                   <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
-                    Path to the JAR file relative to the server directory
+                    {t('servers.create.java.jar_help')}
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-                    Assets Path
+                    {t('servers.create.java.assets_label')}
                   </label>
                   <Input
                     type="text"
@@ -548,13 +550,13 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
                     }))}
                   />
                   <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
-                    Path to Assets.zip relative to the JAR file
+                    {t('servers.create.java.assets_help')}
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-                    Java Path
+                    {t('servers.create.java.java_label')}
                   </label>
                   <Input
                     type="text"
@@ -566,7 +568,7 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
                     }))}
                   />
                   <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
-                    Path to Java executable (or just "java" if in PATH)
+                    {t('servers.create.java.java_help')}
                   </p>
                 </div>
               </div>
@@ -761,7 +763,7 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
 
               <div>
                 <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-                  JVM Arguments
+                  {t('servers.create.java.jvm_label')}
                 </label>
                 <textarea
                   placeholder="-Xms1G -Xmx2G -XX:AOTCache=HytaleServer.aot"
@@ -776,7 +778,7 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
                   rows={2}
                 />
                 <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
-                  JVM arguments for the Java process. AOT cache enables faster startup if HytaleServer.aot exists.
+                  {t('servers.create.java.jvm_help')}
                 </p>
               </div>
             </div>
@@ -829,10 +831,10 @@ export const CreateServerModal = ({ isOpen, onClose, onSubmit }: CreateServerMod
 
       <ModalFooter>
         <Button variant="ghost" onClick={handleClose} disabled={loading}>
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button variant="primary" onClick={handleSubmit} disabled={loading || showSkipConfirmation}>
-          {loading ? 'Creating...' : 'Create Server'}
+          {loading ? t('common.creating') : t('servers.create.submit')}
         </Button>
       </ModalFooter>
     </Modal>

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, ModalFooter, Button, Input, Badge } from '../../components/ui';
 import { Clock, GripVertical, X, ChevronUp, ChevronDown } from 'lucide-react';
 
@@ -59,19 +60,6 @@ interface TaskGroupModalProps {
   editGroup?: TaskGroup | null;
 }
 
-const CRON_PRESETS = [
-  { label: 'Every 5 minutes', value: '*/5 * * * *' },
-  { label: 'Every 15 minutes', value: '*/15 * * * *' },
-  { label: 'Every 30 minutes', value: '*/30 * * * *' },
-  { label: 'Every hour', value: '0 * * * *' },
-  { label: 'Every 6 hours', value: '0 */6 * * *' },
-  { label: 'Daily at midnight', value: '0 0 * * *' },
-  { label: 'Daily at noon', value: '0 12 * * *' },
-  { label: 'Weekly on Sunday', value: '0 0 * * 0' },
-  { label: 'Weekly on Monday', value: '0 0 * * 1' },
-  { label: 'Custom', value: 'custom' },
-];
-
 export const TaskGroupModal = ({
   isOpen,
   onClose,
@@ -80,6 +68,22 @@ export const TaskGroupModal = ({
   availableTasks,
   editGroup,
 }: TaskGroupModalProps) => {
+  const { t } = useTranslation();
+  const CRON_PRESETS = useMemo(
+    () => [
+      { label: t('automation.cron.every_5_minutes'), value: '*/5 * * * *' },
+      { label: t('automation.cron.every_15_minutes'), value: '*/15 * * * *' },
+      { label: t('automation.cron.every_30_minutes'), value: '*/30 * * * *' },
+      { label: t('automation.cron.every_hour'), value: '0 * * * *' },
+      { label: t('automation.cron.every_6_hours'), value: '0 */6 * * *' },
+      { label: t('automation.cron.daily_midnight'), value: '0 0 * * *' },
+      { label: t('automation.cron.daily_noon'), value: '0 12 * * *' },
+      { label: t('automation.cron.weekly_sunday'), value: '0 0 * * 0' },
+      { label: t('automation.cron.weekly_monday'), value: '0 0 * * 1' },
+      { label: t('automation.cron.custom'), value: 'custom' },
+    ],
+    [t]
+  );
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [cronPreset, setCronPreset] = useState('0 0 * * *');
@@ -120,19 +124,19 @@ export const TaskGroupModal = ({
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      setError('Please enter a group name');
+      setError(t('automation.modals.task_group.errors.name'));
       return;
     }
 
     const cronExpression = cronPreset === 'custom' ? customCron : cronPreset;
 
     if (!cronExpression || !isValidCron(cronExpression)) {
-      setError('Please enter a valid cron expression');
+      setError(t('automation.modals.task_group.errors.cron'));
       return;
     }
 
     if (selectedTaskIds.length === 0) {
-      setError('Please select at least one task');
+      setError(t('automation.modals.task_group.errors.tasks'));
       return;
     }
 
@@ -163,7 +167,10 @@ export const TaskGroupModal = ({
       handleClose();
     } catch (err: any) {
       console.error(isEditMode ? 'Error updating task group:' : 'Error creating task group:', err);
-      setError(err.message || (isEditMode ? 'Failed to update task group' : 'Failed to create task group'));
+      setError(
+        err.message ||
+          t(isEditMode ? 'automation.modals.task_group.errors.update' : 'automation.modals.task_group.errors.create')
+      );
     } finally {
       setLoading(false);
     }
@@ -222,19 +229,19 @@ export const TaskGroupModal = ({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title={isEditMode ? "Edit Task Group" : "Create Task Group"}
+      title={isEditMode ? t('automation.modals.task_group.title_edit') : t('automation.modals.task_group.title_create')}
       size="lg"
     >
       <div className="space-y-4">
         {/* Group Name */}
         <div>
           <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-            Group Name *
+            {t('automation.modals.task_group.name_label')}
           </label>
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g., Daily Server Maintenance"
+            placeholder={t('automation.modals.task_group.name_placeholder')}
             className="w-full"
           />
         </div>
@@ -242,12 +249,12 @@ export const TaskGroupModal = ({
         {/* Description */}
         <div>
           <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-            Description (Optional)
+            {t('automation.modals.task_group.description_label')}
           </label>
           <Input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="e.g., Backup, restart, and notify"
+            placeholder={t('automation.modals.task_group.description_placeholder')}
             className="w-full"
           />
         </div>
@@ -255,7 +262,7 @@ export const TaskGroupModal = ({
         {/* Schedule Preset */}
         <div>
           <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-            Schedule *
+            {t('automation.modals.task_group.schedule_label')}
           </label>
           <select
             value={cronPreset}
@@ -274,16 +281,16 @@ export const TaskGroupModal = ({
         {cronPreset === 'custom' && (
           <div>
             <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-              Custom Cron Expression *
+              {t('automation.modals.task_group.custom_cron_label')}
             </label>
             <Input
               value={customCron}
               onChange={(e) => setCustomCron(e.target.value)}
-              placeholder="* * * * *"
+              placeholder={t('automation.modals.task_group.custom_cron_placeholder')}
               className="w-full font-mono"
             />
             <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
-              Format: minute hour day month weekday (e.g., "0 2 * * *" = 2 AM daily)
+              {t('automation.modals.task_group.custom_cron_helper')}
             </p>
           </div>
         )}
@@ -291,7 +298,7 @@ export const TaskGroupModal = ({
         {/* Failure Mode */}
         <div>
           <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-            On Task Failure
+            {t('automation.modals.task_group.failure_label')}
           </label>
           <div className="flex gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
@@ -304,7 +311,7 @@ export const TaskGroupModal = ({
                 className="accent-accent-primary"
               />
               <span className="text-sm text-text-light-primary dark:text-text-primary">
-                Stop remaining tasks
+                {t('automation.modals.task_group.failure_stop')}
               </span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -317,7 +324,7 @@ export const TaskGroupModal = ({
                 className="accent-accent-primary"
               />
               <span className="text-sm text-text-light-primary dark:text-text-primary">
-                Continue with remaining tasks
+                {t('automation.modals.task_group.failure_continue')}
               </span>
             </label>
           </div>
@@ -326,7 +333,7 @@ export const TaskGroupModal = ({
         {/* Delay Between Tasks */}
         <div>
           <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-            Delay Between Tasks (seconds)
+            {t('automation.modals.task_group.delay_label')}
           </label>
           <Input
             type="number"
@@ -336,14 +343,16 @@ export const TaskGroupModal = ({
             className="w-full"
           />
           <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
-            Wait time between each task execution. Set to 0 for no delay.
+            {t('automation.modals.task_group.delay_helper')}
           </p>
         </div>
 
         {/* Task Selection */}
         <div>
           <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-            Tasks * {selectedTaskIds.length > 0 && `(${selectedTaskIds.length} selected)`}
+            {t('automation.modals.task_group.tasks_label')}
+            {selectedTaskIds.length > 0 &&
+              ` (${t('automation.modals.task_group.tasks_selected', { count: selectedTaskIds.length })})`}
           </label>
 
           {/* Selected Tasks (ordered) */}
@@ -398,11 +407,11 @@ export const TaskGroupModal = ({
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg max-h-48 overflow-y-auto">
             {unselectedTasks.length === 0 && selectedTasks.length === 0 ? (
               <div className="p-4 text-center text-text-light-muted dark:text-text-muted text-sm">
-                No tasks available. Create some scheduled tasks first.
+                {t('automation.modals.task_group.tasks_empty')}
               </div>
             ) : unselectedTasks.length === 0 ? (
               <div className="p-4 text-center text-text-light-muted dark:text-text-muted text-sm">
-                All tasks selected
+                {t('automation.modals.task_group.tasks_all_selected')}
               </div>
             ) : (
               unselectedTasks.map((task) => (
@@ -423,7 +432,7 @@ export const TaskGroupModal = ({
                         {task.name}
                       </span>
                       <Badge variant="default" size="sm">{task.type}</Badge>
-                      {!task.enabled && <Badge variant="warning" size="sm">Disabled</Badge>}
+                      {!task.enabled && <Badge variant="warning" size="sm">{t('automation.modals.task_group.disabled')}</Badge>}
                     </div>
                     <span className="text-xs text-text-light-muted dark:text-text-muted">
                       {task.server.name}
@@ -442,20 +451,30 @@ export const TaskGroupModal = ({
               <Clock className="text-accent-primary flex-shrink-0 mt-0.5" size={20} />
               <div className="flex-1">
                 <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">
-                  Group Preview
+                  {t('automation.modals.task_group.preview.title')}
                 </p>
                 <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
-                  Name: {name}
+                  {t('automation.modals.task_group.preview.name', { name })}
                 </p>
                 <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
-                  Schedule: {cronPreset === 'custom' ? customCron : CRON_PRESETS.find(p => p.value === cronPreset)?.label}
+                  {t('automation.modals.task_group.preview.schedule', {
+                    schedule: cronPreset === 'custom' ? customCron : CRON_PRESETS.find(p => p.value === cronPreset)?.label,
+                  })}
                 </p>
                 <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
-                  Tasks: {selectedTasks.length} task(s) will run in sequence
-                  {delayBetweenTasks > 0 && ` with ${delayBetweenTasks}s delay between each`}
+                  {t('automation.modals.task_group.preview.tasks', {
+                    count: selectedTasks.length,
+                  })}
+                  {delayBetweenTasks > 0 &&
+                    ` ${t('automation.modals.task_group.preview.delay', { seconds: delayBetweenTasks })}`}
                 </p>
                 <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
-                  On failure: {failureMode === 'stop' ? 'Stop remaining tasks' : 'Continue with remaining'}
+                  {t('automation.modals.task_group.preview.failure', {
+                    mode:
+                      failureMode === 'stop'
+                        ? t('automation.modals.task_group.failure_stop')
+                        : t('automation.modals.task_group.failure_continue'),
+                  })}
                 </p>
               </div>
             </div>
@@ -472,7 +491,7 @@ export const TaskGroupModal = ({
 
       <ModalFooter>
         <Button variant="ghost" onClick={handleClose} disabled={loading}>
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button
           variant="primary"
@@ -480,7 +499,13 @@ export const TaskGroupModal = ({
           loading={loading}
           disabled={loading || !name || selectedTaskIds.length === 0}
         >
-          {loading ? (isEditMode ? 'Saving...' : 'Creating...') : (isEditMode ? 'Save Changes' : 'Create Group')}
+          {loading
+            ? isEditMode
+              ? t('common.saving')
+              : t('common.creating')
+            : isEditMode
+            ? t('common.save_changes')
+            : t('automation.modals.task_group.submit')}
         </Button>
       </ModalFooter>
     </Modal>

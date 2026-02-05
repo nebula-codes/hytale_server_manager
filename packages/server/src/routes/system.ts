@@ -244,13 +244,51 @@ function getDownloadUrl(assets: any[]): string | null {
   return asset?.browser_download_url || null;
 }
 
+interface ParsedLogEntry {
+  timestamp: string;
+  level: 'error' | 'warn' | 'info' | 'debug';
+  message: string;
+}
+
+// HTTP request log pattern (Morgan logs) - filter these out from HSM logs
+const HTTP_REQUEST_PATTERN = /^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+\//;
+
+/**
+ * Parse a Winston log line into structured format
+ * Expected format: "2024-01-15 10:30:45 [INFO]: Log message here"
+ */
+function parseLogLine(line: string, excludeHttpLogs: boolean = true): ParsedLogEntry | null {
+  // Match Winston default format: "YYYY-MM-DD HH:mm:ss [LEVEL]: message"
+  const match = line.match(/^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\s+\[(\w+)\]:\s*(.*)$/);
+  if (match) {
+    const [, timestamp, level, message] = match;
+    const normalizedLevel = level.toLowerCase() as ParsedLogEntry['level'];
+    if (['error', 'warn', 'info', 'debug'].includes(normalizedLevel)) {
+      // Filter out HTTP request logs (Morgan middleware logs) if requested
+      if (excludeHttpLogs && HTTP_REQUEST_PATTERN.test(message)) {
+        return null;
+      }
+      return { timestamp, level: normalizedLevel, message };
+    }
+  }
+  // Return null for unparseable lines instead of fallback
+  return null;
+}
+
 /**
  * GET /api/system/logs
- * Get recent application logs
+ * Get recent application logs with optional level filtering
+ *
+ * Query params:
+ * - lines: number of lines to return (default: 100)
+ * - level: filter by log level (error, warn, info, debug)
+ * - includeHttp: include HTTP request logs (default: false)
  */
 router.get('/logs', async (req: Request, res: Response) => {
   try {
     const lines = parseInt(req.query.lines as string) || 100;
+    const levelFilter = req.query.level as string | undefined;
+    const includeHttp = req.query.includeHttp === 'true';
     const logFile = path.join(config.logsPath, 'combined.log');
 
     if (!await fs.pathExists(logFile)) {
@@ -259,12 +297,25 @@ router.get('/logs', async (req: Request, res: Response) => {
     }
 
     const content = await fs.readFile(logFile, 'utf-8');
-    const logLines = content.trim().split('\n').slice(-lines);
+    const logLines = content.trim().split('\n');
+
+    // Parse all log lines into structured format (filter HTTP logs by default)
+    let parsedLogs = logLines
+      .map(line => parseLogLine(line, !includeHttp))
+      .filter((log): log is ParsedLogEntry => log !== null);
+
+    // Apply level filter if specified
+    if (levelFilter && ['error', 'warn', 'info', 'debug'].includes(levelFilter.toLowerCase())) {
+      parsedLogs = parsedLogs.filter(log => log.level === levelFilter.toLowerCase());
+    }
+
+    // Get last N lines
+    parsedLogs = parsedLogs.slice(-lines);
 
     res.json({
-      logs: logLines,
+      logs: parsedLogs,
       file: logFile,
-      count: logLines.length,
+      count: parsedLogs.length,
     });
   } catch (error: any) {
     logger.error('Error reading logs:', error);

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, ModalFooter, Button, Input } from '../../components/ui';
 import { Database } from 'lucide-react';
 
@@ -16,6 +17,7 @@ interface CreateBackupModalProps {
 }
 
 export const CreateBackupModal = ({ isOpen, onClose, onSubmit, servers }: CreateBackupModalProps) => {
+  const { t } = useTranslation();
   const [serverId, setServerId] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,7 +25,7 @@ export const CreateBackupModal = ({ isOpen, onClose, onSubmit, servers }: Create
 
   const handleSubmit = async () => {
     if (!serverId) {
-      setError('Please select a server');
+      setError(t('backups.create.errors.server_required'));
       return;
     }
 
@@ -35,7 +37,7 @@ export const CreateBackupModal = ({ isOpen, onClose, onSubmit, servers }: Create
       handleClose();
     } catch (err: any) {
       console.error('Error creating backup:', err);
-      setError(err.message || 'Failed to create backup');
+      setError(err.message || t('backups.create.errors.create_failed'));
     } finally {
       setLoading(false);
     }
@@ -51,19 +53,19 @@ export const CreateBackupModal = ({ isOpen, onClose, onSubmit, servers }: Create
   const selectedServer = servers.find(s => s.id === serverId);
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Create Backup" size="md">
+    <Modal isOpen={isOpen} onClose={handleClose} title={t('backups.create.title')} size="md">
       <div className="space-y-4">
         {/* Server Selection */}
         <div>
           <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-            Server *
+            {t('backups.create.server_label')} *
           </label>
           <select
             value={serverId}
             onChange={(e) => setServerId(e.target.value)}
             className="w-full px-3 py-2 bg-white dark:bg-primary-bg-secondary border border-gray-300 dark:border-gray-700 rounded-lg text-text-light-primary dark:text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary"
           >
-            <option value="">Select a server...</option>
+            <option value="">{t('backups.create.server_placeholder')}</option>
             {servers.map((server) => (
               <option key={server.id} value={server.id}>
                 {server.name} ({server.status})
@@ -78,16 +80,16 @@ export const CreateBackupModal = ({ isOpen, onClose, onSubmit, servers }: Create
         {/* Description */}
         <div>
           <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-            Description (Optional)
+            {t('backups.create.description_label')}
           </label>
           <Input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="e.g., Before major update, Manual backup..."
+            placeholder={t('backups.create.description_placeholder')}
             className="w-full"
           />
           <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
-            Add a note to help identify this backup later
+            {t('backups.create.description_help')}
           </p>
         </div>
 
@@ -98,18 +100,18 @@ export const CreateBackupModal = ({ isOpen, onClose, onSubmit, servers }: Create
               <Database className="text-accent-primary flex-shrink-0 mt-0.5" size={20} />
               <div className="flex-1">
                 <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">
-                  Backup Preview
+                  {t('backups.create.preview_title')}
                 </p>
                 <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
-                  Server: {selectedServer.name}
+                  {t('backups.create.preview_server', { server: selectedServer.name })}
                 </p>
                 {description && (
                   <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
-                    Note: {description}
+                    {t('backups.create.preview_note', { note: description })}
                   </p>
                 )}
                 <p className="text-xs text-text-light-muted dark:text-text-muted mt-2">
-                  The backup will include all server files, worlds, and configurations.
+                  {t('backups.create.preview_info')}
                 </p>
               </div>
             </div>
@@ -126,10 +128,10 @@ export const CreateBackupModal = ({ isOpen, onClose, onSubmit, servers }: Create
 
       <ModalFooter>
         <Button variant="ghost" onClick={handleClose} disabled={loading}>
-          Cancel
+          {t('common.cancel')}
         </Button>
         <Button variant="primary" onClick={handleSubmit} loading={loading} disabled={loading || !serverId}>
-          {loading ? 'Creating...' : 'Create Backup'}
+          {loading ? t('common.creating') : t('backups.create.submit')}
         </Button>
       </ModalFooter>
     </Modal>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, Button } from '../../components/ui';
 import { Server, Activity, Cpu, RefreshCw } from 'lucide-react';
 import { useToast } from '../../stores/toastStore';
@@ -53,6 +54,7 @@ interface AlertsSummary {
 }
 
 export const DashboardPage = () => {
+  const { t } = useTranslation();
   const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -123,13 +125,13 @@ export const DashboardPage = () => {
     } catch (error: any) {
       console.error('Error fetching dashboard data:', error);
       if (!showRefreshing) {
-        toast.error('Failed to load dashboard', error.message);
+        toast.error(t('common.loading'), error.message);
       }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [metricsRange, toast, fetchAlerts]);
+  }, [metricsRange, toast, fetchAlerts, t]);
 
   // Initial fetch
   useEffect(() => {
@@ -183,7 +185,7 @@ export const DashboardPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-text-light-muted dark:text-text-muted">Loading dashboard...</div>
+        <div className="text-text-light-muted dark:text-text-muted">{t('dashboard.loading')}</div>
       </div>
     );
   }
@@ -194,10 +196,10 @@ export const DashboardPage = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">
-            Dashboard
+            {t('dashboard.title')}
           </h1>
           <p className="text-sm sm:text-base text-text-light-muted dark:text-text-muted mt-1">
-            Overview of your Hytale server network
+            {t('dashboard.subtitle')}
           </p>
         </div>
         <Button
@@ -206,7 +208,7 @@ export const DashboardPage = () => {
           onClick={handleRefresh}
           disabled={refreshing}
         >
-          Refresh
+          {t('common.refresh')}
         </Button>
       </div>
 
@@ -221,12 +223,12 @@ export const DashboardPage = () => {
           <Card variant="glass" hover onClick={() => navigate('/servers')}>
             <CardContent className="flex items-center justify-between">
               <div>
-                <p className="text-text-light-muted dark:text-text-muted text-sm">Total Servers</p>
+                <p className="text-text-light-muted dark:text-text-muted text-sm">{t('dashboard.stats.total_servers')}</p>
                 <p className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary mt-1">
                   {stats?.totalServers || 0}
                 </p>
                 <p className="text-success text-sm mt-1">
-                  {stats?.runningServers || 0} running
+                  {stats?.runningServers || 0} {t('dashboard.stats.running')}
                 </p>
               </div>
               <div className="w-12 h-12 bg-accent-primary/20 rounded-lg flex items-center justify-center">
@@ -240,20 +242,19 @@ export const DashboardPage = () => {
           <Card variant="glass">
             <CardContent className="flex items-center justify-between">
               <div>
-                <p className="text-text-light-muted dark:text-text-muted text-sm">Host CPU</p>
+                <p className="text-text-light-muted dark:text-text-muted text-sm">{t('dashboard.stats.host_cpu')}</p>
                 <p className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary mt-1">
                   {(stats?.host?.cpu?.usage || 0).toFixed(1)}%
                 </p>
                 <p
-                  className={`text-sm mt-1 ${
-                    (stats?.host?.cpu?.usage || 0) > 80
+                  className={`text-sm mt-1 ${(stats?.host?.cpu?.usage || 0) > 80
                       ? 'text-danger'
                       : (stats?.host?.cpu?.usage || 0) > 60
-                      ? 'text-warning'
-                      : 'text-success'
-                  }`}
+                        ? 'text-warning'
+                        : 'text-success'
+                    }`}
                 >
-                  {stats?.host?.cpu?.cores || 0} cores
+                  {stats?.host?.cpu?.cores || 0} {t('dashboard.stats.cores')}
                 </p>
               </div>
               <div className="w-12 h-12 bg-info/20 rounded-lg flex items-center justify-center">
@@ -267,20 +268,19 @@ export const DashboardPage = () => {
           <Card variant="glass">
             <CardContent className="flex items-center justify-between">
               <div>
-                <p className="text-text-light-muted dark:text-text-muted text-sm">Host Memory</p>
+                <p className="text-text-light-muted dark:text-text-muted text-sm">{t('dashboard.stats.host_memory')}</p>
                 <p className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary mt-1">
                   {stats?.host?.memory?.usedGB?.toFixed(1) || 0} GB
                 </p>
                 <p
-                  className={`text-sm mt-1 ${
-                    (stats?.host?.memory?.usage || 0) > 85
+                  className={`text-sm mt-1 ${(stats?.host?.memory?.usage || 0) > 85
                       ? 'text-danger'
                       : (stats?.host?.memory?.usage || 0) > 70
-                      ? 'text-warning'
-                      : 'text-success'
-                  }`}
+                        ? 'text-warning'
+                        : 'text-success'
+                    }`}
                 >
-                  of {stats?.host?.memory?.totalGB?.toFixed(1) || 0} GB ({(stats?.host?.memory?.usage || 0).toFixed(0)}%)
+                  {t('dashboard.stats.of')} {stats?.host?.memory?.totalGB?.toFixed(1) || 0} GB ({(stats?.host?.memory?.usage || 0).toFixed(0)}%)
                 </p>
               </div>
               <div className="w-12 h-12 bg-warning/20 rounded-lg flex items-center justify-center">

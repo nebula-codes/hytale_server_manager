@@ -320,6 +320,9 @@ export class AlertsService {
           `Server ${server.name} is down`,
           `The server ${server.name} is currently stopped.`
         );
+      } else if (server.status === 'running') {
+        // Auto-resolve server_down alerts when server is back online
+        await this.autoResolveAlerts(server.id, 'server_down');
       }
 
       // Check metrics if available
@@ -345,6 +348,9 @@ export class AlertsService {
             `CPU usage is at ${metric.cpuUsage.toFixed(1)}%`,
             { cpuUsage: metric.cpuUsage }
           );
+        } else {
+          // Auto-resolve high_cpu alerts when CPU is back to normal
+          await this.autoResolveAlerts(server.id, 'high_cpu');
         }
 
         // Check memory usage
@@ -366,6 +372,9 @@ export class AlertsService {
             `Memory usage is at ${metric.memoryUsage.toFixed(1)}%`,
             { memoryUsage: metric.memoryUsage }
           );
+        } else {
+          // Auto-resolve high_memory alerts when memory is back to normal
+          await this.autoResolveAlerts(server.id, 'high_memory');
         }
 
         // Check disk usage
@@ -387,6 +396,9 @@ export class AlertsService {
             `Disk usage is at ${metric.diskUsage.toFixed(1)}%`,
             { diskUsage: metric.diskUsage }
           );
+        } else {
+          // Auto-resolve high_disk alerts when disk usage is back to normal
+          await this.autoResolveAlerts(server.id, 'high_disk');
         }
       }
     }
@@ -409,18 +421,13 @@ export class AlertsService {
     message: string,
     metadata?: any
   ): Promise<void> {
-    // Check if similar unresolved alert exists (within last hour)
-    const oneHourAgo = new Date();
-    oneHourAgo.setHours(oneHourAgo.getHours() - 1);
-
+    // Check if any unresolved alert of the same type exists for this server
+    // No time window - prevents repeated alerts for ongoing conditions
     const existingAlert = await prisma.alert.findFirst({
       where: {
         serverId,
         type,
         isResolved: false,
-        createdAt: {
-          gte: oneHourAgo,
-        },
       },
     });
 
@@ -434,6 +441,26 @@ export class AlertsService {
         metadata,
       });
     }
+  }
+
+  /**
+   * Auto-resolve alerts when conditions are no longer met
+   */
+  private async autoResolveAlerts(
+    serverId: string,
+    type: AlertType
+  ): Promise<void> {
+    await prisma.alert.updateMany({
+      where: {
+        serverId,
+        type,
+        isResolved: false,
+      },
+      data: {
+        isResolved: true,
+        resolvedAt: new Date(),
+      },
+    });
   }
 
   /**

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge, DataTable, type Column } from '../../components/ui';
 import { Plus, Play, Pause, Trash2, Clock, Command, Database, RotateCw, PlayCircle, Pencil, Layers, ListOrdered } from 'lucide-react';
 import { useToast } from '../../stores/toastStore';
@@ -62,6 +63,7 @@ type TabType = 'tasks' | 'groups';
 export const AutomationPage = () => {
   const navigate = useNavigate();
   const toast = useToast();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('tasks');
   const [servers, setServers] = useState<Server[]>([]);
   const [selectedServer, setSelectedServer] = useState<string>('all');
@@ -114,7 +116,7 @@ export const AutomationPage = () => {
       setServers(data.map((s: any) => ({ id: s.id, name: s.name, status: s.status })));
     } catch (error) {
       console.error('Error fetching servers:', error);
-      toast.error('Failed to load servers', 'Please try again later');
+      toast.error(t('automation.toast.load_servers.title'), t('automation.toast.load_servers.description'));
     }
   };
 
@@ -136,7 +138,7 @@ export const AutomationPage = () => {
       setTasks(data);
     } catch (error) {
       console.error('Error fetching tasks:', error);
-      toast.error('Failed to load tasks', 'Please try again later');
+      toast.error(t('automation.toast.load_tasks.title'), t('automation.toast.load_tasks.description'));
     } finally {
       setLoadingTasks(false);
     }
@@ -149,7 +151,7 @@ export const AutomationPage = () => {
       setTaskGroups(data);
     } catch (error) {
       console.error('Error fetching task groups:', error);
-      toast.error('Failed to load task groups', 'Please try again later');
+      toast.error(t('automation.toast.load_groups.title'), t('automation.toast.load_groups.description'));
     } finally {
       setLoadingGroups(false);
     }
@@ -159,42 +161,42 @@ export const AutomationPage = () => {
   const handleToggleTask = async (taskId: string, currentEnabled: boolean) => {
     try {
       await api.toggleTask(taskId, !currentEnabled);
-      toast.success(currentEnabled ? 'Task disabled' : 'Task enabled');
+      toast.success(currentEnabled ? t('automation.toast.task_disabled') : t('automation.toast.task_enabled'));
       await fetchTasks();
     } catch (error: any) {
       console.error('Error toggling task:', error);
-      toast.error('Failed to toggle task', error.message);
+      toast.error(t('automation.toast.toggle_task_failed.title'), error.message || t('automation.toast.generic_error'));
     }
   };
 
   const handleRunNow = async (taskId: string) => {
     try {
       await api.runTaskNow(taskId);
-      toast.success('Task executed', 'Task has been run manually');
+      toast.success(t('automation.toast.task_executed.title'), t('automation.toast.task_executed.description'));
       await fetchTasks();
     } catch (error: any) {
       console.error('Error running task:', error);
-      toast.error('Failed to run task', error.message);
+      toast.error(t('automation.toast.run_task_failed.title'), error.message || t('automation.toast.generic_error'));
     }
   };
 
   const handleDeleteTask = async (taskId: string) => {
-    if (!confirm('Are you sure you want to delete this task?')) return;
+    if (!confirm(t('automation.confirm.delete_task'))) return;
 
     try {
       await api.deleteTask(taskId);
-      toast.success('Task deleted', 'Task has been removed');
+      toast.success(t('automation.toast.task_deleted.title'), t('automation.toast.task_deleted.description'));
       await fetchTasks();
     } catch (error: any) {
       console.error('Error deleting task:', error);
-      toast.error('Failed to delete task', error.message);
+      toast.error(t('automation.toast.delete_task_failed.title'), error.message || t('automation.toast.generic_error'));
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedTasks.length === 0) return;
 
-    if (!confirm(`Are you sure you want to delete ${selectedTasks.length} task(s)? This action cannot be undone.`)) {
+    if (!confirm(t('automation.confirm.bulk_delete_tasks', { count: selectedTasks.length }))) {
       return;
     }
 
@@ -212,10 +214,13 @@ export const AutomationPage = () => {
     }
 
     if (deleted > 0) {
-      toast.success(`Deleted ${deleted} task(s)`, failed > 0 ? `${failed} task(s) failed to delete` : undefined);
+      toast.success(
+        t('automation.toast.bulk_tasks_deleted.title', { count: deleted }),
+        failed > 0 ? t('automation.toast.bulk_tasks_deleted.description', { failed }) : undefined
+      );
     }
     if (failed > 0 && deleted === 0) {
-      toast.error('Failed to delete tasks');
+      toast.error(t('automation.toast.bulk_tasks_failed.title'), t('automation.toast.bulk_tasks_failed.description', { failed }));
     }
 
     await fetchTasks();
@@ -225,14 +230,14 @@ export const AutomationPage = () => {
 
   const handleCreateTask = async (serverId: string, data: any) => {
     await api.createTask(serverId, data);
-    toast.success('Task created', 'Scheduled task has been created');
+    toast.success(t('automation.toast.task_created.title'), t('automation.toast.task_created.description'));
     await fetchTasks();
     setShowCreateModal(false);
   };
 
   const handleUpdateTask = async (taskId: string, data: any) => {
     await api.updateTask(taskId, data);
-    toast.success('Task updated', 'Scheduled task has been updated');
+    toast.success(t('automation.toast.task_updated.title'), t('automation.toast.task_updated.description'));
     await fetchTasks();
     setEditingTask(null);
     setShowCreateModal(false);
@@ -252,43 +257,43 @@ export const AutomationPage = () => {
   const handleToggleGroup = async (groupId: string, currentEnabled: boolean) => {
     try {
       await api.toggleTaskGroup(groupId, !currentEnabled);
-      toast.success(currentEnabled ? 'Task group disabled' : 'Task group enabled');
+      toast.success(currentEnabled ? t('automation.toast.group_disabled') : t('automation.toast.group_enabled'));
       await fetchTaskGroups();
     } catch (error: any) {
       console.error('Error toggling task group:', error);
-      toast.error('Failed to toggle task group', error.message);
+      toast.error(t('automation.toast.toggle_group_failed.title'), error.message || t('automation.toast.generic_error'));
     }
   };
 
   const handleRunGroupNow = async (groupId: string) => {
     try {
-      toast.info('Running task group...', 'Tasks will execute in sequence');
+      toast.info(t('automation.toast.group_running.title'), t('automation.toast.group_running.description'));
       await api.runTaskGroupNow(groupId);
-      toast.success('Task group executed', 'All tasks have been run');
+      toast.success(t('automation.toast.group_executed.title'), t('automation.toast.group_executed.description'));
       await fetchTaskGroups();
     } catch (error: any) {
       console.error('Error running task group:', error);
-      toast.error('Failed to run task group', error.message);
+      toast.error(t('automation.toast.run_group_failed.title'), error.message || t('automation.toast.generic_error'));
     }
   };
 
   const handleDeleteGroup = async (groupId: string) => {
-    if (!confirm('Are you sure you want to delete this task group?')) return;
+    if (!confirm(t('automation.confirm.delete_group'))) return;
 
     try {
       await api.deleteTaskGroup(groupId);
-      toast.success('Task group deleted', 'Task group has been removed');
+      toast.success(t('automation.toast.group_deleted.title'), t('automation.toast.group_deleted.description'));
       await fetchTaskGroups();
     } catch (error: any) {
       console.error('Error deleting task group:', error);
-      toast.error('Failed to delete task group', error.message);
+      toast.error(t('automation.toast.delete_group_failed.title'), error.message || t('automation.toast.generic_error'));
     }
   };
 
   const handleBulkDeleteGroups = async () => {
     if (selectedGroups.length === 0) return;
 
-    if (!confirm(`Are you sure you want to delete ${selectedGroups.length} task group(s)? This action cannot be undone.`)) {
+    if (!confirm(t('automation.confirm.bulk_delete_groups', { count: selectedGroups.length }))) {
       return;
     }
 
@@ -306,10 +311,13 @@ export const AutomationPage = () => {
     }
 
     if (deleted > 0) {
-      toast.success(`Deleted ${deleted} task group(s)`, failed > 0 ? `${failed} group(s) failed to delete` : undefined);
+      toast.success(
+        t('automation.toast.bulk_groups_deleted.title', { count: deleted }),
+        failed > 0 ? t('automation.toast.bulk_groups_deleted.description', { failed }) : undefined
+      );
     }
     if (failed > 0 && deleted === 0) {
-      toast.error('Failed to delete task groups');
+      toast.error(t('automation.toast.bulk_groups_failed.title'), t('automation.toast.bulk_groups_failed.description', { failed }));
     }
 
     await fetchTaskGroups();
@@ -319,14 +327,14 @@ export const AutomationPage = () => {
 
   const handleCreateGroup = async (data: any) => {
     await api.createTaskGroup(data);
-    toast.success('Task group created', 'Task group has been created');
+    toast.success(t('automation.toast.group_created.title'), t('automation.toast.group_created.description'));
     await fetchTaskGroups();
     setShowGroupModal(false);
   };
 
   const handleUpdateGroup = async (groupId: string, data: any) => {
     await api.updateTaskGroup(groupId, data);
-    toast.success('Task group updated', 'Task group has been updated');
+    toast.success(t('automation.toast.group_updated.title'), t('automation.toast.group_updated.description'));
     await fetchTaskGroups();
     setEditingGroup(null);
     setShowGroupModal(false);
@@ -343,15 +351,15 @@ export const AutomationPage = () => {
   };
 
   const formatCron = (cron: string): string => {
-    if (cron === '0 * * * *') return 'Every hour';
-    if (cron === '0 0 * * *') return 'Daily at midnight';
-    if (cron === '0 0 * * 0') return 'Weekly on Sunday';
-    if (cron === '*/5 * * * *') return 'Every 5 minutes';
-    if (cron === '*/15 * * * *') return 'Every 15 minutes';
-    if (cron === '*/30 * * * *') return 'Every 30 minutes';
-    if (cron === '0 */6 * * *') return 'Every 6 hours';
-    if (cron === '0 12 * * *') return 'Daily at noon';
-    if (cron === '0 0 * * 1') return 'Weekly on Monday';
+    if (cron === '0 * * * *') return t('automation.cron.every_hour');
+    if (cron === '0 0 * * *') return t('automation.cron.daily_midnight');
+    if (cron === '0 0 * * 0') return t('automation.cron.weekly_sunday');
+    if (cron === '*/5 * * * *') return t('automation.cron.every_5_minutes');
+    if (cron === '*/15 * * * *') return t('automation.cron.every_15_minutes');
+    if (cron === '*/30 * * * *') return t('automation.cron.every_30_minutes');
+    if (cron === '0 */6 * * *') return t('automation.cron.every_6_hours');
+    if (cron === '0 12 * * *') return t('automation.cron.daily_noon');
+    if (cron === '0 0 * * 1') return t('automation.cron.weekly_monday');
     return cron;
   };
 
@@ -359,7 +367,7 @@ export const AutomationPage = () => {
   const taskColumns: Column<ScheduledTask>[] = [
     {
       key: 'name',
-      label: 'Task',
+      label: t('automation.table.task'),
       render: (task) => (
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-lg ${task.enabled ? 'bg-success/20' : 'bg-gray-200 dark:bg-gray-800'}`}>
@@ -386,33 +394,33 @@ export const AutomationPage = () => {
     },
     {
       key: 'type',
-      label: 'Type',
+      label: t('automation.table.type'),
       render: (task) => (
         <Badge variant="default" size="sm">{task.type}</Badge>
       ),
     },
     {
       key: 'cronExpression',
-      label: 'Schedule',
+      label: t('automation.table.schedule'),
       render: (task) => (
         <Badge variant="info" size="sm">{formatCron(task.cronExpression)}</Badge>
       ),
     },
     {
       key: 'enabled',
-      label: 'Status',
+      label: t('automation.table.status'),
       render: (task) => (
         <Badge variant={task.enabled ? 'success' : 'default'} size="sm">
-          {task.enabled ? 'Active' : 'Disabled'}
+          {task.enabled ? t('automation.status.active') : t('automation.status.disabled')}
         </Badge>
       ),
     },
     {
       key: 'lastRun',
-      label: 'Last Run',
+      label: t('automation.table.last_run'),
       render: (task) => (
         <div>
-          <p className="text-sm">{task.lastRun ? new Date(task.lastRun).toLocaleDateString() : 'Never'}</p>
+          <p className="text-sm">{task.lastRun ? new Date(task.lastRun).toLocaleDateString() : t('automation.status.never')}</p>
           {task.lastRun && (
             <p className="text-xs text-text-light-muted dark:text-text-muted">
               {new Date(task.lastRun).toLocaleTimeString()}
@@ -423,23 +431,23 @@ export const AutomationPage = () => {
     },
     {
       key: 'lastStatus',
-      label: 'Result',
+      label: t('automation.table.result'),
       render: (task) => {
         if (!task.lastRun) {
-          return <Badge variant="default" size="sm">Never run</Badge>;
+          return <Badge variant="default" size="sm">{t('automation.status.never_run')}</Badge>;
         }
         if (task.lastStatus === 'success') {
-          return <Badge variant="success" size="sm">Success</Badge>;
+          return <Badge variant="success" size="sm">{t('automation.status.success')}</Badge>;
         }
         if (task.lastStatus === 'failed') {
-          return <Badge variant="danger" size="sm">Failed</Badge>;
+          return <Badge variant="danger" size="sm">{t('automation.status.failed')}</Badge>;
         }
-        return <Badge variant="default" size="sm">Unknown</Badge>;
+        return <Badge variant="default" size="sm">{t('automation.status.unknown')}</Badge>;
       },
     },
     {
       key: 'actions',
-      label: 'Actions',
+      label: t('automation.table.actions'),
       sortable: false,
       render: (task) => (
         <div className="flex gap-1">
@@ -488,7 +496,7 @@ export const AutomationPage = () => {
   const groupColumns: Column<TaskGroup>[] = [
     {
       key: 'name',
-      label: 'Group',
+      label: t('automation.table.group'),
       render: (group) => (
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-lg ${group.enabled ? 'bg-accent-primary/20' : 'bg-gray-200 dark:bg-gray-800'}`}>
@@ -507,53 +515,53 @@ export const AutomationPage = () => {
     },
     {
       key: 'taskMemberships',
-      label: 'Tasks',
+      label: t('automation.table.tasks'),
       render: (group) => (
         <div className="flex items-center gap-2">
-          <Badge variant="info" size="sm">{group.taskMemberships.length} task(s)</Badge>
+          <Badge variant="info" size="sm">{t('automation.table.task_count', { count: group.taskMemberships.length })}</Badge>
         </div>
       ),
     },
     {
       key: 'cronExpression',
-      label: 'Schedule',
+      label: t('automation.table.schedule'),
       render: (group) => (
         <Badge variant="info" size="sm">{formatCron(group.cronExpression)}</Badge>
       ),
     },
     {
       key: 'delayBetweenTasks',
-      label: 'Delay',
+      label: t('automation.table.delay'),
       render: (group) => (
         <span className="text-sm text-text-light-muted dark:text-text-muted">
-          {group.delayBetweenTasks > 0 ? `${group.delayBetweenTasks}s` : 'None'}
+          {group.delayBetweenTasks > 0 ? `${group.delayBetweenTasks}s` : t('automation.status.none')}
         </span>
       ),
     },
     {
       key: 'failureMode',
-      label: 'On Failure',
+      label: t('automation.table.on_failure'),
       render: (group) => (
         <Badge variant={group.failureMode === 'stop' ? 'warning' : 'default'} size="sm">
-          {group.failureMode === 'stop' ? 'Stop' : 'Continue'}
+          {group.failureMode === 'stop' ? t('automation.failure.stop') : t('automation.failure.continue')}
         </Badge>
       ),
     },
     {
       key: 'enabled',
-      label: 'Status',
+      label: t('automation.table.status'),
       render: (group) => (
         <Badge variant={group.enabled ? 'success' : 'default'} size="sm">
-          {group.enabled ? 'Active' : 'Disabled'}
+          {group.enabled ? t('automation.status.active') : t('automation.status.disabled')}
         </Badge>
       ),
     },
     {
       key: 'lastRun',
-      label: 'Last Run',
+      label: t('automation.table.last_run'),
       render: (group) => (
         <div>
-          <p className="text-sm">{group.lastRun ? new Date(group.lastRun).toLocaleDateString() : 'Never'}</p>
+          <p className="text-sm">{group.lastRun ? new Date(group.lastRun).toLocaleDateString() : t('automation.status.never')}</p>
           {group.lastRun && (
             <p className="text-xs text-text-light-muted dark:text-text-muted">
               {new Date(group.lastRun).toLocaleTimeString()}
@@ -564,21 +572,21 @@ export const AutomationPage = () => {
     },
     {
       key: 'lastStatus',
-      label: 'Result',
+      label: t('automation.table.result'),
       render: (group) => {
         if (!group.lastRun) {
-          return <Badge variant="default" size="sm">Never run</Badge>;
+          return <Badge variant="default" size="sm">{t('automation.status.never_run')}</Badge>;
         }
         if (group.lastStatus === 'success') {
-          return <Badge variant="success" size="sm">Success</Badge>;
+          return <Badge variant="success" size="sm">{t('automation.status.success')}</Badge>;
         }
         if (group.lastStatus === 'failed') {
-          return <Badge variant="danger" size="sm">Failed</Badge>;
+          return <Badge variant="danger" size="sm">{t('automation.status.failed')}</Badge>;
         }
         if (group.lastStatus === 'partial') {
-          return <Badge variant="warning" size="sm">Partial</Badge>;
+          return <Badge variant="warning" size="sm">{t('automation.status.partial')}</Badge>;
         }
-        return <Badge variant="default" size="sm">Unknown</Badge>;
+        return <Badge variant="default" size="sm">{t('automation.status.unknown')}</Badge>;
       },
     },
     {
@@ -639,18 +647,18 @@ export const AutomationPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">Task Automation</h1>
-          <p className="text-text-light-muted dark:text-text-muted mt-1">Schedule and automate server tasks</p>
+          <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">{t('automation.title')}</h1>
+          <p className="text-text-light-muted dark:text-text-muted mt-1">{t('automation.subtitle')}</p>
         </div>
         <div className="flex gap-2">
           {activeTab === 'tasks' && (
             <Button variant="primary" icon={<Plus size={18} />} onClick={() => setShowCreateModal(true)}>
-              Create Task
+              {t('automation.buttons.create_task')}
             </Button>
           )}
           {activeTab === 'groups' && (
             <Button variant="primary" icon={<Plus size={18} />} onClick={() => setShowGroupModal(true)}>
-              Create Group
+              {t('automation.buttons.create_group')}
             </Button>
           )}
         </div>
@@ -660,25 +668,23 @@ export const AutomationPage = () => {
       <div className="flex gap-1 bg-white dark:bg-primary-bg-secondary p-1 rounded-lg w-fit">
         <button
           onClick={() => setActiveTab('tasks')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${
-            activeTab === 'tasks'
+          className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${activeTab === 'tasks'
               ? 'bg-accent-primary text-black'
               : 'text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary'
-          }`}
+            }`}
         >
           <Clock size={16} />
-          Tasks ({tasks.length})
+          {t('automation.tabs.tasks', { count: tasks.length })}
         </button>
         <button
           onClick={() => setActiveTab('groups')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${
-            activeTab === 'groups'
+          className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium transition-colors ${activeTab === 'groups'
               ? 'bg-accent-primary text-black'
               : 'text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary'
-          }`}
+            }`}
         >
           <Layers size={16} />
-          Task Groups ({taskGroups.length})
+          {t('automation.tabs.groups', { count: taskGroups.length })}
         </button>
       </div>
 
@@ -687,26 +693,24 @@ export const AutomationPage = () => {
         <>
           {/* Server Selector */}
           <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-sm text-text-light-muted dark:text-text-muted">Server:</span>
+            <span className="text-sm text-text-light-muted dark:text-text-muted">{t('automation.server_selector.label')}</span>
             <button
               onClick={() => setSelectedServer('all')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                selectedServer === 'all'
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedServer === 'all'
                   ? 'bg-accent-primary text-black'
                   : 'bg-white dark:bg-primary-bg-secondary text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary'
-              }`}
+                }`}
             >
-              All Servers
+              {t('automation.server_selector.all_servers')}
             </button>
             {servers.map((server) => (
               <button
                 key={server.id}
                 onClick={() => setSelectedServer(server.id)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  selectedServer === server.id
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedServer === server.id
                     ? 'bg-accent-primary text-black'
                     : 'bg-white dark:bg-primary-bg-secondary text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:hover:text-text-primary'
-                }`}
+                  }`}
               >
                 {server.name}
               </button>
@@ -719,7 +723,7 @@ export const AutomationPage = () => {
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-text-light-muted dark:text-text-muted text-sm">Total Tasks</p>
+                    <p className="text-text-light-muted dark:text-text-muted text-sm">{t('automation.stats.total_tasks')}</p>
                     <p className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary mt-1">{tasks.length}</p>
                   </div>
                   <Clock size={32} className="text-accent-primary" />
@@ -730,7 +734,7 @@ export const AutomationPage = () => {
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-text-light-muted dark:text-text-muted text-sm">Active</p>
+                    <p className="text-text-light-muted dark:text-text-muted text-sm">{t('automation.stats.active')}</p>
                     <p className="text-3xl font-heading font-bold text-success mt-1">{activeTasks}</p>
                   </div>
                   <Play size={32} className="text-success" />
@@ -741,7 +745,7 @@ export const AutomationPage = () => {
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-text-light-muted dark:text-text-muted text-sm">Successful</p>
+                    <p className="text-text-light-muted dark:text-text-muted text-sm">{t('automation.stats.successful')}</p>
                     <p className="text-3xl font-heading font-bold text-success mt-1">{successfulTasks}</p>
                   </div>
                   <PlayCircle size={32} className="text-success" />
@@ -752,7 +756,7 @@ export const AutomationPage = () => {
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-text-light-muted dark:text-text-muted text-sm">Failed</p>
+                    <p className="text-text-light-muted dark:text-text-muted text-sm">{t('automation.stats.failed')}</p>
                     <p className="text-3xl font-heading font-bold text-danger mt-1">{failedTasks}</p>
                   </div>
                   <Pause size={32} className="text-danger" />
@@ -765,18 +769,20 @@ export const AutomationPage = () => {
           <Card variant="glass">
             <CardHeader>
               <CardTitle>
-                {selectedServer === 'all' ? 'All Tasks' : `${servers.find(s => s.id === selectedServer)?.name} Tasks`}
-                {loadingTasks && ' (Loading...)'}
+                {selectedServer === 'all'
+                  ? t('automation.cards.all_tasks')
+                  : t('automation.cards.server_tasks', { server: servers.find(s => s.id === selectedServer)?.name })}
+                {loadingTasks ? ` (${t('common.loading')})` : ''}
               </CardTitle>
-              <CardDescription>Automated tasks and recurring jobs with advanced filtering</CardDescription>
+              <CardDescription>{t('automation.cards.description')}</CardDescription>
             </CardHeader>
             <CardContent>
               {tasks.length === 0 && !loadingTasks ? (
                 <div className="text-center py-12 text-text-light-muted dark:text-text-muted">
                   <Clock size={48} className="mx-auto mb-4 opacity-50" />
-                  <p>No scheduled tasks found</p>
+                  <p>{t('automation.empty.title')}</p>
                   <Button variant="primary" className="mt-4" icon={<Plus size={16} />} onClick={() => setShowCreateModal(true)}>
-                    Create Your First Task
+                    {t('automation.empty.button')}
                   </Button>
                 </div>
               ) : (
@@ -798,7 +804,7 @@ export const AutomationPage = () => {
                       loading={deletingMultiple}
                       disabled={deletingMultiple}
                     >
-                      Delete Selected
+                      {t('automation.actions.delete_selected')}
                     </Button>
                   }
                 />
@@ -817,7 +823,7 @@ export const AutomationPage = () => {
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-text-light-muted dark:text-text-muted text-sm">Total Groups</p>
+                    <p className="text-text-light-muted dark:text-text-muted text-sm">{t('automation.groups.stats.total')}</p>
                     <p className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary mt-1">{taskGroups.length}</p>
                   </div>
                   <Layers size={32} className="text-accent-primary" />
@@ -828,7 +834,7 @@ export const AutomationPage = () => {
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-text-light-muted dark:text-text-muted text-sm">Active Groups</p>
+                    <p className="text-text-light-muted dark:text-text-muted text-sm">{t('automation.groups.stats.active')}</p>
                     <p className="text-3xl font-heading font-bold text-success mt-1">{activeGroups}</p>
                   </div>
                   <Play size={32} className="text-success" />
@@ -839,7 +845,7 @@ export const AutomationPage = () => {
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-text-light-muted dark:text-text-muted text-sm">Total Tasks in Groups</p>
+                    <p className="text-text-light-muted dark:text-text-muted text-sm">{t('automation.groups.stats.tasks_in_groups')}</p>
                     <p className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary mt-1">
                       {taskGroups.reduce((sum, g) => sum + g.taskMemberships.length, 0)}
                     </p>
@@ -854,19 +860,19 @@ export const AutomationPage = () => {
           <Card variant="glass">
             <CardHeader>
               <CardTitle>
-                Task Groups
-                {loadingGroups && ' (Loading...)'}
+                {t('automation.groups.title')}
+                {loadingGroups ? ` (${t('common.loading')})` : ''}
               </CardTitle>
-              <CardDescription>Groups of tasks that run in sequence with configurable delays</CardDescription>
+              <CardDescription>{t('automation.groups.description')}</CardDescription>
             </CardHeader>
             <CardContent>
               {taskGroups.length === 0 && !loadingGroups ? (
                 <div className="text-center py-12 text-text-light-muted dark:text-text-muted">
                   <Layers size={48} className="mx-auto mb-4 opacity-50" />
-                  <p>No task groups found</p>
-                  <p className="text-sm mt-2">Create a group to run multiple tasks in sequence</p>
+                  <p>{t('automation.groups.empty.title')}</p>
+                  <p className="text-sm mt-2">{t('automation.groups.empty.subtitle')}</p>
                   <Button variant="primary" className="mt-4" icon={<Plus size={16} />} onClick={() => setShowGroupModal(true)}>
-                    Create Your First Group
+                    {t('automation.groups.empty.button')}
                   </Button>
                 </div>
               ) : (
@@ -888,7 +894,7 @@ export const AutomationPage = () => {
                       loading={deletingMultipleGroups}
                       disabled={deletingMultipleGroups}
                     >
-                      Delete Selected
+                      {t('automation.actions.delete_selected')}
                     </Button>
                   }
                 />

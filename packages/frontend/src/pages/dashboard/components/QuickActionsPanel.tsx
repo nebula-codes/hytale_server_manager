@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent, Button } from '../../../components/ui';
 import { Play, Square, RotateCcw, HardDrive, RefreshCw } from 'lucide-react';
 import { useToast } from '../../../stores/toastStore';
@@ -12,6 +13,7 @@ interface QuickActionsPanelProps {
 
 export const QuickActionsPanel = ({ runningCount, stoppedCount, onRefresh }: QuickActionsPanelProps) => {
   const toast = useToast();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState<string | null>(null);
 
   const handleAction = async (action: 'start-all' | 'stop-all' | 'restart-all') => {
@@ -21,18 +23,33 @@ export const QuickActionsPanel = ({ runningCount, stoppedCount, onRefresh }: Qui
 
       if (response.successCount > 0) {
         toast.success(
-          `${action === 'start-all' ? 'Starting' : action === 'stop-all' ? 'Stopping' : 'Restarting'} ${response.successCount} server(s)`,
-          response.failedCount > 0 ? `${response.failedCount} failed` : undefined
+          t(
+            action === 'start-all'
+              ? 'dashboard.quick_actions.toast.success_start'
+              : action === 'stop-all'
+              ? 'dashboard.quick_actions.toast.success_stop'
+              : 'dashboard.quick_actions.toast.success_restart',
+            { count: response.successCount }
+          ),
+          response.failedCount > 0
+            ? t('dashboard.quick_actions.toast.failed_body', { count: response.failedCount })
+            : undefined
         );
       } else if (response.failedCount > 0) {
-        toast.error('Action failed', `${response.failedCount} server(s) failed`);
+        toast.error(
+          t('dashboard.quick_actions.toast.failed_title'),
+          t('dashboard.quick_actions.toast.failed_body', { count: response.failedCount })
+        );
       } else {
-        toast.info('No servers affected', 'No servers matched the action criteria');
+        toast.info(
+          t('dashboard.quick_actions.toast.none_title'),
+          t('dashboard.quick_actions.toast.none_body')
+        );
       }
 
       onRefresh();
     } catch (error: any) {
-      toast.error('Action failed', error.message);
+      toast.error(t('dashboard.quick_actions.toast.failed_title'), error.message);
     } finally {
       setLoading(null);
     }
@@ -41,7 +58,7 @@ export const QuickActionsPanel = ({ runningCount, stoppedCount, onRefresh }: Qui
   return (
     <Card variant="glass">
       <CardHeader>
-        <CardTitle>Quick Actions</CardTitle>
+        <CardTitle>{t('dashboard.quick_actions.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
@@ -52,10 +69,10 @@ export const QuickActionsPanel = ({ runningCount, stoppedCount, onRefresh }: Qui
             onClick={() => handleAction('start-all')}
             disabled={loading !== null || stoppedCount === 0}
           >
-            Start All Servers
+            {t('dashboard.quick_actions.start_all')}
             {stoppedCount > 0 && (
               <span className="ml-auto text-text-light-muted dark:text-text-muted text-sm">
-                ({stoppedCount} stopped)
+                {t('dashboard.quick_actions.stopped_count', { count: stoppedCount })}
               </span>
             )}
           </Button>
@@ -67,10 +84,10 @@ export const QuickActionsPanel = ({ runningCount, stoppedCount, onRefresh }: Qui
             onClick={() => handleAction('stop-all')}
             disabled={loading !== null || runningCount === 0}
           >
-            Stop All Servers
+            {t('dashboard.quick_actions.stop_all')}
             {runningCount > 0 && (
               <span className="ml-auto text-text-light-muted dark:text-text-muted text-sm">
-                ({runningCount} running)
+                {t('dashboard.quick_actions.running_count', { count: runningCount })}
               </span>
             )}
           </Button>
@@ -82,7 +99,7 @@ export const QuickActionsPanel = ({ runningCount, stoppedCount, onRefresh }: Qui
             onClick={() => handleAction('restart-all')}
             disabled={loading !== null || runningCount === 0}
           >
-            Restart All Servers
+            {t('dashboard.quick_actions.restart_all')}
           </Button>
 
           <div className="pt-2 border-t border-gray-200 dark:border-gray-800">
@@ -93,7 +110,7 @@ export const QuickActionsPanel = ({ runningCount, stoppedCount, onRefresh }: Qui
               onClick={onRefresh}
               disabled={loading !== null}
             >
-              Refresh Dashboard
+              {t('dashboard.quick_actions.refresh')}
             </Button>
           </div>
         </div>

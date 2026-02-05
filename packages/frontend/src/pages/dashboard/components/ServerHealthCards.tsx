@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent, Badge, StatusIndicator } from '../../../components/ui';
 import { Cpu, MemoryStick, Users } from 'lucide-react';
 import type { ServerStatus } from '../../../types';
@@ -35,16 +36,17 @@ const healthBadgeVariant = (health: string): 'success' | 'warning' | 'danger' | 
 
 export const ServerHealthCards = ({ servers, loading }: ServerHealthCardsProps) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   if (loading) {
     return (
       <Card variant="glass">
         <CardHeader>
-          <CardTitle>Server Health</CardTitle>
+          <CardTitle>{t('dashboard.health.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-text-light-muted dark:text-text-muted">
-            Loading server health...
+            {t('dashboard.health.loading')}
           </div>
         </CardContent>
       </Card>
@@ -55,11 +57,11 @@ export const ServerHealthCards = ({ servers, loading }: ServerHealthCardsProps) 
     return (
       <Card variant="glass">
         <CardHeader>
-          <CardTitle>Server Health</CardTitle>
+          <CardTitle>{t('dashboard.health.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-text-light-muted dark:text-text-muted">
-            No servers found
+            {t('dashboard.health.empty')}
           </div>
         </CardContent>
       </Card>
@@ -69,7 +71,7 @@ export const ServerHealthCards = ({ servers, loading }: ServerHealthCardsProps) 
   return (
     <Card variant="glass">
       <CardHeader>
-        <CardTitle>Server Health</CardTitle>
+        <CardTitle>{t('dashboard.health.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
@@ -87,7 +89,7 @@ export const ServerHealthCards = ({ servers, loading }: ServerHealthCardsProps) 
                   </span>
                 </div>
                 <Badge variant={healthBadgeVariant(server.healthStatus)} size="sm">
-                  {server.healthStatus}
+                  {t(`dashboard.health.status.${server.healthStatus}`, server.healthStatus)}
                 </Badge>
               </div>
 

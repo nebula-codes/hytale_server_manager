@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input } from '../../components/ui';
 import { UpdateSettingsCard } from '../../components/settings/UpdateSettingsCard';
 import { HytaleDownloaderSettingsCard } from '../../components/settings/HytaleDownloaderSettingsCard';
@@ -43,6 +44,7 @@ const ALL_EVENTS = [
 ];
 
 export const SettingsPage = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const { providers, loadProviders, configureProvider } = useModProviderStore();
 
@@ -128,7 +130,7 @@ export const SettingsPage = () => {
         enabledEvents: data.enabledEvents ?? [],
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to load Discord settings');
+      setError(err.message || t('settings.discord.errors.load'));
     } finally {
       setLoading(false);
     }
@@ -144,6 +146,7 @@ export const SettingsPage = () => {
       setFtpStatus(status);
     } catch (err: any) {
       console.error('Failed to load FTP settings:', err);
+      setFtpError(t('settings.ftp.errors.load'));
     }
   };
 
@@ -169,7 +172,7 @@ export const SettingsPage = () => {
         setFtpStatus({ enabled: true, connected: false, message: result.message });
       }
     } catch (err: any) {
-      setFtpError(err.message || 'Failed to test FTP connection');
+      setFtpError(err.message || t('settings.ftp.errors.test'));
     } finally {
       setFtpTesting(false);
     }
@@ -181,9 +184,9 @@ export const SettingsPage = () => {
     setSuccess(null);
     try {
       await api.updateDiscordSettings(settings);
-      setSuccess('Discord settings saved successfully');
+      setSuccess(t('settings.discord.success.saved'));
     } catch (err: any) {
-      setError(err.message || 'Failed to save Discord settings');
+      setError(err.message || t('settings.discord.errors.save'));
     } finally {
       setSaving(false);
     }
@@ -195,9 +198,9 @@ export const SettingsPage = () => {
     setSuccess(null);
     try {
       await api.testDiscordNotification();
-      setSuccess('Test notification sent! Check your Discord channel.');
+      setSuccess(t('settings.discord.success.test'));
     } catch (err: any) {
-      setError(err.message || 'Failed to send test notification');
+      setError(err.message || t('settings.discord.errors.test'));
     } finally {
       setTesting(false);
     }
@@ -213,12 +216,12 @@ export const SettingsPage = () => {
 
     try {
       await configureProvider(providerId, apiKey);
-      setProviderSuccess(prev => ({ ...prev, [providerId]: 'API key saved successfully!' }));
+      setProviderSuccess(prev => ({ ...prev, [providerId]: t('settings.mods.saved') }));
       setProviderApiKeys(prev => ({ ...prev, [providerId]: '' })); // Clear the input after success
     } catch (err) {
       setProviderError(prev => ({
         ...prev,
-        [providerId]: err instanceof Error ? err.message : 'Failed to save API key',
+        [providerId]: err instanceof Error ? err.message : t('settings.mods.save_error'),
       }));
     } finally {
       setProviderSaving(prev => ({ ...prev, [providerId]: false }));
@@ -269,7 +272,7 @@ export const SettingsPage = () => {
   if (loading) {
     return (
       <div className="container mx-auto p-6 space-y-6">
-        <div className="text-center py-8 text-text-secondary">Loading settings...</div>
+        <div className="text-center py-8 text-text-secondary">{t('settings.loading')}</div>
       </div>
     );
   }
@@ -277,8 +280,8 @@ export const SettingsPage = () => {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-text-primary">Settings</h1>
-        <p className="text-text-secondary mt-1">Configure application settings</p>
+        <h1 className="text-3xl font-bold text-text-primary">{t('settings.title')}</h1>
+        <p className="text-text-secondary mt-1">{t('settings.subtitle')}</p>
       </div>
 
       {/* Software Updates */}
@@ -294,16 +297,16 @@ export const SettingsPage = () => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Package size={20} />
-                Mod Providers
+                {t('settings.mods.title')}
               </CardTitle>
-              <CardDescription>Configure API keys for mod providers to browse and install mods from different sources</CardDescription>
+              <CardDescription>{t('settings.mods.description')}</CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
             {providers.length === 0 ? (
-              <p className="text-text-secondary text-sm">Loading providers...</p>
+              <p className="text-text-secondary text-sm">{t('settings.mods.loading')}</p>
             ) : (
               providers.map((provider) => (
                 <div key={provider.id} className="border rounded-lg p-4 dark:border-gray-700">
@@ -321,16 +324,16 @@ export const SettingsPage = () => {
                         <p className="text-xs text-text-secondary">
                           {provider.requiresApiKey
                             ? provider.isConfigured
-                              ? 'API key configured'
-                              : 'API key required'
-                            : 'No API key required'}
+                              ? t('settings.mods.configured')
+                              : t('settings.mods.key_required')
+                            : t('settings.mods.no_key')}
                         </p>
                       </div>
                     </div>
                     {provider.isConfigured && (
                       <span className="flex items-center gap-1 text-green-500 text-sm">
                         <Check size={16} />
-                        Configured
+                        {t('settings.mods.configured')}
                       </span>
                     )}
                   </div>
@@ -360,7 +363,7 @@ export const SettingsPage = () => {
                       <div className="flex gap-2">
                         <Input
                           type="password"
-                          placeholder={provider.isConfigured ? '(Configured - enter new key to update)' : 'Enter API key'}
+                          placeholder={provider.isConfigured ? t('settings.mods.placeholder_configured') : t('settings.mods.placeholder_key')}
                           value={providerApiKeys[provider.id] || ''}
                           onChange={(e) => setProviderApiKeys(prev => ({ ...prev, [provider.id]: e.target.value }))}
                           className="flex-1"
@@ -371,14 +374,14 @@ export const SettingsPage = () => {
                           onClick={() => handleProviderSave(provider.id)}
                           disabled={!providerApiKeys[provider.id]?.trim() || providerSaving[provider.id]}
                         >
-                          {providerSaving[provider.id] ? 'Saving...' : 'Save'}
+                          {providerSaving[provider.id] ? t('settings.mods.saving') : t('settings.mods.save')}
                         </Button>
                       </div>
 
                       {provider.id === 'curseforge' && (
                         <div className="flex items-center gap-2 mt-2">
                           <p className="text-xs text-text-secondary">
-                            Get an API key from
+                            {t('settings.mods.get_key')}
                           </p>
                           <a
                             href="https://support.curseforge.com/en/support/solutions/articles/9000208346-about-the-curseforge-api-and-how-to-apply-for-a-key"
@@ -386,7 +389,7 @@ export const SettingsPage = () => {
                             rel="noopener noreferrer"
                             className="text-xs text-accent-primary hover:underline flex items-center gap-1"
                           >
-                            CurseForge Console
+                            {t('settings.mods.curseforge_console')}
                             <ExternalLink size={12} />
                           </a>
                         </div>
@@ -394,7 +397,7 @@ export const SettingsPage = () => {
                       {provider.id === 'modtale' && (
                         <div className="flex items-center gap-2 mt-2">
                           <p className="text-xs text-text-secondary">
-                            Get an API key from
+                            {t('settings.mods.get_key')}
                           </p>
                           <a
                             href="https://modtale.net/dashboard/developer"
@@ -402,7 +405,7 @@ export const SettingsPage = () => {
                             rel="noopener noreferrer"
                             className="text-xs text-accent-primary hover:underline flex items-center gap-1"
                           >
-                            Modtale Dashboard
+                            {t('settings.mods.modtale_dashboard')}
                             <ExternalLink size={12} />
                           </a>
                         </div>
@@ -423,9 +426,9 @@ export const SettingsPage = () => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Lock size={20} />
-                Change Password
+                {t('settings.security.title')}
               </CardTitle>
-              <CardDescription>Update your account password</CardDescription>
+              <CardDescription>{t('settings.security.description')}</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -452,11 +455,11 @@ export const SettingsPage = () => {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Current Password</label>
+              <label className="block text-sm font-medium mb-2">{t('settings.security.current')}</label>
               <div className="relative">
                 <Input
                   type={showCurrentPassword ? 'text' : 'password'}
-                  placeholder="Enter your current password"
+                  placeholder={t('settings.security.current')}
                   value={passwordForm.currentPassword}
                   onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
                 />
@@ -471,11 +474,11 @@ export const SettingsPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">New Password</label>
+              <label className="block text-sm font-medium mb-2">{t('settings.security.new')}</label>
               <div className="relative">
                 <Input
                   type={showNewPassword ? 'text' : 'password'}
-                  placeholder="Enter new password (min. 12 characters)"
+                  placeholder={t('settings.security.new')}
                   value={passwordForm.newPassword}
                   onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
                 />
@@ -488,16 +491,16 @@ export const SettingsPage = () => {
                 </button>
               </div>
               {passwordForm.newPassword.length > 0 && passwordForm.newPassword.length < 8 && (
-                <p className="text-xs text-red-500 mt-1">Password must be at least 8 characters</p>
+                <p className="text-xs text-red-500 mt-1">{t('settings.security.min_length')}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Confirm New Password</label>
+              <label className="block text-sm font-medium mb-2">{t('settings.security.confirm')}</label>
               <div className="relative">
                 <Input
                   type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="Confirm new password"
+                  placeholder={t('settings.security.confirm')}
                   value={passwordForm.confirmPassword}
                   onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
                 />
@@ -510,7 +513,7 @@ export const SettingsPage = () => {
                 </button>
               </div>
               {passwordForm.confirmPassword.length > 0 && passwordForm.newPassword !== passwordForm.confirmPassword && (
-                <p className="text-xs text-red-500 mt-1">Passwords do not match</p>
+                <p className="text-xs text-red-500 mt-1">{t('settings.security.mismatch')}</p>
               )}
             </div>
 
@@ -521,7 +524,7 @@ export const SettingsPage = () => {
                 disabled={passwordSaving || !isPasswordFormValid()}
               >
                 <Lock size={16} className="mr-2" />
-                {passwordSaving ? 'Changing...' : 'Change Password'}
+                {passwordSaving ? t('settings.security.changing') : t('settings.security.change')}
               </Button>
             </div>
           </div>
@@ -535,9 +538,9 @@ export const SettingsPage = () => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Bell size={20} />
-                Discord Notifications
+                {t('settings.discord.title')}
               </CardTitle>
-              <CardDescription>Configure Discord webhook notifications for server events</CardDescription>
+              <CardDescription>{t('settings.discord.description')}</CardDescription>
             </div>
             <label className="flex items-center cursor-pointer">
               <input
@@ -546,7 +549,7 @@ export const SettingsPage = () => {
                 onChange={(e) => setSettings(prev => ({ ...prev, enabled: e.target.checked }))}
                 className="mr-2"
               />
-              <span className="text-sm">Enable</span>
+              <span className="text-sm">{t('settings.discord.enable')}</span>
             </label>
           </div>
         </CardHeader>
@@ -573,24 +576,24 @@ export const SettingsPage = () => {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Webhook URL</label>
+              <label className="block text-sm font-medium mb-2">{t('settings.discord.webhook_url')}</label>
               <Input
                 type="text"
-                placeholder={settings.webhookUrl === '***' ? '(Configured - enter new URL to change)' : 'https://discord.com/api/webhooks/...'}
+                placeholder={settings.webhookUrl === '***' ? t('settings.discord.webhook_placeholder_configured') : t('settings.discord.webhook_placeholder')}
                 value={settings.webhookUrl === '***' ? '' : (settings.webhookUrl || '')}
                 onChange={(e) => setSettings(prev => ({ ...prev, webhookUrl: e.target.value }))}
                 disabled={!settings.enabled}
               />
               <p className="text-xs text-text-secondary mt-1">
                 {settings.webhookUrl === '***'
-                  ? 'Webhook URL is configured. Enter a new URL to change it.'
-                  : 'Get this URL from Discord: Server Settings → Integrations → Webhooks'}
+                  ? t('settings.discord.webhook_configured_hint')
+                  : t('settings.discord.webhook_hint')}
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Bot Username</label>
+                <label className="block text-sm font-medium mb-2">{t('settings.discord.username')}</label>
                 <Input
                   type="text"
                   value={settings.username || ''}
@@ -599,7 +602,7 @@ export const SettingsPage = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Avatar URL</label>
+                <label className="block text-sm font-medium mb-2">{t('settings.discord.avatar_url')}</label>
                 <Input
                   type="text"
                   value={settings.avatarUrl || ''}
@@ -610,7 +613,7 @@ export const SettingsPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Enabled Events</label>
+              <label className="block text-sm font-medium mb-2">{t('settings.discord.events')}</label>
               <div className="grid grid-cols-2 gap-2">
                 {ALL_EVENTS.map(event => (
                   <label key={event} className="flex items-center gap-2 p-2 border rounded">
@@ -633,7 +636,7 @@ export const SettingsPage = () => {
                 disabled={saving || !settings.enabled}
               >
                 <Save size={16} className="mr-2" />
-                {saving ? 'Saving...' : 'Save Changes'}
+                {saving ? t('settings.mods.saving') : t('settings.discord.save')}
               </Button>
               <Button
                 variant="secondary"
@@ -641,7 +644,7 @@ export const SettingsPage = () => {
                 disabled={testing || !settings.enabled || !settings.webhookUrl}
               >
                 <Bell size={16} className="mr-2" />
-                {testing ? 'Sending...' : 'Test'}
+                {testing ? t('settings.discord.sending') : t('settings.discord.test')}
               </Button>
             </div>
           </div>
@@ -655,28 +658,26 @@ export const SettingsPage = () => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <HardDrive size={20} />
-                FTP Storage
+                {t('settings.ftp.title')}
               </CardTitle>
-              <CardDescription>Configure FTP server for remote backup storage</CardDescription>
+              <CardDescription>{t('settings.ftp.description')}</CardDescription>
             </div>
-            {ftpStatus && (
-              <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
-                ftpStatus.connected
-                  ? 'bg-green-500/10 text-green-500'
-                  : ftpStatus.enabled
-                    ? 'bg-yellow-500/10 text-yellow-500'
-                    : 'bg-gray-500/10 text-gray-500'
-              }`}>
-                <div className={`w-2 h-2 rounded-full ${
-                  ftpStatus.connected
-                    ? 'bg-green-500'
+                {ftpStatus && (
+                  <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${ftpStatus.connected
+                    ? 'bg-green-500/10 text-green-500'
                     : ftpStatus.enabled
-                      ? 'bg-yellow-500'
-                      : 'bg-gray-500'
-                }`} />
-                {ftpStatus.connected ? 'Connected' : ftpStatus.enabled ? 'Disconnected' : 'Not Configured'}
-              </div>
-            )}
+                      ? 'bg-yellow-500/10 text-yellow-500'
+                      : 'bg-gray-500/10 text-gray-500'
+                    }`}>
+                    <div className={`w-2 h-2 rounded-full ${ftpStatus.connected
+                      ? 'bg-green-500'
+                      : ftpStatus.enabled
+                        ? 'bg-yellow-500'
+                        : 'bg-gray-500'
+                      }`} />
+                    {ftpStatus.connected ? t('settings.ftp.status.connected') : ftpStatus.enabled ? t('settings.ftp.status.disconnected') : t('settings.ftp.status.not_configured')}
+                  </div>
+                )}
           </div>
         </CardHeader>
         <CardContent>
@@ -701,14 +702,13 @@ export const SettingsPage = () => {
           )}
 
           <div className="bg-blue-500/10 text-blue-400 p-3 rounded mb-4 text-sm">
-            <strong>Note:</strong> FTP credentials are configured via environment variables on the server for security.
-            You can use this form to test connections with different credentials.
+            <strong>{t('settings.ftp.note_title')}</strong> {t('settings.ftp.note')}
           </div>
 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">FTP Host</label>
+                <label className="block text-sm font-medium mb-2">{t('settings.ftp.host')}</label>
                 <Input
                   type="text"
                   placeholder="ftp.example.com"
@@ -717,7 +717,7 @@ export const SettingsPage = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Port</label>
+                <label className="block text-sm font-medium mb-2">{t('settings.ftp.port')}</label>
                 <Input
                   type="number"
                   value={ftpSettings.port}
@@ -728,7 +728,7 @@ export const SettingsPage = () => {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Username</label>
+                <label className="block text-sm font-medium mb-2">{t('settings.ftp.username')}</label>
                 <Input
                   type="text"
                   placeholder="ftp_user"
@@ -737,11 +737,11 @@ export const SettingsPage = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Password</label>
+                <label className="block text-sm font-medium mb-2">{t('settings.ftp.password')}</label>
                 <div className="relative">
                   <Input
                     type={showFtpPassword ? 'text' : 'password'}
-                    placeholder="Enter FTP password"
+                    placeholder={t('settings.ftp.password_placeholder')}
                     value={ftpSettings.password}
                     onChange={(e) => setFtpSettings(prev => ({ ...prev, password: e.target.value }))}
                   />
@@ -763,7 +763,7 @@ export const SettingsPage = () => {
                   checked={ftpSettings.secure}
                   onChange={(e) => setFtpSettings(prev => ({ ...prev, secure: e.target.checked }))}
                 />
-                <span className="text-sm">Use SFTP (FTP over TLS/SSL)</span>
+                <span className="text-sm">{t('settings.ftp.secure')}</span>
               </label>
             </div>
 
@@ -774,7 +774,7 @@ export const SettingsPage = () => {
                 disabled={ftpTesting || !ftpSettings.host || !ftpSettings.username || !ftpSettings.password}
               >
                 <Server size={16} className="mr-2" />
-                {ftpTesting ? 'Testing...' : 'Test Connection'}
+                {ftpTesting ? t('settings.ftp.testing') : t('settings.ftp.test')}
               </Button>
             </div>
           </div>

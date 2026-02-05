@@ -21,7 +21,7 @@ console.log(`[Config] JWT_REFRESH_SECRET loaded: ${process.env.JWT_REFRESH_SECRE
 console.log(`[Config] IS_DOCKER env: ${process.env.IS_DOCKER}`);
 
 // Version info - update this on each release
-export const VERSION = '0.3.16';
+export const VERSION = '0.3.25';
 export const VERSION_NAME = 'Beta';
 
 /**

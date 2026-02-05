@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, ModalFooter, Button, Badge } from '../ui';
 import { Plus, Minus, Server, Users } from 'lucide-react';
 import type { NetworkWithMembers } from '../../types';
@@ -28,6 +29,7 @@ export const ManageNetworkServersModal = ({
   onRemoveServer,
   isLoading,
 }: ManageNetworkServersModalProps) => {
+  const { t } = useTranslation();
   const [addingServerId, setAddingServerId] = useState<string | null>(null);
   const [removingServerId, setRemovingServerId] = useState<string | null>(null);
 
@@ -54,13 +56,13 @@ export const ManageNetworkServersModal = ({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'running':
-        return <Badge variant="success" size="sm">Running</Badge>;
+        return <Badge variant="success" size="sm">{t('networks.manage.status.running')}</Badge>;
       case 'stopped':
-        return <Badge variant="default" size="sm">Stopped</Badge>;
+        return <Badge variant="default" size="sm">{t('networks.manage.status.stopped')}</Badge>;
       case 'starting':
-        return <Badge variant="warning" size="sm">Starting</Badge>;
+        return <Badge variant="warning" size="sm">{t('networks.manage.status.starting')}</Badge>;
       case 'stopping':
-        return <Badge variant="warning" size="sm">Stopping</Badge>;
+        return <Badge variant="warning" size="sm">{t('networks.manage.status.stopping')}</Badge>;
       default:
         return <Badge variant="default" size="sm">{status}</Badge>;
     }
@@ -69,11 +71,11 @@ export const ManageNetworkServersModal = ({
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'proxy':
-        return <Badge variant="info" size="sm">Proxy</Badge>;
+        return <Badge variant="info" size="sm">{t('networks.manage.role.proxy')}</Badge>;
       case 'backend':
-        return <Badge variant="warning" size="sm">Backend</Badge>;
+        return <Badge variant="warning" size="sm">{t('networks.manage.role.backend')}</Badge>;
       default:
-        return <Badge variant="default" size="sm">Member</Badge>;
+        return <Badge variant="default" size="sm">{t('networks.manage.role.member')}</Badge>;
     }
   };
 
@@ -81,7 +83,7 @@ export const ManageNetworkServersModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Manage Servers - ${network.name}`}
+      title={t('networks.manage.title', { name: network.name })}
       size="lg"
     >
       <div className="space-y-6">
@@ -90,13 +92,13 @@ export const ManageNetworkServersModal = ({
           <div className="flex items-center gap-2 mb-3">
             <Users size={18} className="text-accent-primary" />
             <h3 className="font-medium text-text-light-primary dark:text-text-primary">
-              Current Members ({network.members.length})
+              {t('networks.manage.current_members', { count: network.members.length })}
             </h3>
           </div>
 
           {network.members.length === 0 ? (
             <div className="text-center py-6 text-text-muted bg-gray-800/50 rounded-lg">
-              No servers in this network
+              {t('networks.manage.empty')}
             </div>
           ) : (
             <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -125,7 +127,7 @@ export const ManageNetworkServersModal = ({
                     disabled={isLoading || removingServerId === member.serverId}
                     className="text-danger hover:bg-danger/10"
                   >
-                    {removingServerId === member.serverId ? 'Removing...' : 'Remove'}
+                    {removingServerId === member.serverId ? t('common.deleting') : t('common.remove')}
                   </Button>
                 </div>
               ))}
@@ -141,13 +143,13 @@ export const ManageNetworkServersModal = ({
           <div className="flex items-center gap-2 mb-3">
             <Plus size={18} className="text-success" />
             <h3 className="font-medium text-text-light-primary dark:text-text-primary">
-              Available Servers ({ungroupedServers.length})
+              {t('networks.manage.available', { count: ungroupedServers.length })}
             </h3>
           </div>
 
           {ungroupedServers.length === 0 ? (
             <div className="text-center py-6 text-text-muted bg-gray-800/50 rounded-lg">
-              No ungrouped servers available
+              {t('networks.manage.empty_available')}
             </div>
           ) : (
             <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -175,7 +177,7 @@ export const ManageNetworkServersModal = ({
                     disabled={isLoading || addingServerId === server.id}
                     className="text-success hover:bg-success/10"
                   >
-                    {addingServerId === server.id ? 'Adding...' : 'Add'}
+                    {addingServerId === server.id ? t('common.loading') : t('common.add')}
                   </Button>
                 </div>
               ))}
@@ -186,7 +188,7 @@ export const ManageNetworkServersModal = ({
 
       <ModalFooter>
         <Button variant="primary" onClick={onClose}>
-          Done
+          {t('common.done')}
         </Button>
       </ModalFooter>
     </Modal>

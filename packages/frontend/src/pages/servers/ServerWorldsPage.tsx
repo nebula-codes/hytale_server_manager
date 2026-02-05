@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button } from '../../components/ui';
 import { Globe, Trash2, RefreshCw, ArrowLeft, Settings } from 'lucide-react';
 import { api } from '../../services/api';
@@ -26,6 +27,7 @@ interface World {
 
 export const ServerWorldsPage = () => {
   const { id: serverId } = useParams<{ id: string }>();
+  const { t } = useTranslation();
   const toast = useToast();
 
   const [server, setServer] = useState<Server | null>(null);
@@ -60,7 +62,7 @@ export const ServerWorldsPage = () => {
       const data = await api.listWorlds<World>(serverId);
       setWorlds(data);
     } catch (err: any) {
-      setError(err.message || 'Failed to load worlds');
+      setError(err.message || t('servers.worlds.toast.load_failed'));
     } finally {
       setLoading(false);
     }
@@ -69,16 +71,16 @@ export const ServerWorldsPage = () => {
   const handleDeleteWorld = async (worldId: string, worldName: string) => {
     if (!serverId) return;
 
-    if (!confirm(`Are you sure you want to delete world "${worldName}"? This action cannot be undone.`)) {
+    if (!confirm(t('servers.worlds.confirm_delete', { name: worldName }))) {
       return;
     }
 
     try {
       await api.deleteWorld(serverId, worldId);
-      toast.success('World deleted', `${worldName} has been removed`);
+      toast.success(t('servers.worlds.toast.deleted.title'), t('servers.worlds.toast.deleted.description', { name: worldName }));
       loadWorlds();
     } catch (err: any) {
-      toast.error('Failed to delete world', err.message || 'An error occurred');
+      toast.error(t('servers.worlds.toast.delete_failed.title'), err.message || t('common.error'));
     }
   };
 
@@ -115,12 +117,12 @@ export const ServerWorldsPage = () => {
         <div className="flex items-center gap-3 sm:gap-4">
           <Link to={`/servers/${serverId}`}>
             <Button variant="ghost" icon={<ArrowLeft size={18} />}>
-              <span className="hidden sm:inline">Back</span>
+              <span className="hidden sm:inline">{t('common.back')}</span>
             </Button>
           </Link>
           <div>
             <h1 className="text-2xl sm:text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">
-              Worlds
+              {t('servers.worlds.title')}
             </h1>
             {server && (
               <p className="text-sm sm:text-base text-text-light-muted dark:text-text-muted mt-1">
@@ -136,7 +138,7 @@ export const ServerWorldsPage = () => {
             onClick={loadWorlds}
             disabled={loading}
           >
-            Refresh
+            {t('common.refresh')}
           </Button>
         </div>
       </div>
@@ -149,7 +151,7 @@ export const ServerWorldsPage = () => {
             Universe Worlds
           </CardTitle>
           <CardDescription>
-            Manage worlds in this server's universe. Each world has its own configuration and can be activated independently.
+            {t('servers.worlds.subtitle')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -166,9 +168,9 @@ export const ServerWorldsPage = () => {
           ) : worlds.length === 0 ? (
             <div className="text-center py-12">
               <Globe size={48} className="mx-auto text-text-light-muted dark:text-text-muted mb-3 opacity-50" />
-              <p className="text-text-light-muted dark:text-text-muted mb-2">No worlds found</p>
+              <p className="text-text-light-muted dark:text-text-muted mb-2">{t('servers.worlds.empty.title')}</p>
               <p className="text-sm text-text-light-muted dark:text-text-muted opacity-75">
-                Worlds will appear here once the server has created them
+                {t('servers.worlds.empty.subtitle')}
               </p>
             </div>
           ) : (
@@ -188,9 +190,9 @@ export const ServerWorldsPage = () => {
                         {world.name}
                       </h3>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-text-light-muted dark:text-text-muted mt-1">
-                        <span>Size: {formatSize(world.sizeBytes)}</span>
+                        <span>{t('servers.worlds.size', { size: formatSize(world.sizeBytes) })}</span>
                         {world.lastPlayed && (
-                          <span>Last played: {formatDate(world.lastPlayed)}</span>
+                          <span>{t('servers.worlds.last_played', { date: formatDate(world.lastPlayed) })}</span>
                         )}
                       </div>
                       {world.description && (
@@ -206,17 +208,17 @@ export const ServerWorldsPage = () => {
                       variant="ghost"
                       size="sm"
                       icon={<Settings size={16} />}
-                      title="World settings"
+                      title={t('servers.worlds.actions.settings')}
                       onClick={() => setConfigModalWorld(world)}
                     >
-                      <span className="hidden sm:inline">Config</span>
+                      <span className="hidden sm:inline">{t('servers.worlds.actions.config')}</span>
                     </Button>
                     <Button
                       variant="danger"
                       size="sm"
                       icon={<Trash2 size={16} />}
                       onClick={() => handleDeleteWorld(world.id, world.name)}
-                      title="Delete world"
+                      title={t('servers.worlds.actions.delete')}
                     />
                   </div>
                 </div>
@@ -229,16 +231,14 @@ export const ServerWorldsPage = () => {
       {/* Info Card */}
       <Card variant="glass">
         <CardHeader>
-          <CardTitle>About Universes & Worlds</CardTitle>
+          <CardTitle>{t('servers.worlds.info.title')}</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-text-light-muted dark:text-text-muted space-y-2">
           <p>
-            In Hytale, a <strong className="text-text-light-primary dark:text-text-primary">universe</strong> contains
-            multiple <strong className="text-text-light-primary dark:text-text-primary">worlds</strong>, each with their
-            own configuration files and settings.
+            {t('servers.worlds.info.body1')}
           </p>
           <p>
-            Each world can have different settings for PvP, fall damage, NPC spawning, game time, and more.
+            {t('servers.worlds.info.body2')}
           </p>
         </CardContent>
       </Card>

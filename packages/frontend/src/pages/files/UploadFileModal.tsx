@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, Button, Card, CardContent, Badge } from '../../components/ui';
 import { Upload, AlertCircle, CheckCircle, File, X, AlertTriangle } from 'lucide-react';
 import { api, ApiError } from '../../services/api';
@@ -38,6 +39,7 @@ export const UploadFileModal = ({
   serverId,
   currentPath,
 }: UploadFileModalProps) => {
+  const { t } = useTranslation();
   const [uploads, setUploads] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -73,11 +75,14 @@ export const UploadFileModal = ({
    */
   const validateFile = (file: File): string | null => {
     if (file.size === 0) {
-      return 'Empty files cannot be uploaded';
+      return t('files.upload.errors.empty');
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      return `File exceeds maximum size of ${MAX_FILE_SIZE_MB}MB (file is ${(file.size / (1024 * 1024)).toFixed(2)}MB)`;
+      return t('files.upload.errors.too_large', {
+        max: MAX_FILE_SIZE_MB,
+        size: (file.size / (1024 * 1024)).toFixed(2),
+      });
     }
 
     return null;
@@ -144,7 +149,7 @@ export const UploadFileModal = ({
       if (count > 1) {
         errors.push({
           fileName,
-          reason: `Duplicate: "${fileName}" appears ${count} times in queue`,
+          reason: t('files.upload.errors.duplicate', { file: fileName, count }),
         });
       }
     });
@@ -200,37 +205,37 @@ export const UploadFileModal = ({
   const getErrorMessage = (error: unknown): string => {
     if (error instanceof ApiError) {
       if (error.statusCode === 413) {
-        return `File too large. Maximum size is ${MAX_FILE_SIZE_MB}MB`;
-      }
-      if (error.statusCode === 400) {
-        return error.message || 'Invalid file or request';
-      }
-      if (error.statusCode === 401) {
-        return 'Session expired. Please login again.';
-      }
-      if (error.statusCode === 403) {
-        return 'You do not have permission to upload files';
-      }
-      if (error.statusCode === 409) {
-        return error.message || 'File conflict or already exists';
-      }
-      if (error.statusCode === 0) {
-        return 'Network error. Please check your connection.';
-      }
-      return error.message || 'Upload failed';
+      return t('files.upload.errors.too_large', { max: MAX_FILE_SIZE_MB, size: '' }).trim();
     }
+    if (error.statusCode === 400) {
+      return error.message || t('files.upload.errors.invalid');
+    }
+    if (error.statusCode === 401) {
+      return t('files.upload.errors.session');
+    }
+    if (error.statusCode === 403) {
+      return t('files.upload.errors.permission');
+    }
+    if (error.statusCode === 409) {
+      return error.message || t('files.upload.errors.conflict');
+    }
+    if (error.statusCode === 0) {
+      return t('files.upload.errors.network_generic');
+    }
+    return error.message || t('files.upload.errors.failed');
+  }
 
     if (error instanceof Error) {
       if (error.message === 'Upload cancelled') {
-        return 'Upload was cancelled';
+        return t('files.upload.errors.cancelled');
       }
       if (error.message === 'Upload failed') {
-        return 'Network error during upload';
+        return t('files.upload.errors.network');
       }
       return error.message;
     }
 
-    return 'An unexpected error occurred';
+    return t('files.alert.unexpected_error');
   };
 
   const uploadFile = async (id: string, file: File) => {
@@ -291,7 +296,7 @@ export const UploadFileModal = ({
               ? {
                   ...u,
                   status: 'cancelled' as const,
-                  error: 'Upload cancelled',
+                  error: t('files.upload.errors.cancelled'),
                 }
               : u
           )
@@ -336,7 +341,7 @@ export const UploadFileModal = ({
   if (!isOpen) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Upload Files">
+    <Modal isOpen={isOpen} onClose={onClose} title={t('files.upload.title')}>
       <div className="space-y-6">
         {/* Drag and Drop Area */}
         <div
@@ -351,17 +356,17 @@ export const UploadFileModal = ({
         >
           <Upload size={32} className="mx-auto mb-3 text-text-light-muted dark:text-text-muted" />
           <p className="text-text-light-primary dark:text-text-primary font-medium mb-1">
-            Drag and drop files here
+            {t('files.upload.drag_drop')}
           </p>
           <p className="text-sm text-text-light-muted dark:text-text-muted mb-4">
-            or click to select files from your computer
+            {t('files.upload.click_select')}
           </p>
           <Button
             variant="secondary"
             size="sm"
             onClick={() => fileInputRef.current?.click()}
           >
-            Select Files
+            {t('files.upload.select_files')}
           </Button>
           <input
             ref={fileInputRef}
@@ -375,28 +380,28 @@ export const UploadFileModal = ({
         {/* Validation Errors */}
         {validationErrors.length > 0 && (
           <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <div className="flex gap-3">
-              <AlertTriangle size={20} className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h4 className="font-medium text-red-900 dark:text-red-100 mb-2">
-                  {validationErrors.length} file(s) could not be added
-                </h4>
-                <ul className="space-y-1">
-                  {validationErrors.map((error, idx) => (
-                    <li key={idx} className="text-sm text-red-800 dark:text-red-200">
-                      <span className="font-medium">{error.fileName}:</span> {error.reason}
-                    </li>
-                  ))}
-                </ul>
+              <div className="flex gap-3">
+                <AlertTriangle size={20} className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-medium text-red-900 dark:text-red-100 mb-2">
+                    {t('files.upload.validation.failed', { count: validationErrors.length })}
+                  </h4>
+                  <ul className="space-y-1">
+                    {validationErrors.map((error, idx) => (
+                      <li key={idx} className="text-sm text-red-800 dark:text-red-200">
+                        <span className="font-medium">{error.fileName}:</span> {error.reason}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-            </div>
           </div>
         )}
 
         {/* File Size Info */}
         <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
           <p className="text-xs text-blue-900 dark:text-blue-100">
-            <span className="font-medium">Maximum file size:</span> {MAX_FILE_SIZE_MB}MB per file
+            <span className="font-medium">{t('files.upload.max_size_label')}</span> {MAX_FILE_SIZE_MB}MB
           </p>
         </div>
 
@@ -410,7 +415,7 @@ export const UploadFileModal = ({
               className="rounded border-gray-300 dark:border-gray-700"
             />
             <span className="text-sm text-text-light-primary dark:text-text-primary">
-              Auto-extract ZIP files
+              {t('files.upload.auto_extract')}
             </span>
           </label>
         </div>
@@ -420,14 +425,14 @@ export const UploadFileModal = ({
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <h3 className="font-medium text-text-light-primary dark:text-text-primary">
-                Uploads ({uploads.length})
+                {t('files.upload.list_title', { count: uploads.length })}
               </h3>
               {completedCount > 0 && (
                 <button
                   onClick={clearCompleted}
                   className="text-xs text-accent-primary hover:underline"
                 >
-                  Clear completed
+                  {t('files.upload.clear_completed')}
                 </button>
               )}
             </div>
@@ -448,7 +453,7 @@ export const UploadFileModal = ({
                           )}
                           {upload.status === 'extracting' && (
                             <Badge variant="success" size="sm">
-                              Extracted
+                              {t('files.upload.extracted')}
                             </Badge>
                           )}
                           {upload.status === 'error' && (
@@ -467,14 +472,14 @@ export const UploadFileModal = ({
                             <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
                               {upload.status === 'uploading'
                                 ? `${Math.round(upload.progress)}%`
-                                : 'Waiting...'}
+                                : t('files.upload.waiting')}
                             </p>
                           </>
                         ) : null}
 
                         {upload.status === 'extracting' && upload.extractedFiles && (
                           <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
-                            Extracted {upload.extractedFiles.length} file(s)
+                            {t('files.upload.extracted_count', { count: upload.extractedFiles.length })}
                           </p>
                         )}
 
@@ -483,7 +488,7 @@ export const UploadFileModal = ({
                         )}
 
                         {upload.status === 'cancelled' && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Cancelled</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t('files.upload.cancelled')}</p>
                         )}
                       </div>
 
@@ -491,7 +496,7 @@ export const UploadFileModal = ({
                         <button
                           onClick={() => cancelUpload(upload.id)}
                           className="text-gray-500 hover:text-red-600 dark:hover:text-red-400 flex-shrink-0 transition-colors"
-                          title="Cancel upload"
+                          title={t('files.upload.cancel_title')}
                         >
                           <X size={16} />
                         </button>
@@ -501,7 +506,7 @@ export const UploadFileModal = ({
                         <button
                           onClick={() => removeUpload(upload.id)}
                           className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 flex-shrink-0"
-                          title="Remove from list"
+                          title={t('files.upload.remove_title')}
                         >
                           <X size={16} />
                         </button>
@@ -517,7 +522,7 @@ export const UploadFileModal = ({
         {/* Actions */}
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>
-            Close
+            {t('common.close', { defaultValue: 'Close' })}
           </Button>
         </div>
       </div>

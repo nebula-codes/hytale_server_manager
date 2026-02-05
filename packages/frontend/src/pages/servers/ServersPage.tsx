@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, StatusIndicator, DataTable, ConfirmDialog, type Column } from '../../components/ui';
 import { Play, Square, RotateCw, Eye, Plus, Trash2, Network, List, LayoutGrid, Skull } from 'lucide-react';
 import { useToast } from '../../stores/toastStore';
@@ -41,6 +42,7 @@ interface Server {
 type ViewMode = 'grouped' | 'flat';
 
 export const ServersPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const toast = useToast();
   const [servers, setServers] = useState<Server[]>([]);
@@ -126,13 +128,13 @@ export const ServersPage = () => {
         prev.map((s) =>
           s.id === data.serverId
             ? {
-                ...s,
-                cpuUsage: data.metrics.cpuUsage,
-                memoryUsage: Math.round(data.metrics.memoryUsage),
-                memoryAllocated: Math.round(data.metrics.memoryTotal),
-                tps: data.metrics.tps,
-                uptime: Math.round(data.metrics.uptime),
-              }
+              ...s,
+              cpuUsage: data.metrics.cpuUsage,
+              memoryUsage: Math.round(data.metrics.memoryUsage),
+              memoryAllocated: Math.round(data.metrics.memoryTotal),
+              tps: data.metrics.tps,
+              uptime: Math.round(data.metrics.uptime),
+            }
             : s
         )
       );
@@ -182,14 +184,14 @@ export const ServersPage = () => {
               prev.map((s) =>
                 s.id === server.id
                   ? {
-                      ...s,
-                      currentPlayers: status.playerCount,
-                      cpuUsage: metrics.cpuUsage,
-                      memoryUsage: Math.round(metrics.memoryUsage),
-                      memoryAllocated: Math.round(metrics.memoryTotal),
-                      tps: metrics.tps,
-                      uptime: Math.round(metrics.uptime),
-                    }
+                    ...s,
+                    currentPlayers: status.playerCount,
+                    cpuUsage: metrics.cpuUsage,
+                    memoryUsage: Math.round(metrics.memoryUsage),
+                    memoryAllocated: Math.round(metrics.memoryTotal),
+                    tps: metrics.tps,
+                    uptime: Math.round(metrics.uptime),
+                  }
                   : s
               )
             );
@@ -200,7 +202,7 @@ export const ServersPage = () => {
       }
     } catch (error) {
       console.error('Error fetching servers:', error);
-      toast.error('Failed to load servers', 'Please try again later');
+      toast.error(t('servers.toast.load_failed.title'), t('servers.toast.load_failed.description'));
     } finally {
       setLoading(false);
     }
@@ -209,51 +211,51 @@ export const ServersPage = () => {
   const handleStart = async (server: Server) => {
     try {
       await api.startServer(server.id);
-      toast.success('Server starting', `${server.name} is starting up...`);
+      toast.success(t('servers.toast.starting.title'), t('servers.toast.starting.description', { name: server.name }));
 
       // Update local state immediately
       setServers((prev) =>
         prev.map((s) => (s.id === server.id ? { ...s, status: 'starting' } : s))
       );
     } catch (error: any) {
-      toast.error('Failed to start server', error.message);
+      toast.error(t('servers.toast.start_failed.title'), error.message || t('servers.toast.generic_error'));
     }
   };
 
   const handleStop = async (server: Server) => {
     try {
       await api.stopServer(server.id);
-      toast.warning('Server stopping', `${server.name} is shutting down...`);
+      toast.warning(t('servers.toast.stopping.title'), t('servers.toast.stopping.description', { name: server.name }));
 
       // Update local state immediately
       setServers((prev) =>
         prev.map((s) => (s.id === server.id ? { ...s, status: 'stopping' } : s))
       );
     } catch (error: any) {
-      toast.error('Failed to stop server', error.message);
+      toast.error(t('servers.toast.stop_failed.title'), error.message || t('servers.toast.generic_error'));
     }
   };
 
   const handleRestart = async (server: Server) => {
     try {
       await api.restartServer(server.id);
-      toast.info('Server restarting', `${server.name} is restarting...`);
+      toast.info(t('servers.toast.restarting.title'), t('servers.toast.restarting.description', { name: server.name }));
     } catch (error: any) {
-      toast.error('Failed to restart server', error.message);
+      toast.error(t('servers.toast.restart_failed.title'), error.message || t('servers.toast.generic_error'));
     }
   };
 
   const handleKill = async (server: Server) => {
     try {
       await api.killServer(server.id);
-      toast.warning('Server killed', `${server.name} has been force killed`);
+      toast.warning(t('servers.toast.killed.title'), t('servers.toast.killed.description', { name: server.name }));
 
       // Update local state immediately
       setServers((prev) =>
         prev.map((s) => (s.id === server.id ? { ...s, status: 'stopped' } : s))
       );
     } catch (error: any) {
-      toast.error('Failed to kill server', error.message);
+      toast.error(t('servers.toast.kill_failed.title'), error.message || t('servers.toast.generic_error'));
     }
   };
 
@@ -266,11 +268,11 @@ export const ServersPage = () => {
   const handleCreateServer = async (data: ServerFormData) => {
     try {
       const newServer = await api.createServer<Server>(data);
-      toast.success('Server created', `${newServer.name} has been created successfully`);
+      toast.success(t('servers.toast.created.title'), t('servers.toast.created.description', { name: newServer.name }));
       await fetchServers(); // Refresh the list
       refetchUngrouped(); // Refresh ungrouped servers
     } catch (error: any) {
-      toast.error('Failed to create server', error.message);
+      toast.error(t('servers.toast.create_failed.title'), error.message || t('servers.toast.generic_error'));
       throw error; // Re-throw to keep modal open
     }
   };
@@ -287,12 +289,12 @@ export const ServersPage = () => {
     try {
       setDeleting(true);
       await api.deleteServer(serverToDelete.id);
-      toast.success('Server deleted', `${serverToDelete.name} has been deleted`);
+      toast.success(t('servers.toast.deleted.title'), t('servers.toast.deleted.description', { name: serverToDelete.name }));
       setServers((prev) => prev.filter((s) => s.id !== serverToDelete.id));
       setServerToDelete(null);
       refetchUngrouped();
     } catch (error: any) {
-      toast.error('Failed to delete server', error.message);
+      toast.error(t('servers.toast.delete_failed.title'), error.message || t('servers.toast.generic_error'));
     } finally {
       setDeleting(false);
     }
@@ -410,7 +412,7 @@ export const ServersPage = () => {
   const columns: Column<Server>[] = [
     {
       key: 'name',
-      label: 'Server',
+      label: t('servers.columns.server'),
       render: (server) => (
         <div>
           <p className="font-medium text-text-light-primary dark:text-text-primary">{server.name}</p>
@@ -420,12 +422,12 @@ export const ServersPage = () => {
     },
     {
       key: 'status',
-      label: 'Status',
+      label: t('servers.columns.status'),
       render: (server) => <StatusIndicator status={server.status} showLabel />,
     },
     {
       key: 'currentPlayers',
-      label: 'Players',
+      label: t('servers.columns.players'),
       render: (server) => (
         <div>
           <p className="font-medium text-text-light-primary dark:text-text-primary">
@@ -442,12 +444,12 @@ export const ServersPage = () => {
     },
     {
       key: 'version',
-      label: 'Version',
+      label: t('servers.columns.version'),
       render: (server) => <Badge variant="info" size="sm">{server.version}</Badge>,
     },
     {
       key: 'tps',
-      label: 'TPS',
+      label: t('servers.columns.tps'),
       render: (server) => {
         if (server.status !== 'running' || !server.tps) {
           return <span className="text-sm text-text-light-muted dark:text-text-muted">-</span>;
@@ -461,7 +463,7 @@ export const ServersPage = () => {
     },
     {
       key: 'cpuUsage',
-      label: 'CPU',
+      label: t('servers.columns.cpu'),
       render: (server) => {
         if (server.status !== 'running' || server.cpuUsage === undefined) {
           return <span className="text-sm text-text-light-muted dark:text-text-muted">-</span>;
@@ -471,9 +473,8 @@ export const ServersPage = () => {
             <p className="text-sm text-text-light-primary dark:text-text-primary">{server.cpuUsage.toFixed(1)}%</p>
             <div className="w-16 h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden mt-1">
               <div
-                className={`h-full ${
-                  server.cpuUsage > 70 ? 'bg-danger' : server.cpuUsage > 50 ? 'bg-warning' : 'bg-success'
-                }`}
+                className={`h-full ${server.cpuUsage > 70 ? 'bg-danger' : server.cpuUsage > 50 ? 'bg-warning' : 'bg-success'
+                  }`}
                 style={{ width: `${server.cpuUsage}%` }}
               />
             </div>
@@ -483,7 +484,7 @@ export const ServersPage = () => {
     },
     {
       key: 'memoryUsage',
-      label: 'Memory',
+      label: t('servers.columns.memory'),
       render: (server) => {
         if (server.status !== 'running' || !server.memoryUsage) {
           return <span className="text-sm text-text-light-muted dark:text-text-muted">-</span>;
@@ -500,7 +501,7 @@ export const ServersPage = () => {
     },
     {
       key: 'uptime',
-      label: 'Uptime',
+      label: t('servers.columns.uptime'),
       render: (server) => (
         server.status === 'running' && server.uptime ? (
           <span className="text-sm text-text-light-primary dark:text-text-primary">{formatUptime(server.uptime)}</span>
@@ -511,7 +512,7 @@ export const ServersPage = () => {
     },
     {
       key: 'actions',
-      label: 'Actions',
+      label: t('servers.columns.actions'),
       sortable: false,
       render: (server) => (
         <div className="flex gap-2">
@@ -523,7 +524,7 @@ export const ServersPage = () => {
                 icon={<Square size={14} />}
                 onClick={() => handleStop(server)}
               >
-                Stop
+                {t('servers.actions.stop')}
               </Button>
               <Button
                 variant="ghost"
@@ -531,7 +532,7 @@ export const ServersPage = () => {
                 icon={<RotateCw size={14} />}
                 onClick={() => handleRestart(server)}
               >
-                Restart
+                {t('servers.actions.restart')}
               </Button>
             </>
           ) : server.status === 'stopped' || server.status === 'crashed' ? (
@@ -541,7 +542,7 @@ export const ServersPage = () => {
               icon={<Play size={14} />}
               onClick={() => handleStart(server)}
             >
-              Start
+              {t('servers.actions.start')}
             </Button>
           ) : server.status === 'stopping' ? (
             <Button
@@ -550,9 +551,9 @@ export const ServersPage = () => {
               icon={<Skull size={14} />}
               onClick={() => handleKill(server)}
               className="text-danger hover:bg-danger/10"
-              title="Force kill the server"
+              title={t('servers.tooltips.force_kill')}
             >
-              Kill
+              {t('servers.actions.kill')}
             </Button>
           ) : (
             <Button variant="ghost" size="sm" disabled>
@@ -565,7 +566,7 @@ export const ServersPage = () => {
             icon={<Eye size={14} />}
             onClick={() => navigate(`/servers/${server.id}`)}
           >
-            Details
+            {t('servers.actions.details')}
           </Button>
           <Button
             variant="ghost"
@@ -573,9 +574,11 @@ export const ServersPage = () => {
             icon={<Trash2 size={14} />}
             onClick={() => setServerToDelete(server)}
             disabled={server.status !== 'stopped' && server.status !== 'crashed'}
-            title={server.status !== 'stopped' && server.status !== 'crashed' ? 'Stop the server before deleting' : 'Delete server'}
+            title={server.status !== 'stopped' && server.status !== 'crashed'
+              ? t('servers.tooltips.stop_before_delete')
+              : t('servers.tooltips.delete_server')}
           >
-            Delete
+            {t('servers.actions.delete')}
           </Button>
         </div>
       ),
@@ -586,7 +589,7 @@ export const ServersPage = () => {
   const ungroupedColumns: Column<{ id: string; name: string; status: string }>[] = [
     {
       key: 'name',
-      label: 'Server',
+      label: t('servers.columns.server'),
       render: (server) => (
         <span
           className="font-medium text-text-light-primary dark:text-text-primary cursor-pointer hover:text-accent-primary"
@@ -598,7 +601,7 @@ export const ServersPage = () => {
     },
     {
       key: 'status',
-      label: 'Status',
+      label: t('servers.columns.status'),
       render: (server) => {
         // Use status from local servers state if available for immediate updates
         const fullServer = servers.find(s => s.id === server.id);
@@ -608,7 +611,7 @@ export const ServersPage = () => {
     },
     {
       key: 'actions',
-      label: 'Actions',
+      label: t('common.actions'),
       sortable: false,
       render: (server) => {
         const fullServer = servers.find(s => s.id === server.id);
@@ -623,7 +626,7 @@ export const ServersPage = () => {
                   icon={<Square size={14} />}
                   onClick={() => fullServer && handleStop(fullServer)}
                 >
-                  Stop
+                  {t('servers.actions.stop')}
                 </Button>
                 <Button
                   variant="ghost"
@@ -631,7 +634,7 @@ export const ServersPage = () => {
                   icon={<RotateCw size={14} />}
                   onClick={() => fullServer && handleRestart(fullServer)}
                 >
-                  Restart
+                  {t('servers.actions.restart')}
                 </Button>
               </>
             ) : currentStatus === 'stopped' || currentStatus === 'crashed' ? (
@@ -641,7 +644,7 @@ export const ServersPage = () => {
                 icon={<Play size={14} />}
                 onClick={() => fullServer && handleStart(fullServer)}
               >
-                Start
+                {t('servers.actions.start')}
               </Button>
             ) : currentStatus === 'stopping' ? (
               <Button
@@ -650,9 +653,9 @@ export const ServersPage = () => {
                 icon={<Skull size={14} />}
                 onClick={() => fullServer && handleKill(fullServer)}
                 className="text-danger hover:bg-danger/10"
-                title="Force kill the server"
+                title={t('servers.tooltips.force_kill')}
               >
-                Kill
+                {t('servers.actions.kill')}
               </Button>
             ) : (
               <Button variant="ghost" size="sm" disabled>
@@ -665,7 +668,7 @@ export const ServersPage = () => {
               icon={<Eye size={14} />}
               onClick={() => navigate(`/servers/${server.id}`)}
             >
-              Details
+              {t('servers.actions.details')}
             </Button>
             <Button
               variant="ghost"
@@ -675,7 +678,7 @@ export const ServersPage = () => {
               disabled={currentStatus !== 'stopped' && currentStatus !== 'crashed'}
               title={currentStatus !== 'stopped' && currentStatus !== 'crashed' ? 'Stop the server before deleting' : 'Delete server'}
             >
-              Delete
+              {t('servers.actions.delete')}
             </Button>
           </div>
         );
@@ -693,33 +696,31 @@ export const ServersPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">Servers</h1>
-          <p className="text-sm sm:text-base text-text-light-muted dark:text-text-muted mt-1">Manage your Hytale server instances</p>
+          <h1 className="text-2xl sm:text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">{t('servers.title')}</h1>
+          <p className="text-sm sm:text-base text-text-light-muted dark:text-text-muted mt-1">{t('servers.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {/* View Mode Toggle */}
           <div className="flex bg-gray-800 rounded-lg p-1">
             <button
               onClick={() => setViewMode('grouped')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors ${
-                viewMode === 'grouped'
-                  ? 'bg-accent-primary text-black'
-                  : 'text-text-muted hover:text-text-primary'
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors ${viewMode === 'grouped'
+                ? 'bg-accent-primary text-black'
+                : 'text-text-muted hover:text-text-primary'
+                }`}
             >
               <LayoutGrid size={14} />
-              <span className="hidden sm:inline">Grouped</span>
+              <span className="hidden sm:inline">{t('servers.view_mode.grouped')}</span>
             </button>
             <button
               onClick={() => setViewMode('flat')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors ${
-                viewMode === 'flat'
-                  ? 'bg-accent-primary text-black'
-                  : 'text-text-muted hover:text-text-primary'
-              }`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors ${viewMode === 'flat'
+                ? 'bg-accent-primary text-black'
+                : 'text-text-muted hover:text-text-primary'
+                }`}
             >
               <List size={14} />
-              <span className="hidden sm:inline">Flat</span>
+              <span className="hidden sm:inline">{t('servers.view_mode.flat')}</span>
             </button>
           </div>
 
@@ -728,14 +729,14 @@ export const ServersPage = () => {
             icon={<Network size={18} />}
             onClick={() => setShowCreateNetworkModal(true)}
           >
-            <span className="hidden sm:inline">Create Network</span>
+            <span className="hidden sm:inline">{t('servers.create_network')}</span>
           </Button>
           <Button
             variant="primary"
             icon={<Plus size={18} />}
             onClick={() => setShowCreateModal(true)}
           >
-            <span className="hidden sm:inline">Create Server</span>
+            <span className="hidden sm:inline">{t('servers.create.title')}</span>
           </Button>
         </div>
       </div>
@@ -746,7 +747,7 @@ export const ServersPage = () => {
           {/* Loading State */}
           {networksLoading && (
             <div className="text-center py-8 text-text-muted">
-              Loading networks...
+              {t('common.loading')}
             </div>
           )}
 
@@ -754,7 +755,7 @@ export const ServersPage = () => {
           {!networksLoading && networks.length > 0 && (
             <div>
               <h2 className="text-lg font-heading font-semibold text-text-light-primary dark:text-text-primary mb-4">
-                Networks ({networks.length})
+                {t('servers.networks')} ({networks.length})
               </h2>
               {networks.map((network) => (
                 <NetworkCard
@@ -781,7 +782,7 @@ export const ServersPage = () => {
           {ungroupedServers.length > 0 && (
             <Card variant="glass">
               <CardHeader>
-                <CardTitle>Ungrouped Servers ({ungroupedServers.length})</CardTitle>
+                <CardTitle>{t('servers.ungrouped')} ({ungroupedServers.length})</CardTitle>
               </CardHeader>
               <CardContent>
                 <DataTable
@@ -801,17 +802,17 @@ export const ServersPage = () => {
               <CardContent>
                 <Network size={48} className="mx-auto text-text-muted mb-4" />
                 <h3 className="text-lg font-heading font-semibold text-text-light-primary dark:text-text-primary mb-2">
-                  No Servers Yet
+                  {t('servers.empty.title')}
                 </h3>
                 <p className="text-text-light-muted dark:text-text-muted mb-4">
-                  Create your first server to get started, or create a network to organize multiple servers.
+                  {t('servers.empty.description')}
                 </p>
                 <div className="flex justify-center gap-3">
                   <Button variant="secondary" icon={<Network size={18} />} onClick={() => setShowCreateNetworkModal(true)}>
-                    Create Network
+                    {t('servers.create_network')}
                   </Button>
                   <Button variant="primary" icon={<Plus size={18} />} onClick={() => setShowCreateModal(true)}>
-                    Create Server
+                    {t('servers.create.submit')}
                   </Button>
                 </div>
               </CardContent>
@@ -822,7 +823,9 @@ export const ServersPage = () => {
         /* Flat View - Original Table */
         <Card variant="glass">
           <CardHeader>
-            <CardTitle>All Servers {loading && '(Loading...)'}</CardTitle>
+            <CardTitle>
+              {t('servers.all_servers')} {loading && `(${t('common.loading')})`}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <DataTable
@@ -858,10 +861,10 @@ export const ServersPage = () => {
         isOpen={!!serverToDelete}
         onClose={() => setServerToDelete(null)}
         onConfirm={handleDeleteServer}
-        title="Delete Server"
-        message={`Are you sure you want to delete "${serverToDelete?.name}"? This action cannot be undone.`}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
+        title={t('servers.delete_dialog.title')}
+        message={t('servers.delete_dialog.message', { name: serverToDelete?.name ?? '' })}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
         variant="danger"
         loading={deleting}
       />

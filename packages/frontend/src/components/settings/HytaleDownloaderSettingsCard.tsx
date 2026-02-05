@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, TokenExpiryBadge } from '../ui';
+import { useTranslation } from 'react-i18next';
 import { HytaleOAuthModal } from '../modals/HytaleOAuthModal';
 import {
   useHytaleDownloaderStore,
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react';
 
 export const HytaleDownloaderSettingsCard = () => {
+  const { t } = useTranslation();
   const {
     fetchStatus,
     installBinary,
@@ -55,13 +57,13 @@ export const HytaleDownloaderSettingsCard = () => {
 
     try {
       await installBinary();
-      setLocalSuccess('Hytale Downloader installed successfully!');
+      setLocalSuccess(t('settings.downloader.install_success'));
     } catch (err: any) {
-      setLocalError(err.message || 'Failed to install');
+      setLocalError(err.message || t('settings.downloader.install_failed'));
     } finally {
       setIsInstalling(false);
     }
-  }, [installBinary]);
+  }, [installBinary, t]);
 
   const handleUpdate = useCallback(async () => {
     setIsInstalling(true);
@@ -70,16 +72,16 @@ export const HytaleDownloaderSettingsCard = () => {
 
     try {
       await updateBinary();
-      setLocalSuccess('Hytale Downloader updated successfully!');
+      setLocalSuccess(t('settings.downloader.update_success'));
     } catch (err: any) {
-      setLocalError(err.message || 'Failed to update');
+      setLocalError(err.message || t('settings.downloader.update_failed'));
     } finally {
       setIsInstalling(false);
     }
-  }, [updateBinary]);
+  }, [updateBinary, t]);
 
   const handleClearCredentials = useCallback(async () => {
-    if (!confirm('Are you sure you want to disconnect your Hytale account?')) {
+    if (!confirm(t('settings.downloader.disconnect_confirm'))) {
       return;
     }
 
@@ -89,19 +91,19 @@ export const HytaleDownloaderSettingsCard = () => {
 
     try {
       await clearCredentials();
-      setLocalSuccess('Hytale account disconnected.');
+      setLocalSuccess(t('settings.downloader.disconnect_success'));
     } catch (err: any) {
-      setLocalError(err.message || 'Failed to clear credentials');
+      setLocalError(err.message || t('settings.downloader.disconnect_failed'));
     } finally {
       setIsClearingCredentials(false);
     }
-  }, [clearCredentials]);
+  }, [clearCredentials, t]);
 
   const handleOAuthSuccess = useCallback(() => {
-    setLocalSuccess('Hytale account connected successfully!');
+    setLocalSuccess(t('settings.downloader.connect_success'));
     setShowOAuthModal(false);
     fetchStatus();
-  }, [fetchStatus]);
+  }, [fetchStatus, t]);
 
   const handleRefreshToken = useCallback(async () => {
     setLocalError(null);
@@ -109,11 +111,11 @@ export const HytaleDownloaderSettingsCard = () => {
 
     try {
       await refreshToken();
-      setLocalSuccess('Token refreshed successfully!');
+      setLocalSuccess(t('settings.downloader.refresh_success'));
     } catch (err: any) {
-      setLocalError(err.message || 'Failed to refresh token');
+      setLocalError(err.message || t('settings.downloader.refresh_failed'));
     }
-  }, [refreshToken]);
+  }, [refreshToken, t]);
 
   const handleToggleAutoRefresh = useCallback(async () => {
     setLocalError(null);
@@ -123,11 +125,11 @@ export const HytaleDownloaderSettingsCard = () => {
 
     try {
       await setAutoRefresh(newEnabled, 1800); // 30 minutes
-      setLocalSuccess(newEnabled ? 'Auto-refresh enabled!' : 'Auto-refresh disabled!');
+      setLocalSuccess(newEnabled ? t('settings.downloader.auto_refresh_enabled') : t('settings.downloader.auto_refresh_disabled'));
     } catch (err: any) {
-      setLocalError(err.message || 'Failed to update auto-refresh settings');
+      setLocalError(err.message || t('settings.downloader.auto_refresh_failed'));
     }
-  }, [setAutoRefresh, status?.autoRefresh?.enabled]);
+  }, [setAutoRefresh, status?.autoRefresh?.enabled, t]);
 
   return (
     <>
@@ -137,16 +139,16 @@ export const HytaleDownloaderSettingsCard = () => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Download size={20} />
-                Hytale Server Downloader
+                {t('settings.downloader.title')}
               </CardTitle>
               <CardDescription>
-                Download official Hytale server files using your Hytale account
+                {t('settings.downloader.description')}
               </CardDescription>
             </div>
             {status?.binaryInstalled && (
               <div className="flex items-center gap-2 px-3 py-1 rounded-full text-sm bg-green-500/10 text-green-500">
                 <div className="w-2 h-2 rounded-full bg-green-500" />
-                Installed
+                {t('settings.downloader.installed')}
               </div>
             )}
           </div>
@@ -187,7 +189,7 @@ export const HytaleDownloaderSettingsCard = () => {
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-accent-primary" />
               <span className="ml-2 text-text-light-secondary dark:text-text-secondary">
-                Loading status...
+                {t('settings.downloader.loading')}
               </span>
             </div>
           ) : (
@@ -195,17 +197,17 @@ export const HytaleDownloaderSettingsCard = () => {
               {/* Binary Status */}
               <div className="border rounded-lg p-4 dark:border-gray-700">
                 <h4 className="font-medium text-text-light-primary dark:text-text-primary mb-3">
-                  Downloader Tool
+                  {t('settings.downloader.tool')}
                 </h4>
 
                 {status?.binaryInstalled ? (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-text-light-secondary dark:text-text-secondary">
-                        Version
+                        {t('settings.downloader.version')}
                       </span>
                       <span className="text-sm font-mono text-text-light-primary dark:text-text-primary">
-                        {status.binaryVersion || 'Unknown'}
+                        {status.binaryVersion || t('settings.downloader.unknown')}
                       </span>
                     </div>
                     <Button
@@ -219,13 +221,13 @@ export const HytaleDownloaderSettingsCard = () => {
                       ) : (
                         <RefreshCw size={16} className="mr-2" />
                       )}
-                      {isInstalling ? 'Updating...' : 'Check for Updates'}
+                      {isInstalling ? t('settings.downloader.updating') : t('settings.downloader.update')}
                     </Button>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     <p className="text-sm text-text-light-muted dark:text-text-muted">
-                      The Hytale Downloader tool is not installed. Install it to download official server files.
+                      {t('settings.downloader.not_installed')}
                     </p>
                     <Button
                       variant="primary"
@@ -237,7 +239,7 @@ export const HytaleDownloaderSettingsCard = () => {
                       ) : (
                         <Download size={16} className="mr-2" />
                       )}
-                      {isInstalling ? 'Installing...' : 'Install Downloader'}
+                      {isInstalling ? t('settings.downloader.installing') : t('settings.downloader.install')}
                     </Button>
                   </div>
                 )}
@@ -246,18 +248,18 @@ export const HytaleDownloaderSettingsCard = () => {
               {/* Authentication Status */}
               <div className="border rounded-lg p-4 dark:border-gray-700">
                 <h4 className="font-medium text-text-light-primary dark:text-text-primary mb-3">
-                  Hytale Account
+                  {t('settings.downloader.account_title')}
                 </h4>
 
                 {status?.isAuthenticated ? (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-green-500">
                       <Check size={16} />
-                      <span className="text-sm">Connected</span>
+                      <span className="text-sm">{t('settings.downloader.connected')}</span>
                     </div>
                     {status.accountEmail && (
                       <p className="text-sm text-text-light-muted dark:text-text-muted">
-                        Account: {status.accountEmail}
+                        {t('settings.downloader.account_label', { email: status.accountEmail })}
                       </p>
                     )}
 
@@ -265,12 +267,12 @@ export const HytaleDownloaderSettingsCard = () => {
                     {status.tokenInfo && (
                       <div className="space-y-2 pt-2 border-t dark:border-gray-700">
                         <h5 className="text-xs font-medium text-text-light-secondary dark:text-text-secondary uppercase tracking-wide">
-                          Token Status
+                          {t('settings.downloader.token_status')}
                         </h5>
 
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-text-light-muted dark:text-text-muted">
-                            Access Token
+                            {t('settings.downloader.access_token')}
                           </span>
                           <TokenExpiryBadge
                             expiresIn={status.tokenInfo.accessTokenExpiresIn}
@@ -281,7 +283,7 @@ export const HytaleDownloaderSettingsCard = () => {
 
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-text-light-muted dark:text-text-muted">
-                            Refresh Token
+                            {t('settings.downloader.refresh_token')}
                           </span>
                           <TokenExpiryBadge
                             expiresIn={status.tokenInfo.refreshTokenExpiresIn}
@@ -293,7 +295,7 @@ export const HytaleDownloaderSettingsCard = () => {
                         {status.tokenInfo.branch && (
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-text-light-muted dark:text-text-muted">
-                              Branch
+                              {t('settings.downloader.branch')}
                             </span>
                             <span className="text-sm text-text-light-primary dark:text-text-primary">
                               {status.tokenInfo.branch}
@@ -306,22 +308,20 @@ export const HytaleDownloaderSettingsCard = () => {
                           <div className="flex items-center gap-2">
                             <Clock size={16} className="text-text-light-muted dark:text-text-muted" />
                             <span className="text-sm text-text-light-muted dark:text-text-muted">
-                              Auto-refresh (30 min)
+                              {t('settings.downloader.auto_refresh')}
                             </span>
                           </div>
                           <button
                             onClick={handleToggleAutoRefresh}
                             disabled={isUpdatingAutoRefresh}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                              status.autoRefresh?.enabled
-                                ? 'bg-accent-primary'
-                                : 'bg-gray-300 dark:bg-gray-600'
-                            } ${isUpdatingAutoRefresh ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${status.autoRefresh?.enabled
+                              ? 'bg-accent-primary'
+                              : 'bg-gray-300 dark:bg-gray-600'
+                              } ${isUpdatingAutoRefresh ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                           >
                             <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                status.autoRefresh?.enabled ? 'translate-x-6' : 'translate-x-1'
-                              }`}
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${status.autoRefresh?.enabled ? 'translate-x-6' : 'translate-x-1'
+                                }`}
                             />
                           </button>
                         </div>
@@ -339,7 +339,7 @@ export const HytaleDownloaderSettingsCard = () => {
                             ) : (
                               <RefreshCw size={16} className="mr-2" />
                             )}
-                            {isRefreshingToken ? 'Refreshing...' : 'Refresh Now'}
+                            {isRefreshingToken ? t('settings.downloader.refreshing') : t('settings.downloader.refresh_now')}
                           </Button>
                         </div>
                       </div>
@@ -353,7 +353,7 @@ export const HytaleDownloaderSettingsCard = () => {
                         disabled={!status?.binaryInstalled}
                       >
                         <Key size={16} className="mr-2" />
-                        Reconnect
+                        {t('settings.downloader.reconnect')}
                       </Button>
                       <Button
                         variant="secondary"
@@ -367,14 +367,14 @@ export const HytaleDownloaderSettingsCard = () => {
                         ) : (
                           <Trash2 size={16} className="mr-2" />
                         )}
-                        {isClearingCredentials ? 'Disconnecting...' : 'Disconnect'}
+                        {isClearingCredentials ? t('settings.downloader.disconnecting') : t('settings.downloader.disconnect')}
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     <p className="text-sm text-text-light-muted dark:text-text-muted">
-                      Connect your Hytale account to download official server files.
+                      {t('settings.downloader.connect_message')}
                     </p>
                     <Button
                       variant="primary"
@@ -382,11 +382,11 @@ export const HytaleDownloaderSettingsCard = () => {
                       disabled={!status?.binaryInstalled}
                     >
                       <Key size={16} className="mr-2" />
-                      Connect Hytale Account
+                      {t('settings.downloader.connect_account')}
                     </Button>
                     {!status?.binaryInstalled && (
                       <p className="text-xs text-text-light-muted dark:text-text-muted">
-                        Install the downloader tool first to connect your account.
+                        {t('settings.downloader.install_first')}
                       </p>
                     )}
                   </div>
@@ -396,8 +396,7 @@ export const HytaleDownloaderSettingsCard = () => {
               {/* Info */}
               <div className="bg-blue-500/10 text-blue-400 p-3 rounded text-sm">
                 <p>
-                  The Hytale Downloader uses OAuth to authenticate with your Hytale account.
-                  Your credentials are stored locally and are never sent to third parties.
+                  {t('settings.downloader.info')}
                 </p>
                 <a
                   href="https://support.hytale.com/hc/en-us/articles/45326769420827-Hytale-Server-Manual"
@@ -405,7 +404,7 @@ export const HytaleDownloaderSettingsCard = () => {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 mt-2 text-accent-primary hover:underline"
                 >
-                  View Hytale Server Manual
+                  {t('settings.downloader.view_manual')}
                   <ExternalLink size={12} />
                 </a>
               </div>

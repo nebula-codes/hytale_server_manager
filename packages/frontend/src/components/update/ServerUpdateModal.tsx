@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowUp,
   CheckCircle,
@@ -32,17 +33,17 @@ interface ServerUpdateModalProps {
 }
 
 const STATUS_CONFIG: Record<UpdateStatus, { icon: React.ReactNode; label: string; color: string }> = {
-  pending: { icon: <Loader2 className="w-5 h-5 animate-spin" />, label: 'Preparing...', color: 'text-blue-400' },
-  stopping: { icon: <StopCircle className="w-5 h-5" />, label: 'Stopping server...', color: 'text-yellow-400' },
-  backing_up: { icon: <FolderArchive className="w-5 h-5" />, label: 'Creating backup...', color: 'text-blue-400' },
-  preserving: { icon: <HardDrive className="w-5 h-5" />, label: 'Preserving user files...', color: 'text-blue-400' },
-  downloading: { icon: <Download className="w-5 h-5" />, label: 'Downloading new version...', color: 'text-blue-400' },
-  installing: { icon: <HardDrive className="w-5 h-5" />, label: 'Installing update...', color: 'text-blue-400' },
-  restoring: { icon: <RotateCcw className="w-5 h-5" />, label: 'Restoring user files...', color: 'text-blue-400' },
-  starting: { icon: <PlayCircle className="w-5 h-5" />, label: 'Starting server...', color: 'text-green-400' },
-  completed: { icon: <CheckCircle className="w-5 h-5" />, label: 'Update completed!', color: 'text-green-400' },
-  failed: { icon: <XCircle className="w-5 h-5" />, label: 'Update failed', color: 'text-red-400' },
-  rolled_back: { icon: <RotateCcw className="w-5 h-5" />, label: 'Rolled back', color: 'text-yellow-400' },
+  pending: { icon: <Loader2 className="w-5 h-5 animate-spin" />, label: 'updates.modal.status.pending', color: 'text-blue-400' },
+  stopping: { icon: <StopCircle className="w-5 h-5" />, label: 'updates.modal.status.stopping', color: 'text-yellow-400' },
+  backing_up: { icon: <FolderArchive className="w-5 h-5" />, label: 'updates.modal.status.backing_up', color: 'text-blue-400' },
+  preserving: { icon: <HardDrive className="w-5 h-5" />, label: 'updates.modal.status.preserving', color: 'text-blue-400' },
+  downloading: { icon: <Download className="w-5 h-5" />, label: 'updates.modal.status.downloading', color: 'text-blue-400' },
+  installing: { icon: <HardDrive className="w-5 h-5" />, label: 'updates.modal.status.installing', color: 'text-blue-400' },
+  restoring: { icon: <RotateCcw className="w-5 h-5" />, label: 'updates.modal.status.restoring', color: 'text-blue-400' },
+  starting: { icon: <PlayCircle className="w-5 h-5" />, label: 'updates.modal.status.starting', color: 'text-green-400' },
+  completed: { icon: <CheckCircle className="w-5 h-5" />, label: 'updates.modal.status.completed', color: 'text-green-400' },
+  failed: { icon: <XCircle className="w-5 h-5" />, label: 'updates.modal.status.failed', color: 'text-red-400' },
+  rolled_back: { icon: <RotateCcw className="w-5 h-5" />, label: 'updates.modal.status.rolled_back', color: 'text-yellow-400' },
 };
 
 export const ServerUpdateModal = ({
@@ -52,6 +53,7 @@ export const ServerUpdateModal = ({
   serverName,
   currentVersion,
 }: ServerUpdateModalProps) => {
+  const { t } = useTranslation();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<UpdateStatus | null>(null);
@@ -85,15 +87,15 @@ export const ServerUpdateModal = ({
       onCompleted: () => {
         setStatus('completed');
         setProgress(100);
-        setMessage('Update completed successfully!');
+        setMessage(t('updates.modal.completed_message'));
       },
       onFailed: (data) => {
         setStatus('failed');
-        setError(data.error || 'Unknown error occurred');
+        setError(data.error || t('updates.modal.errors.unknown'));
       },
       onCancelled: () => {
         setStatus('failed');
-        setError('Update was cancelled');
+        setError(t('updates.modal.errors.cancelled'));
       },
     });
 
@@ -167,7 +169,7 @@ export const ServerUpdateModal = ({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Server Update"
+      title={t('updates.modal.title')}
       size="md"
       showCloseButton={!isUpdating}
     >
@@ -177,12 +179,12 @@ export const ServerUpdateModal = ({
           <div>
             <h3 className="font-medium text-text-light-primary dark:text-text-primary">{serverName}</h3>
             <p className="text-sm text-text-light-muted dark:text-text-muted">
-              Current version: {currentVersion}
+              {t('updates.modal.current_version', { version: currentVersion })}
             </p>
           </div>
           {versionCheck?.availableVersion && (
             <div className="text-right">
-              <p className="text-sm text-text-light-muted dark:text-text-muted">Available version:</p>
+              <p className="text-sm text-text-light-muted dark:text-text-muted">{t('updates.modal.available_version_label')}</p>
               <p className="font-medium text-accent-primary">{versionCheck.availableVersion}</p>
             </div>
           )}
@@ -193,12 +195,12 @@ export const ServerUpdateModal = ({
           <div className="flex items-start gap-3 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
             <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
             <div className="text-sm">
-              <p className="font-medium text-yellow-500 mb-1">Before updating:</p>
+              <p className="font-medium text-yellow-500 mb-1">{t('updates.modal.before.title')}</p>
               <ul className="text-text-light-muted dark:text-text-muted space-y-1 list-disc list-inside">
-                <li>A full backup will be created automatically</li>
-                <li>Your configs, mods, universe, and logs will be preserved</li>
-                <li>The server will be stopped during the update</li>
-                <li>You can rollback if something goes wrong</li>
+                <li>{t('updates.modal.before.items.backup')}</li>
+                <li>{t('updates.modal.before.items.preserve')}</li>
+                <li>{t('updates.modal.before.items.stop')}</li>
+                <li>{t('updates.modal.before.items.rollback')}</li>
               </ul>
             </div>
           </div>
@@ -214,7 +216,7 @@ export const ServerUpdateModal = ({
               </div>
               <div>
                 <p className={`font-medium ${statusConfig?.color}`}>
-                  {statusConfig?.label}
+                  {statusConfig?.label ? t(statusConfig.label) : ''}
                 </p>
                 {message && (
                   <p className="text-sm text-text-light-muted dark:text-text-muted">{message}</p>
@@ -234,7 +236,7 @@ export const ServerUpdateModal = ({
               />
             </div>
             <p className="text-sm text-center text-text-light-muted dark:text-text-muted">
-              {progress}% complete
+              {t('updates.modal.progress', { percent: progress })}
             </p>
 
             {/* Error Message */}
@@ -250,7 +252,8 @@ export const ServerUpdateModal = ({
         {isChecking && (
           <div className="flex items-center justify-center gap-2 py-8">
             <Loader2 className="w-5 h-5 animate-spin text-accent-primary" />
-            <span className="text-text-light-muted dark:text-text-muted">Checking for updates...</span>
+           <span className="text-text-light-muted dark:text-text-muted">Checking for updates...</span>
+            <span className="text-text-light-muted dark:text-text-muted">{t('updates.modal.checking')}</span>
           </div>
         )}
 
@@ -260,7 +263,7 @@ export const ServerUpdateModal = ({
             <CheckCircle className="w-12 h-12 text-green-500 mb-3" />
             <p className="font-medium text-text-light-primary dark:text-text-primary">Server is up to date</p>
             <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
-              You're running the latest version ({currentVersion})
+              {t('updates.modal.up_to_date.description', { version: currentVersion })}
             </p>
           </div>
         )}
@@ -289,7 +292,7 @@ export const ServerUpdateModal = ({
         {!isUpdating && !isComplete && versionCheck?.updateAvailable && (
           <>
             <Button variant="ghost" onClick={onClose}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="primary"
@@ -302,7 +305,7 @@ export const ServerUpdateModal = ({
               ) : (
                 <ArrowUp className="w-4 h-4" />
               )}
-              Start Update
+              {startUpdate.isPending ? t('common.loading') : t('updates.modal.start')}
             </Button>
           </>
         )}
@@ -314,21 +317,21 @@ export const ServerUpdateModal = ({
             onClick={handleCancelUpdate}
             disabled={cancelUpdate.isPending}
           >
-            Cancel Update
+            {t('updates.modal.cancel')}
           </Button>
         )}
 
         {/* After update completes */}
         {isComplete && (
           <Button variant="primary" onClick={onClose}>
-            Close
+            {t('common.close')}
           </Button>
         )}
 
         {/* No update available */}
         {!isChecking && !versionCheck?.updateAvailable && !isUpdating && !isComplete && (
           <Button variant="ghost" onClick={onClose}>
-            Close
+            {t('common.close')}
           </Button>
         )}
       </ModalFooter>

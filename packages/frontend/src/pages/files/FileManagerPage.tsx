@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge, Input } from '../../components/ui';
 import {
   Folder, File, FileText, FileCode, FileImage, FileArchive,
@@ -34,6 +35,7 @@ export const FileManagerPage = () => {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
+  const { t } = useTranslation();
 
   // Modals
   const [showEditor, setShowEditor] = useState(false);
@@ -139,8 +141,8 @@ export const FileManagerPage = () => {
     if (!selectedServer) return;
 
     const confirmMsg = item.type === 'directory'
-      ? `Are you sure you want to delete the directory "${item.name}" and all its contents?`
-      : `Are you sure you want to delete "${item.name}"?`;
+      ? t('files.confirm.delete_directory', { name: item.name })
+      : t('files.confirm.delete_file', { name: item.name });
 
     if (!confirm(confirmMsg)) return;
 
@@ -148,13 +150,19 @@ export const FileManagerPage = () => {
       await api.deleteFile(selectedServer, item.path);
       await fetchFiles();
     } catch (error: unknown) {
-      let message = 'An unexpected error occurred';
+      let message = t('files.alert.unexpected_error');
+      let typeLabel = item.type === 'directory' ? t('files.types.directory') : t('files.types.file');
       if (error instanceof ApiError || error instanceof AuthError || error instanceof Error) {
         message = error.message;
       } else if (typeof error === 'string') {
         message = error;
       }
-      alert(`Error deleting ${item.type}: ${message}`);
+      alert(
+        t('files.alert.delete_error', {
+          type: typeLabel,
+          message,
+        })
+      );
     }
   };
 
@@ -222,14 +230,15 @@ export const FileManagerPage = () => {
 
   const selectedServerData = servers.find(s => s.id === selectedServer);
   const usagePercent = diskUsage.total > 0 ? (diskUsage.used / diskUsage.total) * 100 : 0;
+  const getServerPlaceholder = () => t('files.server_selector.placeholder');
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">File Manager</h1>
-          <p className="text-text-light-muted dark:text-text-muted mt-1">Browse and manage server files</p>
+          <h1 className="text-3xl font-heading font-bold text-text-light-primary dark:text-text-primary">{t('files.title')}</h1>
+          <p className="text-text-light-muted dark:text-text-muted mt-1">{t('files.subtitle')}</p>
         </div>
       </div>
 
@@ -244,7 +253,7 @@ export const FileManagerPage = () => {
             }}
             className="w-full max-w-md px-4 py-2 bg-white dark:bg-primary-bg-secondary border border-gray-300 dark:border-gray-700 rounded-lg text-text-light-primary dark:text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary"
           >
-            <option value="">Select a server...</option>
+            <option value="">{getServerPlaceholder()}</option>
             {servers.map((server) => (
               <option key={server.id} value={server.id}>
                 {server.name} ({server.status})
@@ -256,13 +265,13 @@ export const FileManagerPage = () => {
         {selectedServer && (
           <div className="flex gap-2">
             <Button variant="primary" size="sm" icon={<Plus size={16} />} onClick={handleCreateFile}>
-              New File
+              {t('files.actions.new_file')}
             </Button>
             <Button variant="secondary" size="sm" icon={<FolderPlus size={16} />} onClick={handleCreateDirectory}>
-              New Folder
+              {t('files.actions.new_folder')}
             </Button>
             <Button variant="secondary" size="sm" icon={<Upload size={16} />} onClick={() => setShowUploadModal(true)}>
-              Upload
+              {t('files.actions.upload')}
             </Button>
           </div>
         )}
@@ -274,7 +283,7 @@ export const FileManagerPage = () => {
           <Card variant="glass">
             <CardContent>
               <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-text-light-muted dark:text-text-muted">Disk Usage</p>
+                <p className="text-sm text-text-light-muted dark:text-text-muted">{t('files.disk_usage')}</p>
                 <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">
                   {formatSize(diskUsage.used)}
                 </p>
@@ -318,7 +327,7 @@ export const FileManagerPage = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder="Search files..."
+                placeholder={t('files.search.placeholder')}
                 className="w-64"
               />
               <Button
@@ -328,11 +337,11 @@ export const FileManagerPage = () => {
                 onClick={handleSearch}
                 loading={searching}
               >
-                Search
+                {t('files.actions.search')}
               </Button>
               {searchQuery && (
                 <Button variant="ghost" size="sm" onClick={clearSearch}>
-                  Clear
+                  {t('files.actions.clear')}
                 </Button>
               )}
             </div>
@@ -341,10 +350,10 @@ export const FileManagerPage = () => {
           {/* Files List */}
           <Card variant="glass">
             <CardHeader>
-              <CardTitle>
-                {searchQuery ? `Search Results for "${searchQuery}"` : 'Files and Folders'}
-                {loading && ' (Loading...)'}
-              </CardTitle>
+            <CardTitle>
+              {searchQuery ? t('files.table.search_results', { query: searchQuery }) : t('files.table.files_and_folders')}
+              {loading ? ` (${t('common.loading')})` : ''}
+            </CardTitle>
               <CardDescription>
                 {selectedServerData?.name} - {currentPath || '/'}
               </CardDescription>
@@ -352,17 +361,17 @@ export const FileManagerPage = () => {
             <CardContent>
               {files.length === 0 && !loading ? (
                 <div className="text-center py-12 text-text-light-muted dark:text-text-muted">
-                  {searchQuery ? 'No files found' : 'This directory is empty'}
+                  {searchQuery ? t('files.empty.search') : t('files.empty.directory')}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-300 dark:border-gray-800">
-                        <th className="text-left py-3 px-4 text-sm font-medium text-text-light-muted dark:text-text-muted">Name</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-text-light-muted dark:text-text-muted">Size</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-text-light-muted dark:text-text-muted">Modified</th>
-                        <th className="text-right py-3 px-4 text-sm font-medium text-text-light-muted dark:text-text-muted">Actions</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-text-light-muted dark:text-text-muted">{t('files.table.name')}</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-text-light-muted dark:text-text-muted">{t('files.table.size')}</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-text-light-muted dark:text-text-muted">{t('files.table.modified')}</th>
+                        <th className="text-right py-3 px-4 text-sm font-medium text-text-light-muted dark:text-text-muted">{t('files.table.actions')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -391,7 +400,7 @@ export const FileManagerPage = () => {
                                 {item.name}
                               </span>
                               {item.isEditable && (
-                                <Badge variant="info" size="sm">Editable</Badge>
+                                <Badge variant="info" size="sm">{t('files.badge.editable')}</Badge>
                               )}
                             </div>
                           </td>

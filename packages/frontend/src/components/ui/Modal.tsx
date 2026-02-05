@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -19,6 +20,7 @@ export const Modal = ({
   size = 'md',
   showCloseButton = true,
 }: ModalProps) => {
+  const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -73,7 +75,7 @@ export const Modal = ({
                   <button
                     onClick={onClose}
                     className="ml-auto p-2 sm:p-1 -mr-2 sm:mr-0 text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:text-text-primary transition-colors"
-                    aria-label="Close"
+                    aria-label={t('common.close')}
                   >
                     <X size={28} className="sm:w-6 sm:h-6" />
                   </button>

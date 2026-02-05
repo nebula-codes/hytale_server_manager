@@ -705,3 +705,17 @@ export interface ServerUpdateProgressEvent {
   progress: number;
   message?: string;
 }
+
+// ============================================================================
+// I18N TYPES & CONSTANTS
+// ============================================================================
+
+export interface Language {
+  code: string;
+  label: string;
+}
+
+export const SUPPORTED_LANGUAGES: Language[] = [
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
+];

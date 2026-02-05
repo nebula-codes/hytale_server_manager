@@ -1,4 +1,5 @@
 import type { ServerStatus } from '../../types';
+import { useTranslation } from 'react-i18next';
 
 interface StatusIndicatorProps {
   status: ServerStatus | 'online' | 'offline';
@@ -7,38 +8,39 @@ interface StatusIndicatorProps {
 }
 
 export const StatusIndicator = ({ status, showLabel = false, size = 'md' }: StatusIndicatorProps) => {
+  const { t } = useTranslation();
   const statusConfig = {
     running: {
       className: 'status-running',
-      label: 'Running',
+      label: t('servers.status.running'),
     },
     online: {
       className: 'status-running',
-      label: 'Online',
+      label: t('ui.status.online'),
     },
     stopped: {
       className: 'status-stopped',
-      label: 'Stopped',
+      label: t('servers.status.stopped'),
     },
     offline: {
       className: 'status-stopped',
-      label: 'Offline',
+      label: t('ui.status.offline'),
     },
     starting: {
       className: 'status-warning',
-      label: 'Starting',
+      label: t('servers.status.starting'),
     },
     stopping: {
       className: 'status-warning',
-      label: 'Stopping',
+      label: t('servers.status.stopping'),
     },
     crashed: {
       className: 'status-error',
-      label: 'Crashed',
+      label: t('servers.status.crashed'),
     },
     orphaned: {
       className: 'status-warning',
-      label: 'Reconnecting',
+      label: t('servers.status.orphaned', 'Reconnecting'),
     },
   };
 

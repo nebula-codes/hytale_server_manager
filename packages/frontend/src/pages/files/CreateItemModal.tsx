@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, ModalFooter, Button, Input } from '../../components/ui';
 import { File, Folder } from 'lucide-react';
 import { api } from '../../services/api';
@@ -13,6 +14,7 @@ interface CreateItemModalProps {
 }
 
 export const CreateItemModal = ({ isOpen, onClose, onCreated, serverId, currentPath, type }: CreateItemModalProps) => {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,13 +22,13 @@ export const CreateItemModal = ({ isOpen, onClose, onCreated, serverId, currentP
 
   const handleCreate = async () => {
     if (!name.trim()) {
-      setError('Name is required');
+      setError(t('files.create.errors.required'));
       return;
     }
 
     // Validate name (no path separators)
     if (name.includes('/') || name.includes('\\')) {
-      setError('Name cannot contain path separators (/ or \\)');
+      setError(t('files.create.errors.separators'));
       return;
     }
 
@@ -46,7 +48,7 @@ export const CreateItemModal = ({ isOpen, onClose, onCreated, serverId, currentP
       handleClose();
     } catch (err: any) {
       console.error(`Error creating ${type}:`, err);
-      setError(err.message || `Failed to create ${type}`);
+      setError(err.message || t('files.create.error_generic', { type: type === 'file' ? t('files.types.file') : t('files.types.directory') }));
     } finally {
       setLoading(false);
     }
@@ -61,13 +63,13 @@ export const CreateItemModal = ({ isOpen, onClose, onCreated, serverId, currentP
 
   const getPlaceholder = () => {
     if (type === 'file') {
-      return 'e.g., config.yml, server.properties';
+      return t('files.create.placeholder.file');
     }
-    return 'e.g., configs, mods';
+    return t('files.create.placeholder.folder');
   };
 
   const getTitle = () => {
-    return type === 'file' ? 'Create New File' : 'Create New Folder';
+    return type === 'file' ? t('files.create.title_file') : t('files.create.title_folder');
   };
 
   return (
@@ -82,10 +84,10 @@ export const CreateItemModal = ({ isOpen, onClose, onCreated, serverId, currentP
           )}
           <div>
             <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">
-              Creating {type === 'file' ? 'a new file' : 'a new folder'}
+              {type === 'file' ? t('files.create.creating_file') : t('files.create.creating_folder')}
             </p>
             <p className="text-xs text-text-light-muted dark:text-text-muted">
-              Location: /{currentPath || 'root'}
+              {t('files.create.location', { path: currentPath || 'root' })}
             </p>
           </div>
         </div>
@@ -93,7 +95,7 @@ export const CreateItemModal = ({ isOpen, onClose, onCreated, serverId, currentP
         {/* Name Input */}
         <div>
           <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-            {type === 'file' ? 'File Name' : 'Folder Name'} *
+            {type === 'file' ? t('files.create.file_name') : t('files.create.folder_name')} *
           </label>
           <Input
             value={name}
@@ -103,7 +105,7 @@ export const CreateItemModal = ({ isOpen, onClose, onCreated, serverId, currentP
             autoFocus
           />
           <p className="text-xs text-text-light-muted dark:text-text-muted mt-1">
-            Do not include path separators (/ or \)
+            {t('files.create.no_separators')}
           </p>
         </div>
 
@@ -111,13 +113,13 @@ export const CreateItemModal = ({ isOpen, onClose, onCreated, serverId, currentP
         {type === 'file' && (
           <div>
             <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
-              Initial Content (Optional)
+              {t('files.create.initial_content')}
             </label>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               className="w-full h-32 bg-white dark:bg-primary-bg-secondary text-text-light-primary dark:text-text-primary font-mono text-sm p-3 rounded-lg border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-accent-primary resize-none"
-              placeholder="Leave empty to create an empty file..."
+              placeholder={t('files.create.initial_content_placeholder')}
               spellCheck={false}
             />
           </div>
@@ -126,7 +128,7 @@ export const CreateItemModal = ({ isOpen, onClose, onCreated, serverId, currentP
         {/* Preview */}
         {name && (
           <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <p className="text-xs text-text-light-muted dark:text-text-muted mb-1">Full path:</p>
+            <p className="text-xs text-text-light-muted dark:text-text-muted mb-1">{t('files.create.full_path')}</p>
             <p className="text-sm font-mono text-text-light-primary dark:text-text-primary">
               /{currentPath ? `${currentPath}/` : ''}{name}
             </p>
@@ -143,7 +145,7 @@ export const CreateItemModal = ({ isOpen, onClose, onCreated, serverId, currentP
 
       <ModalFooter>
         <Button variant="ghost" onClick={handleClose} disabled={loading}>
-          Cancel
+          {t('common.cancel', { defaultValue: 'Cancel' })}
         </Button>
         <Button
           variant="primary"
@@ -151,7 +153,7 @@ export const CreateItemModal = ({ isOpen, onClose, onCreated, serverId, currentP
           loading={loading}
           disabled={loading || !name.trim()}
         >
-          {loading ? `Creating...` : `Create ${type === 'file' ? 'File' : 'Folder'}`}
+          {loading ? t('common.creating', { defaultValue: 'Creating...' }) : type === 'file' ? t('files.create.create_file') : t('files.create.create_folder')}
         </Button>
       </ModalFooter>
     </Modal>
