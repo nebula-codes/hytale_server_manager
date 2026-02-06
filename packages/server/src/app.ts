@@ -162,7 +162,7 @@ export class App {
     );
     this.taskGroupService = new TaskGroupService(this.prisma, this.schedulerService);
     this.fileService = new FileService();
-    this.metricsService = new MetricsService();
+    this.metricsService = new MetricsService(this.consoleService);
     this.worldsService = new WorldsService();
     this.alertsService = new AlertsService(this.discordService);
     this.automationRulesService = new AutomationRulesService(this.serverService as any, this.backupService);

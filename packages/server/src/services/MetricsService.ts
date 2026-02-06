@@ -3,6 +3,7 @@ import os from 'os';
 import fs from 'fs-extra';
 import path from 'path';
 import logger from '../utils/logger';
+import { ConsoleService } from './ConsoleService';
 
 const prisma = new PrismaClient();
 
@@ -31,6 +32,8 @@ export class MetricsService {
   private collectionInterval: NodeJS.Timeout | null = null;
   private readonly COLLECTION_INTERVAL_MS = 60000; // 1 minute
   private readonly RETENTION_DAYS = 30; // Keep metrics for 30 days
+  private readonly CONSOLE_LOG_RETENTION_DAYS = 7; // Keep console logs for 7 days
+  private consoleService: ConsoleService | null = null;
 
   // Store previous CPU measurements per server for delta calculation
   private previousCpuTimes: Map<string, { idle: number; total: number }> = new Map();
@@ -39,6 +42,10 @@ export class MetricsService {
   // Store previous host CPU measurement for delta calculation
   private previousHostCpuTimes: { idle: number; total: number } | null = null;
   private lastHostCpuUsage: number = 0;
+
+  constructor(consoleService?: ConsoleService) {
+    this.consoleService = consoleService || null;
+  }
 
   /**
    * Start collecting metrics for all running servers
@@ -278,25 +285,44 @@ export class MetricsService {
   }
 
   /**
-   * Get disk usage for a path
+   * Get disk usage for a path with timeout
    */
   private async getDiskUsage(dirPath: string): Promise<{ usage: number; used: number; total: number }> {
     // For simplicity, we'll get the directory size and use system disk stats
     // In production, you might want to use a library like 'check-disk-space'
 
-    const used = await this.getDirectorySize(dirPath);
-    const usedGB = used / 1024 / 1024 / 1024;
+    const TIMEOUT_MS = 10000; // 10 second timeout to prevent CPU spikes
 
-    // Use OS free space as a rough estimate
-    // Note: This is a simplified approach
-    const totalGB = 100; // Default to 100GB if we can't determine
-    const usage = (usedGB / totalGB) * 100;
+    try {
+      // Race between directory size calculation and timeout
+      const used = await Promise.race([
+        this.getDirectorySize(dirPath),
+        new Promise<number>((_, reject) =>
+          setTimeout(() => reject(new Error('Directory size calculation timeout')), TIMEOUT_MS)
+        )
+      ]);
 
-    return {
-      usage: Math.min(usage, 100),
-      used: usedGB,
-      total: totalGB,
-    };
+      const usedGB = used / 1024 / 1024 / 1024;
+
+      // Use OS free space as a rough estimate
+      // Note: This is a simplified approach
+      const totalGB = 100; // Default to 100GB if we can't determine
+      const usage = (usedGB / totalGB) * 100;
+
+      return {
+        usage: Math.min(usage, 100),
+        used: usedGB,
+        total: totalGB,
+      };
+    } catch (error) {
+      // Timeout occurred or error during calculation
+      logger.warn(`Disk usage calculation timed out or failed for ${dirPath}, using cached/default values`);
+      return {
+        usage: 0,
+        used: 0,
+        total: 100,
+      };
+    }
   }
 
   /**
@@ -540,7 +566,7 @@ export class MetricsService {
   }
 
   /**
-   * Clean up old metrics (older than retention period)
+   * Clean up old metrics and console logs (older than retention period)
    */
   private async cleanupOldMetrics(): Promise<void> {
     const cutoffDate = new Date();
@@ -565,6 +591,18 @@ export class MetricsService {
     const totalCleaned = serverResult.count + hostResult.count;
     if (totalCleaned > 0) {
       logger.info(`Cleaned up ${totalCleaned} old metrics (${serverResult.count} server, ${hostResult.count} host)`);
+    }
+
+    // Also clean up old console logs
+    if (this.consoleService) {
+      try {
+        const logsDeleted = await this.consoleService.clearAllOldLogs(this.CONSOLE_LOG_RETENTION_DAYS);
+        if (logsDeleted > 0) {
+          logger.info(`Cleaned up ${logsDeleted} old console logs`);
+        }
+      } catch (error) {
+        logger.error('Error cleaning up old console logs:', error);
+      }
     }
   }
 }

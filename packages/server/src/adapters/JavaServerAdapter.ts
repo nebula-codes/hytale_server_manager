@@ -57,6 +57,7 @@ export class JavaServerAdapter implements IServerAdapter {
       assetsPath?: string;
       minMemory?: string;
       maxMemory?: string;
+      cpuCores?: number;
       javaArgs?: string[];
       serverArgs?: string[];
     }
@@ -72,11 +73,32 @@ export class JavaServerAdapter implements IServerAdapter {
     this.assetsPath = adapterConfig?.assetsPath || '../Assets.zip';
     const minMemory = adapterConfig?.minMemory || '1G';
     this.maxMemory = adapterConfig?.maxMemory || '2G';
-    this.javaArgs = adapterConfig?.javaArgs || [
-      `-Xms${minMemory}`,
-      `-Xmx${this.maxMemory}`,
-      '-jar',
-    ];
+
+    // Build JVM arguments
+    if (adapterConfig?.javaArgs) {
+      // Use provided javaArgs as-is
+      this.javaArgs = adapterConfig.javaArgs;
+    } else {
+      // Build default javaArgs with optional CPU core limits
+      const args = [`-Xms${minMemory}`, `-Xmx${this.maxMemory}`];
+
+      // Add CPU core limits if specified
+      if (adapterConfig?.cpuCores && adapterConfig.cpuCores > 0) {
+        const cores = adapterConfig.cpuCores;
+        const concurrentThreads = Math.max(1, Math.floor(cores / 2));
+        args.push(
+          '-XX:+UseContainerSupport',        // Make JVM container-aware
+          `-XX:ActiveProcessorCount=${cores}`, // Limit JVM to specified CPU cores
+          `-XX:ParallelGCThreads=${cores}`,   // Limit parallel GC threads
+          `-XX:ConcGCThreads=${concurrentThreads}`, // Limit concurrent GC threads
+          '-XX:+UseG1GC',                     // Use G1 garbage collector (better for containers)
+          '-XX:MaxGCPauseMillis=200'          // Target max GC pause time
+        );
+      }
+
+      args.push('-jar');
+      this.javaArgs = args;
+    }
 
     // Extract -Xmx from javaArgs if provided (overrides default maxMemory)
     const xmxArg = this.javaArgs.find((arg) => arg.toLowerCase().startsWith('-xmx'));
