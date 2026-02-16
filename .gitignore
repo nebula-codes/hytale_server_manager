@@ -26,3 +26,6 @@ dist-ssr
 .env
 .claude
 releases/hytale-server-manager-1.0.0-windows.zip
+.github/agents/
+_bmad/
+.codex/
