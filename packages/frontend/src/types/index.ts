@@ -529,6 +529,14 @@ export interface ServerNetwork {
   proxyServerId?: string;
   proxyConfig?: {
     startOrder?: 'proxy_first' | 'backends_first';
+    javaPath?: string;
+    jvmArgs?: string;
+    bindAddress?: string;
+    bindPort?: number;
+    publicAddress?: string;
+    publicPort?: number;
+    proxySecret?: string;
+    autoInstallBridge?: boolean;
   };
   color?: string;
   sortOrder: number;
@@ -629,6 +637,14 @@ export interface CreateNetworkDto {
   proxyServerId?: string;
   proxyConfig?: {
     startOrder?: 'proxy_first' | 'backends_first';
+    javaPath?: string;
+    jvmArgs?: string;
+    bindAddress?: string;
+    bindPort?: number;
+    publicAddress?: string;
+    publicPort?: number;
+    proxySecret?: string;
+    autoInstallBridge?: boolean;
   };
   color?: string;
   serverIds?: string[];
@@ -640,6 +656,14 @@ export interface UpdateNetworkDto {
   proxyServerId?: string;
   proxyConfig?: {
     startOrder?: 'proxy_first' | 'backends_first';
+    javaPath?: string;
+    jvmArgs?: string;
+    bindAddress?: string;
+    bindPort?: number;
+    publicAddress?: string;
+    publicPort?: number;
+    proxySecret?: string;
+    autoInstallBridge?: boolean;
   };
   color?: string;
   sortOrder?: number;

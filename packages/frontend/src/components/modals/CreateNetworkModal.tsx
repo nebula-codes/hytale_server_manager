@@ -47,6 +47,12 @@ export const CreateNetworkModal = ({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState(NETWORK_COLORS[0]);
+  const [networkType, setNetworkType] = useState<'logical' | 'proxy'>('logical');
+  const [startOrder, setStartOrder] = useState<'proxy_first' | 'backends_first'>('backends_first');
+  const [bindAddress, setBindAddress] = useState('0.0.0.0');
+  const [bindPort, setBindPort] = useState(45585);
+  const [publicAddress, setPublicAddress] = useState('');
+  const [autoInstallBridge, setAutoInstallBridge] = useState(true);
   const [selectedServerIds, setSelectedServerIds] = useState<Set<string>>(new Set());
 
   // Reset form when modal closes
@@ -56,6 +62,12 @@ export const CreateNetworkModal = ({
       setName('');
       setDescription('');
       setColor(NETWORK_COLORS[0]);
+      setNetworkType('logical');
+      setStartOrder('backends_first');
+      setBindAddress('0.0.0.0');
+      setBindPort(45585);
+      setPublicAddress('');
+      setAutoInstallBridge(true);
       setSelectedServerIds(new Set());
       setErrors({});
     }
@@ -72,6 +84,9 @@ export const CreateNetworkModal = ({
 
     if (description.length > 200) {
       newErrors.description = t('networks.create.errors.description_length');
+    }
+    if (networkType === 'proxy' && (!Number.isFinite(bindPort) || bindPort < 1 || bindPort > 65535)) {
+      newErrors.bindPort = t('networks.create.errors.bind_port', { defaultValue: 'Proxy port must be between 1 and 65535' });
     }
 
     setErrors(newErrors);
@@ -113,7 +128,17 @@ export const CreateNetworkModal = ({
       const data: CreateNetworkDto = {
         name: name.trim(),
         description: description.trim() || undefined,
-        networkType: 'logical',
+        networkType,
+        proxyConfig: networkType === 'proxy'
+          ? {
+            startOrder,
+            bindAddress: bindAddress.trim() || '0.0.0.0',
+            bindPort,
+            publicAddress: publicAddress.trim() || undefined,
+            publicPort: bindPort,
+            autoInstallBridge,
+          }
+          : undefined,
         color,
         serverIds: serverIds.length > 0 ? serverIds : undefined,
       };
@@ -242,6 +267,108 @@ export const CreateNetworkModal = ({
               ))}
             </div>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-text-light-primary dark:text-text-primary mb-2">
+              {t('networks.create.network_type', { defaultValue: 'Network Type' })}
+            </label>
+            <div className="flex gap-2">
+              <Button
+                variant={networkType === 'logical' ? 'primary' : 'secondary'}
+                size="sm"
+                onClick={() => setNetworkType('logical')}
+              >
+                {t('networks.create.network_type_logical', { defaultValue: 'Logical' })}
+              </Button>
+              <Button
+                variant={networkType === 'proxy' ? 'primary' : 'secondary'}
+                size="sm"
+                onClick={() => setNetworkType('proxy')}
+              >
+                {t('networks.create.network_type_proxy', { defaultValue: 'Proxy (Numdrassl)' })}
+              </Button>
+            </div>
+          </div>
+
+          {networkType === 'proxy' && (
+            <div className="space-y-3 p-3 border border-gray-700 rounded-lg">
+              <h4 className="text-sm font-semibold text-text-light-primary dark:text-text-primary">
+                {t('networks.create.proxy_settings', { defaultValue: 'Proxy Settings' })}
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-text-light-muted dark:text-text-muted mb-1">
+                    {t('networks.create.proxy_bind_address', { defaultValue: 'Bind Address' })}
+                  </label>
+                  <Input
+                    type="text"
+                    value={bindAddress}
+                    onChange={(e) => setBindAddress(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-text-light-muted dark:text-text-muted mb-1">
+                    {t('networks.create.proxy_bind_port', { defaultValue: 'Bind Port' })}
+                  </label>
+                  <Input
+                    type="number"
+                    value={bindPort}
+                    onChange={(e) => {
+                      setBindPort(parseInt(e.target.value || '0', 10));
+                      if (errors.bindPort) setErrors(prev => ({ ...prev, bindPort: '' }));
+                    }}
+                  />
+                  {errors.bindPort && (
+                    <p className="text-danger text-sm mt-1">{errors.bindPort}</p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-text-light-muted dark:text-text-muted mb-1">
+                  {t('networks.create.proxy_public_address', { defaultValue: 'Public Address (optional)' })}
+                </label>
+                <Input
+                  type="text"
+                  value={publicAddress}
+                  onChange={(e) => setPublicAddress(e.target.value)}
+                  placeholder={t('networks.create.proxy_public_address_placeholder', { defaultValue: 'example.com' })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-text-light-muted dark:text-text-muted mb-1">
+                  {t('networks.create.proxy_start_order', { defaultValue: 'Start Order' })}
+                </label>
+                <div className="flex gap-2">
+                  <Button
+                    variant={startOrder === 'backends_first' ? 'primary' : 'secondary'}
+                    size="sm"
+                    onClick={() => setStartOrder('backends_first')}
+                  >
+                    {t('networks.create.proxy_start_order_backends', { defaultValue: 'Backends first' })}
+                  </Button>
+                  <Button
+                    variant={startOrder === 'proxy_first' ? 'primary' : 'secondary'}
+                    size="sm"
+                    onClick={() => setStartOrder('proxy_first')}
+                  >
+                    {t('networks.create.proxy_start_order_proxy', { defaultValue: 'Proxy first' })}
+                  </Button>
+                </div>
+              </div>
+
+              <label className="flex items-center gap-2 text-sm text-text-light-primary dark:text-text-primary cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={autoInstallBridge}
+                  onChange={(e) => setAutoInstallBridge(e.target.checked)}
+                />
+                {t('networks.create.proxy_bridge_autoinstall', { defaultValue: 'Auto-install Bridge plugins on linked servers' })}
+              </label>
+            </div>
+          )}
         </div>
       )}
 
@@ -266,7 +393,9 @@ export const CreateNetworkModal = ({
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-medium text-text-light-primary dark:text-text-primary">
-                {t('networks.create.member_servers')}
+                {networkType === 'proxy'
+                  ? t('networks.create.backend_servers', { defaultValue: 'Backend servers' })
+                  : t('networks.create.member_servers')}
               </label>
               <div className="flex gap-2">
                 <Button variant="ghost" size="sm" onClick={selectAllServers}>

@@ -1,0 +1,67 @@
+services:
+  hytale-server-manager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        - USER_UID=1000  # Same UID as web
+        - USER_GID=1000  # Same GID as web
+    image: hytale-server-manager:local-dev
+    container_name: hytale-server-manager-dev
+    restart: unless-stopped
+    ports:
+      - "3001:3001/tcp"
+      - "5520:5520/udp"
+    environment:
+      # User/Group ID for file permissions (use `id` command to find yours)
+      - PUID=1000
+      - PGID=1000
+      # Set container timezone in TZ format. Using UTC as default.
+      - TZ=Etc/UTC
+      - NODE_ENV=production
+      - PORT=3001
+      - HOST=0.0.0.0
+      # Required secrets - generate your own!
+      # Generate with: openssl rand -hex 64
+      - JWT_SECRET=your-jwt-secret-here-min-32-chars-generate-with-openssl-rand
+      - JWT_REFRESH_SECRET=your-refresh-secret-here-min-32-chars-generate-openssl
+      # Generate with: openssl rand -hex 16
+      - SETTINGS_ENCRYPTION_KEY=your-32-char-encryption-key-here
+      - INSECURE_COOKIES=true
+      # CORS origin - set to your server's URL for external access
+      - CORS_ORIGIN=http://localhost:3001
+      # Rate limiting
+      - RATE_LIMIT_WINDOW=900000
+      - RATE_LIMIT_MAX=1000
+      # File upload limit
+      - MAX_FILE_UPLOAD_SIZE=52428800
+    volumes:
+      # Database persistence
+      - hsm-dev-database:/app/data/db
+      # Game server files
+      - hsm-dev-servers:/app/servers
+      # Backup storage
+      - hsm-dev-backups:/app/data/backups
+      # Application logs
+      - hsm-dev-logs:/app/logs
+      # SSL certificates (if using HTTPS)
+      - hsm-dev-certs:/app/data/certs
+      # Hytale downloader tool
+      - hsm-dev-downloader:/app/data/hytale-downloader
+      # Machine ID for system identification
+      - /etc/machine-id:/etc/machine-id:ro
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  hsm-dev-database:
+  hsm-dev-servers:
+  hsm-dev-backups:
+  hsm-dev-logs:
+  hsm-dev-certs:
+  hsm-dev-downloader:

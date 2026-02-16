@@ -27,6 +27,7 @@ mkdir -p /app/data/db /app/data/servers /app/data/backups /app/data/logs /app/da
 # Fix ownership of data directories
 chown -R hsm:hsm /app/data
 chown hsm:hsm /app
+chown 1000:1000 /app
 
 # Generate secrets if not provided
 if [ -z "$JWT_SECRET" ]; then

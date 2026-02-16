@@ -1,6 +1,7 @@
 import { PrismaClient, ServerNetwork as PrismaNetwork } from '@prisma/client';
 import { ServerService } from './ServerService';
 import { BackupService } from './BackupService';
+import { ProxyService, ProxyNetworkConfig, ProxyBackendServer } from './ProxyService';
 import {
   NetworkType,
   NetworkStatusType,
@@ -19,7 +20,7 @@ interface CreateNetworkDto {
   description?: string;
   networkType?: NetworkType;
   proxyServerId?: string;
-  proxyConfig?: { startOrder?: 'proxy_first' | 'backends_first' };
+  proxyConfig?: ProxyNetworkConfig;
   color?: string;
   serverIds?: string[];
 }
@@ -28,7 +29,7 @@ interface UpdateNetworkDto {
   name?: string;
   description?: string;
   proxyServerId?: string;
-  proxyConfig?: { startOrder?: 'proxy_first' | 'backends_first' };
+  proxyConfig?: ProxyNetworkConfig;
   color?: string;
   sortOrder?: number;
   bulkActionsEnabled?: boolean;
@@ -38,15 +39,18 @@ export class NetworkService {
   private prisma: PrismaClient;
   private serverService: ServerService;
   private backupService: BackupService;
+  private proxyService: ProxyService;
 
   constructor(
     prisma: PrismaClient,
     serverService: ServerService,
-    backupService: BackupService
+    backupService: BackupService,
+    proxyService: ProxyService
   ) {
     this.prisma = prisma;
     this.serverService = serverService;
     this.backupService = backupService;
+    this.proxyService = proxyService;
   }
 
   // ==========================================
@@ -77,7 +81,11 @@ export class NetworkService {
     if (data.serverIds && data.serverIds.length > 0) {
       for (let i = 0; i < data.serverIds.length; i++) {
         const serverId = data.serverIds[i];
-        const role: MemberRole = serverId === data.proxyServerId ? 'proxy' : 'member';
+        const role: MemberRole = serverId === data.proxyServerId
+          ? 'proxy'
+          : data.networkType === 'proxy'
+            ? 'backend'
+            : 'member';
         await this.addServer(network.id, serverId, role, i);
       }
     }
@@ -274,26 +282,23 @@ export class NetworkService {
     const results: ServerOperationResult[] = [];
 
     if (network.networkType === 'proxy') {
-      const proxyConfig = network.proxyConfig ? JSON.parse(network.proxyConfig) : {};
+      const proxyConfig = this.parseProxyConfig(network.proxyConfig);
       const startOrder = proxyConfig.startOrder || 'backends_first';
-
-      const proxyMember = network.members.find(m => m.role === 'proxy');
       const backendMembers = network.members.filter(m => m.role !== 'proxy');
+      const backendServers = await this.loadBackendServers(backendMembers.map(member => member.serverId));
+
+      await this.ensureBackendServerArgs(backendServers);
 
       if (startOrder === 'backends_first') {
         // Start backends first
         for (const member of backendMembers) {
           results.push(await this.startServerSafe(member.serverId, member.server.name));
         }
-        // Then start proxy
-        if (proxyMember) {
-          results.push(await this.startServerSafe(proxyMember.serverId, proxyMember.server.name));
-        }
+        // Then start proxy process
+        results.push(await this.startProxySafe(network.id, network.name, backendServers, proxyConfig));
       } else {
         // Start proxy first
-        if (proxyMember) {
-          results.push(await this.startServerSafe(proxyMember.serverId, proxyMember.server.name));
-        }
+        results.push(await this.startProxySafe(network.id, network.name, backendServers, proxyConfig));
         // Then start backends
         for (const member of backendMembers) {
           results.push(await this.startServerSafe(member.serverId, member.server.name));
@@ -322,18 +327,15 @@ export class NetworkService {
     const results: ServerOperationResult[] = [];
 
     if (network.networkType === 'proxy') {
-      const proxyConfig = network.proxyConfig ? JSON.parse(network.proxyConfig) : {};
+      const proxyConfig = this.parseProxyConfig(network.proxyConfig);
       // Stop order is reverse of start order
       const startOrder = proxyConfig.startOrder || 'backends_first';
 
-      const proxyMember = network.members.find(m => m.role === 'proxy');
       const backendMembers = network.members.filter(m => m.role !== 'proxy');
 
       if (startOrder === 'backends_first') {
         // Stop proxy first (reverse of backends_first start)
-        if (proxyMember) {
-          results.push(await this.stopServerSafe(proxyMember.serverId, proxyMember.server.name));
-        }
+        results.push(await this.stopProxySafe(network.id));
         // Then stop backends
         for (const member of backendMembers) {
           results.push(await this.stopServerSafe(member.serverId, member.server.name));
@@ -344,9 +346,7 @@ export class NetworkService {
           results.push(await this.stopServerSafe(member.serverId, member.server.name));
         }
         // Then stop proxy
-        if (proxyMember) {
-          results.push(await this.stopServerSafe(proxyMember.serverId, proxyMember.server.name));
-        }
+        results.push(await this.stopProxySafe(network.id));
       }
     } else {
       // Logical network - stop all in parallel
@@ -389,6 +389,33 @@ export class NetworkService {
       const message = error instanceof Error ? error.message : 'Unknown error';
       logger.error(`Failed to stop server ${serverName}:`, error);
       return { serverId, serverName, success: false, error: message };
+    }
+  }
+
+  private async startProxySafe(
+    networkId: string,
+    networkName: string,
+    backendServers: ProxyBackendServer[],
+    proxyConfig: ProxyNetworkConfig
+  ): Promise<ServerOperationResult> {
+    try {
+      await this.proxyService.startProxy(networkId, networkName, backendServers, proxyConfig);
+      return { serverId: `proxy:${networkId}`, serverName: `${networkName} Proxy`, success: true };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Failed to start proxy for network ${networkName}:`, error);
+      return { serverId: `proxy:${networkId}`, serverName: `${networkName} Proxy`, success: false, error: message };
+    }
+  }
+
+  private async stopProxySafe(networkId: string): Promise<ServerOperationResult> {
+    try {
+      await this.proxyService.stopProxy(networkId);
+      return { serverId: `proxy:${networkId}`, serverName: `${networkId} Proxy`, success: true };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Failed to stop proxy for network ${networkId}:`, error);
+      return { serverId: `proxy:${networkId}`, serverName: `${networkId} Proxy`, success: false, error: message };
     }
   }
 
@@ -446,6 +473,14 @@ export class NetworkService {
           playerCount: 0,
         });
       }
+    }
+
+    if (network.networkType === 'proxy') {
+      memberStatuses.push({
+        serverId: `proxy:${networkId}`,
+        serverName: `${network.name} Proxy`,
+        status: this.proxyService.getStatus(networkId),
+      });
     }
 
     // Derive network status
@@ -700,5 +735,63 @@ export class NetworkService {
     });
 
     return servers;
+  }
+
+  private parseProxyConfig(proxyConfig: string | null | undefined): ProxyNetworkConfig {
+    if (!proxyConfig) return {};
+    try {
+      return JSON.parse(proxyConfig) as ProxyNetworkConfig;
+    } catch {
+      return {};
+    }
+  }
+
+  private async loadBackendServers(serverIds: string[]): Promise<ProxyBackendServer[]> {
+    if (serverIds.length === 0) return [];
+
+    const servers = await this.prisma.server.findMany({
+      where: { id: { in: serverIds } },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        port: true,
+        serverPath: true,
+      },
+    });
+
+    return servers.map(server => ({
+      id: server.id,
+      name: server.name,
+      address: server.address,
+      port: server.port,
+      serverPath: server.serverPath,
+    }));
+  }
+
+  private async ensureBackendServerArgs(backendServers: ProxyBackendServer[]): Promise<void> {
+    for (const server of backendServers) {
+      const dbServer = await this.prisma.server.findUnique({
+        where: { id: server.id },
+        select: { serverArgs: true },
+      });
+      if (!dbServer) continue;
+
+      const currentArgs = (dbServer.serverArgs || '').trim();
+      const requiredFlags = ['--accept-early-plugins', '--auth-mode', 'insecure'];
+      const hasAllFlags = requiredFlags.every(flag => currentArgs.includes(flag));
+      if (hasAllFlags) continue;
+
+      const mergedArgs = [currentArgs, '--accept-early-plugins --auth-mode insecure']
+        .filter(Boolean)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      await this.prisma.server.update({
+        where: { id: server.id },
+        data: { serverArgs: mergedArgs },
+      });
+    }
   }
 }

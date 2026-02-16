@@ -1071,7 +1071,17 @@ class ApiService {
     description?: string;
     networkType?: 'logical' | 'proxy';
     proxyServerId?: string;
-    proxyConfig?: { startOrder?: 'proxy_first' | 'backends_first' };
+    proxyConfig?: {
+      startOrder?: 'proxy_first' | 'backends_first';
+      javaPath?: string;
+      jvmArgs?: string;
+      bindAddress?: string;
+      bindPort?: number;
+      publicAddress?: string;
+      publicPort?: number;
+      proxySecret?: string;
+      autoInstallBridge?: boolean;
+    };
     color?: string;
     serverIds?: string[];
   }): Promise<T> {
@@ -1085,7 +1095,17 @@ class ApiService {
     name?: string;
     description?: string;
     proxyServerId?: string;
-    proxyConfig?: { startOrder?: 'proxy_first' | 'backends_first' };
+    proxyConfig?: {
+      startOrder?: 'proxy_first' | 'backends_first';
+      javaPath?: string;
+      jvmArgs?: string;
+      bindAddress?: string;
+      bindPort?: number;
+      publicAddress?: string;
+      publicPort?: number;
+      proxySecret?: string;
+      autoInstallBridge?: boolean;
+    };
     color?: string;
     sortOrder?: number;
     bulkActionsEnabled?: boolean;

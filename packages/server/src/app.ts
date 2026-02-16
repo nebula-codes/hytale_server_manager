@@ -27,6 +27,7 @@ import { AlertsService } from './services/AlertsService';
 import { AutomationRulesService } from './services/AutomationRulesService';
 import { DiscordNotificationService } from './services/DiscordNotificationService';
 import { NetworkService } from './services/NetworkService';
+import { ProxyService } from './services/ProxyService';
 import { PermissionService } from './services/PermissionService';
 import { SettingsService } from './services/SettingsService';
 import { FtpStorageService } from './services/FtpStorageService';
@@ -91,6 +92,7 @@ export class App {
   private automationRulesService: AutomationRulesService;
   private discordService: DiscordNotificationService;
   private networkService: NetworkService;
+  private proxyService: ProxyService;
   private permissionService: PermissionService;
   private settingsService: SettingsService;
   private ftpService: FtpStorageService;
@@ -154,7 +156,13 @@ export class App {
     this.modService = new ModService(this.prisma);
     this.playerService = new PlayerService(this.prisma, this.discordService);
     this.backupService = new BackupService(this.discordService);
-    this.networkService = new NetworkService(this.prisma, this.serverService, this.backupService);
+    this.proxyService = new ProxyService();
+    this.networkService = new NetworkService(
+      this.prisma,
+      this.serverService,
+      this.backupService,
+      this.proxyService
+    );
     this.schedulerService = new SchedulerService(
       this.serverService,
       this.backupService,
@@ -522,6 +530,7 @@ export class App {
       this.alertsService.stopMonitoring();
       await this.consoleService.cleanup();
       this.automationRulesService.cleanup();
+      await this.proxyService.cleanup();
       await this.serverService.cleanup();
       await this.consoleEvents.cleanup();
       this.serverEvents.cleanup();

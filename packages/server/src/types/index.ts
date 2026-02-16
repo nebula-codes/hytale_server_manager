@@ -265,6 +265,18 @@ export interface NetworkBackup {
   serverBackups?: Backup[];
 }
 
+export interface ProxyConfig {
+  startOrder?: 'proxy_first' | 'backends_first';
+  javaPath?: string;
+  jvmArgs?: string;
+  bindAddress?: string;
+  bindPort?: number;
+  publicAddress?: string;
+  publicPort?: number;
+  proxySecret?: string;
+  autoInstallBridge?: boolean;
+}
+
 // Network WebSocket Events
 export interface WSNetworkStatusEvent {
   networkId: string;
