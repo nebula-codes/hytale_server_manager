@@ -156,6 +156,8 @@ export class NetworkService {
       data: updateData,
     });
 
+    await this.syncProxyConfigForNetwork(networkId);
+
     logger.info(`Updated network: ${network.name} (${network.id})`);
     return network;
   }
@@ -226,6 +228,8 @@ export class NetworkService {
       },
     });
 
+    await this.syncProxyConfigForNetwork(networkId);
+
     logger.info(`Added server ${server.name} to network ${networkId} with role ${role}`);
   }
 
@@ -255,6 +259,8 @@ export class NetworkService {
       });
     }
 
+    await this.syncProxyConfigForNetwork(networkId);
+
     logger.info(`Removed server ${serverId} from network ${networkId}`);
   }
 
@@ -265,6 +271,8 @@ export class NetworkService {
       },
       data: { role },
     });
+
+    await this.syncProxyConfigForNetwork(networkId);
 
     logger.info(`Updated server ${serverId} role to ${role} in network ${networkId}`);
   }
@@ -278,6 +286,8 @@ export class NetworkService {
         data: { sortOrder: i },
       });
     }
+
+    await this.syncProxyConfigForNetwork(networkId);
 
     logger.info(`Reordered ${serverIds.length} servers in network ${networkId}`);
   }
@@ -753,6 +763,17 @@ export class NetworkService {
     return servers;
   }
 
+  async syncProxyConfigsForServer(serverId: string): Promise<void> {
+    const memberships = await this.prisma.serverNetworkMember.findMany({
+      where: { serverId },
+      select: { networkId: true },
+    });
+
+    for (const membership of memberships) {
+      await this.syncProxyConfigForNetwork(membership.networkId);
+    }
+  }
+
   /**
    * Ensure that all servers in a network share the same version.
    * Throws if a mismatch is detected.
@@ -862,5 +883,26 @@ export class NetworkService {
       );
     }
     return baseVersion;
+  }
+
+  private async syncProxyConfigForNetwork(networkId: string): Promise<void> {
+    const network = await this.prisma.serverNetwork.findUnique({
+      where: { id: networkId },
+      include: {
+        members: {
+          orderBy: { sortOrder: 'asc' },
+        },
+      },
+    });
+
+    if (!network || network.networkType !== 'proxy') {
+      return;
+    }
+
+    const proxyConfig = this.parseProxyConfig(network.proxyConfig);
+    const backendMembers = network.members.filter(member => member.role !== 'proxy');
+    const backendServers = await this.loadBackendServers(backendMembers.map(member => member.serverId));
+
+    await this.proxyService.syncProxyConfig(network.id, backendServers, proxyConfig);
   }
 }

@@ -312,6 +312,53 @@ export class ProxyService {
     this.stopLogTail(networkId);
   }
 
+  /**
+   * Rewrite proxy.yml for a network without starting/stopping the proxy process.
+   */
+  async syncProxyConfig(
+    networkId: string,
+    backendServers: ProxyBackendServer[],
+    rawConfig: ProxyNetworkConfig
+  ): Promise<void> {
+    const config: Required<Pick<ProxyNetworkConfig, 'bindAddress' | 'bindPort' | 'publicPort' | 'proxySecret'>> & ProxyNetworkConfig = {
+      bindAddress: rawConfig.bindAddress || '0.0.0.0',
+      bindPort: rawConfig.bindPort || 24322,
+      publicPort: rawConfig.publicPort || rawConfig.bindPort || 24322,
+      proxySecret: rawConfig.proxySecret || this.generateSecret(),
+      maxConnections: rawConfig.maxConnections ?? 1000,
+      connectionTimeoutSeconds: rawConfig.connectionTimeoutSeconds ?? 30,
+      debugMode: rawConfig.debugMode ?? false,
+      passthroughMode: rawConfig.passthroughMode ?? false,
+      metricsEnabled: rawConfig.metricsEnabled ?? true,
+      metricsPort: rawConfig.metricsPort ?? 9090,
+      metricsLogIntervalSeconds: rawConfig.metricsLogIntervalSeconds ?? 60,
+      clusterEnabled: rawConfig.clusterEnabled ?? false,
+      proxyId: rawConfig.proxyId || '',
+      proxyRegion: rawConfig.proxyRegion || 'default',
+      redisHost: rawConfig.redisHost || 'localhost',
+      redisPort: rawConfig.redisPort ?? 6379,
+      redisPassword: rawConfig.redisPassword || '',
+      redisSsl: rawConfig.redisSsl ?? false,
+      redisDatabase: rawConfig.redisDatabase ?? 0,
+      fallbackEnabled: rawConfig.fallbackEnabled ?? true,
+      globalFallbackServer: rawConfig.globalFallbackServer || 'lobby',
+      ...rawConfig,
+      publicAddress: rawConfig.publicAddress || 'play.myserver.com',
+      certificatePath: rawConfig.certificatePath?.trim() || 'certs/server.crt',
+      privateKeyPath: rawConfig.privateKeyPath?.trim() || 'certs/server.key',
+      backendFallbackServers: rawConfig.backendFallbackServers || {},
+      proxyProtocol: {
+        enabled: rawConfig.proxyProtocol?.enabled ?? false,
+        required: rawConfig.proxyProtocol?.required ?? true,
+        headerTimeoutSeconds: rawConfig.proxyProtocol?.headerTimeoutSeconds ?? 5,
+        trustedProxies: rawConfig.proxyProtocol?.trustedProxies || [],
+      },
+    };
+
+    const runtimePath = await this.ensureRuntimePath(networkId);
+    await this.writeProxyConfig(runtimePath, backendServers, config);
+  }
+
   async cleanup(): Promise<void> {
     const networkIds = Array.from(this.processes.keys());
     for (const networkId of networkIds) {
