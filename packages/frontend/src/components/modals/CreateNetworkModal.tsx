@@ -50,8 +50,8 @@ export const CreateNetworkModal = ({
   const [networkType, setNetworkType] = useState<'logical' | 'proxy'>('logical');
   const [startOrder, setStartOrder] = useState<'proxy_first' | 'backends_first'>('backends_first');
   const [bindAddress, setBindAddress] = useState('0.0.0.0');
-  const [bindPort, setBindPort] = useState(45585);
-  const [publicAddress, setPublicAddress] = useState('');
+  const [bindPort, setBindPort] = useState(24322);
+  const [publicAddress, setPublicAddress] = useState('play.myserver.com');
   const [autoInstallBridge, setAutoInstallBridge] = useState(true);
   const [selectedServerIds, setSelectedServerIds] = useState<Set<string>>(new Set());
 
@@ -65,8 +65,8 @@ export const CreateNetworkModal = ({
       setNetworkType('logical');
       setStartOrder('backends_first');
       setBindAddress('0.0.0.0');
-      setBindPort(45585);
-      setPublicAddress('');
+      setBindPort(24322);
+      setPublicAddress('play.myserver.com');
       setAutoInstallBridge(true);
       setSelectedServerIds(new Set());
       setErrors({});

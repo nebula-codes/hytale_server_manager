@@ -178,36 +178,36 @@ export const ProxyDetailPage = () => {
     setForm({
       startOrder: parsedConfig.startOrder || 'backends_first',
       bindAddress: parsedConfig.bindAddress || '0.0.0.0',
-      bindPort: parsedConfig.bindPort || 45585,
-      publicAddress: parsedConfig.publicAddress || '',
-      publicPort: parsedConfig.publicPort || parsedConfig.bindPort || 45585,
-      certificatePath: parsedConfig.certificatePath || '',
-      privateKeyPath: parsedConfig.privateKeyPath || '',
-      maxConnections: parsedConfig.maxConnections ?? 10000,
+      bindPort: parsedConfig.bindPort || 24322,
+      publicAddress: parsedConfig.publicAddress || 'play.myserver.com',
+      publicPort: parsedConfig.publicPort || parsedConfig.bindPort || 24322,
+      certificatePath: parsedConfig.certificatePath || 'certs/server.crt',
+      privateKeyPath: parsedConfig.privateKeyPath || 'certs/server.key',
+      maxConnections: parsedConfig.maxConnections ?? 1000,
       connectionTimeoutSeconds: parsedConfig.connectionTimeoutSeconds ?? 30,
       javaPath: parsedConfig.javaPath || 'java',
       jvmArgs: parsedConfig.jvmArgs || '',
       proxySecret: parsedConfig.proxySecret || '',
-      debugMode: parsedConfig.debugMode ?? true,
+      debugMode: parsedConfig.debugMode ?? false,
       passthroughMode: parsedConfig.passthroughMode ?? false,
       metricsEnabled: parsedConfig.metricsEnabled ?? true,
       autoInstallBridge: parsedConfig.autoInstallBridge !== false,
-      metricsPort: parsedConfig.metricsPort ?? 0,
+      metricsPort: parsedConfig.metricsPort ?? 9090,
       metricsLogIntervalSeconds: parsedConfig.metricsLogIntervalSeconds ?? 60,
       clusterEnabled: parsedConfig.clusterEnabled ?? false,
       proxyId: parsedConfig.proxyId || '',
-      proxyRegion: parsedConfig.proxyRegion || '',
+      proxyRegion: parsedConfig.proxyRegion || 'default',
       redisHost: parsedConfig.redisHost || 'localhost',
       redisPort: parsedConfig.redisPort ?? 6379,
       redisPassword: parsedConfig.redisPassword || '',
       redisSsl: parsedConfig.redisSsl ?? false,
       redisDatabase: parsedConfig.redisDatabase ?? 0,
-      fallbackEnabled: parsedConfig.fallbackEnabled ?? false,
-      globalFallbackServer: parsedConfig.globalFallbackServer || '',
+      fallbackEnabled: parsedConfig.fallbackEnabled ?? true,
+      globalFallbackServer: parsedConfig.globalFallbackServer || 'lobby',
       backendFallbackServers: normalizedFallbacks,
       proxyProtocol: {
         enabled: parsedConfig.proxyProtocol?.enabled ?? false,
-        required: parsedConfig.proxyProtocol?.required ?? false,
+        required: parsedConfig.proxyProtocol?.required ?? true,
         headerTimeoutSeconds: parsedConfig.proxyProtocol?.headerTimeoutSeconds ?? 5,
         trustedProxies: parsedConfig.proxyProtocol?.trustedProxies || [],
       },
@@ -229,11 +229,21 @@ export const ProxyDetailPage = () => {
       await api.updateNetwork(id, {
         proxyConfig: {
           ...form,
-          publicPort: form.publicPort || form.bindPort,
+          bindPort: form.bindPort || 24322,
+          publicAddress: form.publicAddress?.trim() || 'play.myserver.com',
+          publicPort: form.publicPort || form.bindPort || 24322,
+          maxConnections: form.maxConnections ?? 1000,
+          debugMode: form.debugMode ?? false,
+          metricsPort: form.metricsPort ?? 9090,
+          proxyRegion: form.proxyRegion?.trim() || 'default',
+          fallbackEnabled: form.fallbackEnabled ?? true,
+          globalFallbackServer: form.globalFallbackServer?.trim() || 'lobby',
+          certificatePath: form.certificatePath?.trim() || 'certs/server.crt',
+          privateKeyPath: form.privateKeyPath?.trim() || 'certs/server.key',
           backendFallbackServers: form.backendFallbackServers || {},
           proxyProtocol: {
             enabled: form.proxyProtocol?.enabled ?? false,
-            required: form.proxyProtocol?.required ?? false,
+            required: form.proxyProtocol?.required ?? true,
             headerTimeoutSeconds: form.proxyProtocol?.headerTimeoutSeconds ?? 5,
             trustedProxies: cleanedTrustedProxies,
           },
@@ -385,7 +395,7 @@ export const ProxyDetailPage = () => {
             <Input
               label="Bind Port"
               type="number"
-              value={form.bindPort ?? 45585}
+              value={form.bindPort ?? 24322}
               onChange={e => handleChange('bindPort', Number(e.target.value))}
             />
             <Input
@@ -397,7 +407,7 @@ export const ProxyDetailPage = () => {
             <Input
               label="Public Port"
               type="number"
-              value={form.publicPort ?? form.bindPort ?? 45585}
+              value={form.publicPort ?? form.bindPort ?? 24322}
               onChange={e => handleChange('publicPort', Number(e.target.value))}
             />
             <Input
@@ -415,7 +425,7 @@ export const ProxyDetailPage = () => {
             <Input
               label="Max Connections"
               type="number"
-              value={form.maxConnections ?? 10000}
+              value={form.maxConnections ?? 1000}
               onChange={e => handleChange('maxConnections', Number(e.target.value))}
             />
             <Input
@@ -425,9 +435,9 @@ export const ProxyDetailPage = () => {
               onChange={e => handleChange('connectionTimeoutSeconds', Number(e.target.value))}
             />
             <Input
-              label="Metrics Port (0 = auto)"
+              label="Metrics Port"
               type="number"
-              value={form.metricsPort ?? 0}
+              value={form.metricsPort ?? 9090}
               onChange={e => handleChange('metricsPort', Number(e.target.value))}
             />
             <Input
@@ -554,7 +564,7 @@ export const ProxyDetailPage = () => {
               <input
                 type="checkbox"
                 className="w-5 h-5"
-                checked={form.debugMode ?? true}
+                checked={form.debugMode ?? false}
                 onChange={(e) => handleChange('debugMode', e.target.checked)}
               />
             </div>
@@ -612,7 +622,7 @@ export const ProxyDetailPage = () => {
               <input
                 type="checkbox"
                 className="w-5 h-5"
-                checked={form.fallbackEnabled ?? false}
+                checked={form.fallbackEnabled ?? true}
                 onChange={(e) => handleChange('fallbackEnabled', e.target.checked)}
               />
             </div>
@@ -637,7 +647,7 @@ export const ProxyDetailPage = () => {
               <input
                 type="checkbox"
                 className="w-5 h-5"
-                checked={form.proxyProtocol?.required ?? false}
+                checked={form.proxyProtocol?.required ?? true}
                 onChange={(e) => handleChange('proxyProtocol', {
                   ...(form.proxyProtocol || {}),
                   required: e.target.checked,
