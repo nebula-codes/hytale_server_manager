@@ -214,6 +214,17 @@ function App() {
               />
 
               <Route
+                path="proxies/:id"
+                element={
+                  <ProtectedRoute pageName="Proxy Detail">
+                    <RequirePermission permission={PERMISSIONS.SERVERS_VIEW}>
+                      <ProxyDetailPage />
+                    </RequirePermission>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
                 path="servers"
                 element={
                   <ProtectedRoute pageName="Servers">
@@ -461,3 +472,4 @@ function App() {
 }
 
 export default App;
+const ProxyDetailPage = lazy(() => import('./pages/proxies/ProxyDetailPage').then(m => ({ default: m.ProxyDetailPage })));

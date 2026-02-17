@@ -18,6 +18,7 @@ export interface ProxyNetworkConfig {
   publicPort?: number;
   proxySecret?: string;
   autoInstallBridge?: boolean;
+  metricsPort?: number;
 }
 
 export interface ProxyBackendServer {
@@ -120,6 +121,10 @@ export class ProxyService {
     const javaArgs = this.parseJvmArgs(config.jvmArgs);
     // Use absolute jar path so runtime cwd does not matter
     const args = [...javaArgs, '-jar', assets.proxyJarPath];
+    const procEnv = {
+      ...process.env,
+      METRICS_PORT: (rawConfig.metricsPort ?? 0).toString(), // 0 lets OS choose a free port
+    };
 
     logger.info(
       `[ProxyService] Starting proxy for network ${networkId} with command: ${config.javaPath} ${args.join(' ')}`
@@ -137,7 +142,7 @@ export class ProxyService {
         cols: 120,
         rows: 30,
         cwd: runtimePath,
-        env: { ...process.env },
+        env: procEnv,
       });
       usedPty = true;
       logger.info('[ProxyService] node-pty detected, starting proxy with PTY for interactive console support');
@@ -146,7 +151,7 @@ export class ProxyService {
       childProcess = spawn(config.javaPath, args, {
         cwd: runtimePath,
         stdio: ['pipe', 'pipe', 'pipe'],
-        env: { ...process.env },
+        env: procEnv,
         windowsHide: true,
       });
     }

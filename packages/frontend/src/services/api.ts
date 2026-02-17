@@ -1085,6 +1085,7 @@ class ApiService {
       publicPort?: number;
       proxySecret?: string;
       autoInstallBridge?: boolean;
+      metricsPort?: number;
     };
     color?: string;
     serverIds?: string[];
@@ -1109,6 +1110,7 @@ class ApiService {
       publicPort?: number;
       proxySecret?: string;
       autoInstallBridge?: boolean;
+      metricsPort?: number;
     };
     color?: string;
     sortOrder?: number;
