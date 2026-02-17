@@ -140,7 +140,7 @@ export const NetworkCard = ({
               {getStatusBadge()}
               {network.networkType === 'proxy' && (
                 <Link to={`/proxies/${network.id}`} onClick={(e) => e.stopPropagation()}>
-                  <Button variant="secondary" size="xs">
+                  <Button variant="secondary" size="sm">
                     Open Proxy
                   </Button>
                 </Link>
