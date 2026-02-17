@@ -37,7 +37,7 @@ export interface ProxyNetworkConfig {
   redisDatabase?: number;
   fallbackEnabled?: boolean;
   globalFallbackServer?: string;
-  backendFallbackServers?: Record<string, string>;
+  backendFallbackServers?: Record<string, boolean>;
   proxyProtocol?: {
     enabled?: boolean;
     required?: boolean;
@@ -418,13 +418,13 @@ export class ProxyService {
     const backendsBlock = backendServers
       .map((server, index) => {
         const host = this.resolveBackendHost(server.address);
-        const fallbackServer = config.backendFallbackServers?.[server.id];
+        const fallbackServer = config.backendFallbackServers?.[server.id] ?? false;
         return [
           '  - name: "' + server.name + '"',
           '    host: "' + host + '"',
           `    port: ${server.port}`,
           `    defaultServer: ${index === 0 ? 'true' : 'false'}`,
-          `    fallbackServer: ${fallbackServer ? `"${fallbackServer}"` : 'null'}`,
+          `    fallbackServer: ${fallbackServer}`,
         ].join('\n');
       })
       .join('\n\n');

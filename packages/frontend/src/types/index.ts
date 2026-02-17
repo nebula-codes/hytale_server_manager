@@ -556,7 +556,7 @@ export interface ServerNetwork {
     redisDatabase?: number;
     fallbackEnabled?: boolean;
     globalFallbackServer?: string;
-    backendFallbackServers?: Record<string, string>;
+    backendFallbackServers?: Record<string, boolean>;
     proxyProtocol?: {
       enabled?: boolean;
       required?: boolean;
@@ -690,7 +690,7 @@ export interface CreateNetworkDto {
     redisDatabase?: number;
     fallbackEnabled?: boolean;
     globalFallbackServer?: string;
-    backendFallbackServers?: Record<string, string>;
+    backendFallbackServers?: Record<string, boolean>;
     proxyProtocol?: {
       enabled?: boolean;
       required?: boolean;
@@ -735,7 +735,7 @@ export interface UpdateNetworkDto {
     redisDatabase?: number;
     fallbackEnabled?: boolean;
     globalFallbackServer?: string;
-    backendFallbackServers?: Record<string, string>;
+    backendFallbackServers?: Record<string, boolean>;
     proxyProtocol?: {
       enabled?: boolean;
       required?: boolean;

@@ -36,7 +36,7 @@ type ProxyConfig = {
   redisDatabase?: number;
   fallbackEnabled?: boolean;
   globalFallbackServer?: string;
-  backendFallbackServers?: Record<string, string>;
+  backendFallbackServers?: Record<string, boolean>;
   proxyProtocol?: {
     enabled?: boolean;
     required?: boolean;
@@ -170,6 +170,11 @@ export const ProxyDetailPage = () => {
   useEffect(() => {
     if (!network) return;
 
+    const normalizedFallbacks = Object.entries(parsedConfig.backendFallbackServers || {}).reduce<Record<string, boolean>>((acc, [serverId, value]) => {
+      acc[serverId] = typeof value === 'boolean' ? value : Boolean(value);
+      return acc;
+    }, {});
+
     setForm({
       startOrder: parsedConfig.startOrder || 'backends_first',
       bindAddress: parsedConfig.bindAddress || '0.0.0.0',
@@ -199,7 +204,7 @@ export const ProxyDetailPage = () => {
       redisDatabase: parsedConfig.redisDatabase ?? 0,
       fallbackEnabled: parsedConfig.fallbackEnabled ?? false,
       globalFallbackServer: parsedConfig.globalFallbackServer || '',
-      backendFallbackServers: parsedConfig.backendFallbackServers || {},
+      backendFallbackServers: normalizedFallbacks,
       proxyProtocol: {
         enabled: parsedConfig.proxyProtocol?.enabled ?? false,
         required: parsedConfig.proxyProtocol?.required ?? false,
@@ -242,7 +247,7 @@ export const ProxyDetailPage = () => {
     }
   };
 
-  const handleBackendFallbackChange = (serverId: string, value: string) => {
+  const handleBackendFallbackChange = (serverId: string, value: boolean) => {
     setForm(prev => ({
       ...prev,
       backendFallbackServers: {
@@ -685,12 +690,27 @@ export const ProxyDetailPage = () => {
                         </div>
                         {member.role !== 'proxy' && (
                           <div className="mt-2">
-                            <Input
-                              label="Fallback Server (optional)"
-                              value={form.backendFallbackServers?.[member.serverId] || ''}
-                              onChange={(e) => handleBackendFallbackChange(member.serverId, e.target.value)}
-                              placeholder="server-name"
-                            />
+                            <p className="text-xs text-text-light-muted dark:text-text-muted mb-1">Fallback Server</p>
+                            <div className="flex items-center gap-4">
+                              <label className="flex items-center gap-2 text-sm text-text-light-primary dark:text-text-primary">
+                                <input
+                                  type="radio"
+                                  name={`fallback-${member.serverId}`}
+                                  checked={(form.backendFallbackServers?.[member.serverId] ?? false) === true}
+                                  onChange={() => handleBackendFallbackChange(member.serverId, true)}
+                                />
+                                true
+                              </label>
+                              <label className="flex items-center gap-2 text-sm text-text-light-primary dark:text-text-primary">
+                                <input
+                                  type="radio"
+                                  name={`fallback-${member.serverId}`}
+                                  checked={(form.backendFallbackServers?.[member.serverId] ?? false) === false}
+                                  onChange={() => handleBackendFallbackChange(member.serverId, false)}
+                                />
+                                false
+                              </label>
+                            </div>
                           </div>
                         )}
                       </div>

@@ -1104,7 +1104,7 @@ class ApiService {
       redisDatabase?: number;
       fallbackEnabled?: boolean;
       globalFallbackServer?: string;
-      backendFallbackServers?: Record<string, string>;
+      backendFallbackServers?: Record<string, boolean>;
       proxyProtocol?: {
         enabled?: boolean;
         required?: boolean;
@@ -1154,7 +1154,7 @@ class ApiService {
       redisDatabase?: number;
       fallbackEnabled?: boolean;
       globalFallbackServer?: string;
-      backendFallbackServers?: Record<string, string>;
+      backendFallbackServers?: Record<string, boolean>;
       proxyProtocol?: {
         enabled?: boolean;
         required?: boolean;

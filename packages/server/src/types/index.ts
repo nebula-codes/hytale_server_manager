@@ -294,7 +294,7 @@ export interface ProxyConfig {
   redisDatabase?: number;
   fallbackEnabled?: boolean;
   globalFallbackServer?: string;
-  backendFallbackServers?: Record<string, string>;
+  backendFallbackServers?: Record<string, boolean>;
   proxyProtocol?: {
     enabled?: boolean;
     required?: boolean;
