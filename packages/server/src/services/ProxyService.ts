@@ -23,6 +23,7 @@ export interface ProxyBackendServer {
   address: string;
   port: number;
   serverPath: string;
+  version?: string;
 }
 
 interface ReleaseAsset {
@@ -32,6 +33,7 @@ interface ReleaseAsset {
 
 interface ReleaseResponse {
   assets: ReleaseAsset[];
+  tag_name?: string;
 }
 
 interface AssetBundle {
@@ -82,7 +84,8 @@ export class ProxyService {
     };
 
     const runtimePath = await this.ensureRuntimePath(networkId);
-    const assets = await this.ensureAssets();
+    const backendVersion = backendServers.find(b => b.version)?.version;
+    const assets = await this.ensureAssets(backendVersion);
 
     await this.writeProxyConfig(runtimePath, backendServers, config);
 
@@ -91,7 +94,8 @@ export class ProxyService {
     }
 
     const javaArgs = this.parseJvmArgs(config.jvmArgs);
-    const args = [...javaArgs, '-jar', path.basename(assets.proxyJarPath)];
+    // Use absolute jar path so runtime cwd does not matter
+    const args = [...javaArgs, '-jar', assets.proxyJarPath];
 
     logger.info(
       `[ProxyService] Starting proxy for network ${networkId} with command: ${config.javaPath} ${args.join(' ')}`
@@ -189,25 +193,30 @@ export class ProxyService {
     return runtimePath;
   }
 
-  private async ensureAssets(): Promise<AssetBundle> {
-    await fs.ensureDir(this.cachePath);
+  private async ensureAssets(version?: string): Promise<AssetBundle> {
+    const cacheRoot = version ? path.join(this.cachePath, version) : this.cachePath;
+    await fs.ensureDir(cacheRoot);
 
-    const release = await this.getLatestRelease();
-    const proxyAsset = release.assets.find(asset => /^proxy-.*\.jar$/i.test(asset.name));
+    const release = await this.getRelease(version);
+    const proxyAsset = this.pickProxyAsset(release.assets);
     const bridgeAsset = release.assets.find(asset => /^bridge-(?!packets).*\.jar$/i.test(asset.name));
     const bridgePacketsAsset = release.assets.find(asset => /^bridge-packets-.*\.jar$/i.test(asset.name));
 
     if (!proxyAsset) {
-      throw new Error('Could not find proxy binary in latest Numdrassl release');
+      throw new Error('Could not find proxy binary in Numdrassl release');
     }
 
-    const proxyJarPath = await this.downloadAsset(proxyAsset.name, proxyAsset.browser_download_url);
+    const proxyJarPath = await this.downloadAsset(cacheRoot, proxyAsset.name, proxyAsset.browser_download_url);
     const bridgeJarPath = bridgeAsset
-      ? await this.downloadAsset(bridgeAsset.name, bridgeAsset.browser_download_url)
+      ? await this.downloadAsset(cacheRoot, bridgeAsset.name, bridgeAsset.browser_download_url)
       : null;
     const bridgePacketsJarPath = bridgePacketsAsset
-      ? await this.downloadAsset(bridgePacketsAsset.name, bridgePacketsAsset.browser_download_url)
+      ? await this.downloadAsset(cacheRoot, bridgePacketsAsset.name, bridgePacketsAsset.browser_download_url)
       : null;
+
+    logger.info(
+      `[ProxyService] Using proxy asset ${proxyAsset.name} for ${process.platform}/${process.arch} (cache: ${cacheRoot})`
+    );
 
     return {
       proxyJarPath,
@@ -216,8 +225,13 @@ export class ProxyService {
     };
   }
 
-  private async getLatestRelease(): Promise<ReleaseResponse> {
-    const response = await fetch('https://api.github.com/repos/Numdrassl/proxy/releases/latest', {
+  private async getRelease(version?: string): Promise<ReleaseResponse> {
+    const baseUrl = 'https://api.github.com/repos/Numdrassl/proxy/releases';
+    const url = version
+      ? `${baseUrl}/tags/${version.startsWith('v') ? version : `v${version}`}`
+      : `${baseUrl}/latest`;
+
+    const response = await fetch(url, {
       headers: {
         Accept: 'application/vnd.github+json',
         'User-Agent': 'HytaleServerManager/0.3',
@@ -225,15 +239,19 @@ export class ProxyService {
     });
 
     if (!response.ok) {
+      // Fallback to latest if the requested tag is missing
+      if (version && response.status === 404) {
+        return this.getRelease(undefined);
+      }
       const details = await response.text();
-      throw new Error(`Failed to fetch latest Numdrassl release: HTTP ${response.status} - ${details}`);
+      throw new Error(`Failed to fetch Numdrassl release${version ? ` for ${version}` : ''}: HTTP ${response.status} - ${details}`);
     }
 
     return response.json() as Promise<ReleaseResponse>;
   }
 
-  private async downloadAsset(fileName: string, url: string): Promise<string> {
-    const targetPath = path.join(this.cachePath, fileName);
+  private async downloadAsset(cacheRoot: string, fileName: string, url: string): Promise<string> {
+    const targetPath = path.join(cacheRoot, fileName);
     if (await fs.pathExists(targetPath)) {
       return targetPath;
     }
@@ -296,20 +314,38 @@ export class ProxyService {
     assets: AssetBundle,
     proxySecret: string
   ): Promise<void> {
+    const hasBridge = Boolean(assets.bridgeJarPath);
+    const hasPackets = Boolean(assets.bridgePacketsJarPath);
+    if (!hasBridge || !hasPackets) {
+      logger.warn(
+        `[ProxyService] Bridge assets missing: bridge=${hasBridge} bridge-packets=${hasPackets}. ` +
+        'Backends will not get bridge mods/plugins.'
+      );
+    }
+
     for (const server of backendServers) {
-      const pluginsPath = path.join(server.serverPath, 'plugins');
-      const earlyPluginsPath = path.join(server.serverPath, 'earlyplugins');
+      const serverRoot = path.resolve(server.serverPath);
+      const earlyPluginsPath = path.join(serverRoot, 'earlyplugins');
+      const modsPath = path.join(serverRoot, 'mods');
+      const pluginsPath = path.join(serverRoot, 'plugins');
       await fs.ensureDir(pluginsPath);
       await fs.ensureDir(earlyPluginsPath);
+      await fs.ensureDir(modsPath);
       await fs.ensureDir(path.join(pluginsPath, 'Bridge'));
 
       if (assets.bridgeJarPath) {
-        await fs.copyFile(assets.bridgeJarPath, path.join(pluginsPath, path.basename(assets.bridgeJarPath)));
+        await fs.copyFile(assets.bridgeJarPath, path.join(modsPath, path.basename(assets.bridgeJarPath)));
+        logger.info(
+          `[ProxyService] Installed bridge jar to ${modsPath} for server ${server.name}`
+        );
       }
       if (assets.bridgePacketsJarPath) {
         await fs.copyFile(
           assets.bridgePacketsJarPath,
           path.join(earlyPluginsPath, path.basename(assets.bridgePacketsJarPath))
+        );
+        logger.info(
+          `[ProxyService] Installed bridge-packets jar to ${earlyPluginsPath} for server ${server.name}`
         );
       }
 
@@ -336,6 +372,53 @@ export class ProxyService {
       return '127.0.0.1';
     }
     return host;
+  }
+
+  /**
+   * Pick the best proxy asset for the current platform/arch.
+   * Prefers arch-specific builds when available, otherwise falls back to the first generic jar.
+   */
+  private pickProxyAsset(assets: ReleaseAsset[]): ReleaseAsset | undefined {
+    const arch = process.arch;
+    const platform = process.platform;
+
+    const archKeywords: Record<string, string[]> = {
+      arm64: ['aarch64', 'arm64'],
+      aarch64: ['aarch64', 'arm64'],
+      x64: ['x86_64', 'amd64', 'x64'],
+    };
+
+    const platformKeywords: Record<NodeJS.Platform, string[]> = {
+      linux: ['linux'],
+      darwin: ['mac', 'darwin', 'osx'],
+      win32: ['win', 'windows'],
+      aix: [],
+      android: ['android'],
+      freebsd: ['freebsd'],
+      openbsd: ['openbsd'],
+      sunos: ['sunos'],
+      cygwin: ['win', 'windows'],
+      netbsd: ['netbsd'],
+      haiku: [],
+    };
+
+    const archKeys = archKeywords[arch] || [arch];
+    const platformKeys = platformKeywords[platform] || [platform];
+
+    const matches = (asset: ReleaseAsset, keys: string[]) => keys.some(k => asset.name.toLowerCase().includes(k));
+
+    // Prefer platform+arch specific asset
+    const exact = assets.find(
+      a => /^proxy-.*\.jar$/i.test(a.name) && matches(a, archKeys) && matches(a, platformKeys)
+    );
+    if (exact) return exact;
+
+    // Then arch-specific
+    const archOnly = assets.find(a => /^proxy-.*\.jar$/i.test(a.name) && matches(a, archKeys));
+    if (archOnly) return archOnly;
+
+    // Fallback generic
+    return assets.find(a => /^proxy-.*\.jar$/i.test(a.name));
   }
 
   private generateSecret(): string {

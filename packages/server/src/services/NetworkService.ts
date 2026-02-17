@@ -66,6 +66,13 @@ export class NetworkService {
       throw new Error('A network with this name already exists');
     }
 
+    // Enforce version alignment across provided servers (including proxy)
+    if (data.serverIds?.length) {
+      await this.assertUniformVersion(data.serverIds, data.proxyServerId);
+    } else if (data.proxyServerId) {
+      await this.assertUniformVersion([data.proxyServerId], data.proxyServerId);
+    }
+
     const network = await this.prisma.serverNetwork.create({
       data: {
         name: data.name,
@@ -135,7 +142,10 @@ export class NetworkService {
 
     if (data.name !== undefined) updateData.name = data.name;
     if (data.description !== undefined) updateData.description = data.description;
-    if (data.proxyServerId !== undefined) updateData.proxyServerId = data.proxyServerId;
+    if (data.proxyServerId !== undefined) {
+      await this.assertUniformVersion([], data.proxyServerId, networkId);
+      updateData.proxyServerId = data.proxyServerId;
+    }
     if (data.proxyConfig !== undefined) updateData.proxyConfig = JSON.stringify(data.proxyConfig);
     if (data.color !== undefined) updateData.color = data.color;
     if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;
@@ -203,6 +213,9 @@ export class NetworkService {
       });
       sortOrder = (maxSort._max.sortOrder ?? -1) + 1;
     }
+
+    // Enforce version consistency within network
+    await this.assertUniformVersion([serverId], undefined, networkId);
 
     await this.prisma.serverNetworkMember.create({
       data: {
@@ -286,6 +299,7 @@ export class NetworkService {
       const startOrder = proxyConfig.startOrder || 'backends_first';
       const backendMembers = network.members.filter(m => m.role !== 'proxy');
       const backendServers = await this.loadBackendServers(backendMembers.map(member => member.serverId));
+      this.ensureUniformBackendVersion(backendServers);
 
       await this.ensureBackendServerArgs(backendServers);
 
@@ -332,6 +346,8 @@ export class NetworkService {
       const startOrder = proxyConfig.startOrder || 'backends_first';
 
       const backendMembers = network.members.filter(m => m.role !== 'proxy');
+      const backendServers = await this.loadBackendServers(backendMembers.map(member => member.serverId));
+      this.ensureUniformBackendVersion(backendServers);
 
       if (startOrder === 'backends_first') {
         // Stop proxy first (reverse of backends_first start)
@@ -737,6 +753,45 @@ export class NetworkService {
     return servers;
   }
 
+  /**
+   * Ensure that all servers in a network share the same version.
+   * Throws if a mismatch is detected.
+   */
+  private async assertUniformVersion(newServerIds: string[], proxyServerId?: string, networkId?: string): Promise<string | null> {
+    const ids = new Set<string>(newServerIds);
+    if (proxyServerId) ids.add(proxyServerId);
+
+    if (networkId) {
+      const network = await this.prisma.serverNetwork.findUnique({
+        where: { id: networkId },
+        include: { members: true },
+      });
+      if (network) {
+        network.members.forEach(m => ids.add(m.serverId));
+        if (network.proxyServerId) ids.add(network.proxyServerId);
+      }
+    }
+
+    if (ids.size === 0) return null;
+
+    const servers = await this.prisma.server.findMany({
+      where: { id: { in: Array.from(ids) } },
+      select: { id: true, name: true, version: true },
+    });
+
+    if (servers.length === 0) return null;
+
+    const baseVersion = servers[0].version;
+    const mismatch = servers.find(s => s.version !== baseVersion);
+    if (mismatch) {
+      throw new Error(
+        `Version mismatch in network members: expected ${baseVersion}, found ${mismatch.version} on server ${mismatch.name}`
+      );
+    }
+
+    return baseVersion;
+  }
+
   private parseProxyConfig(proxyConfig: string | null | undefined): ProxyNetworkConfig {
     if (!proxyConfig) return {};
     try {
@@ -757,6 +812,7 @@ export class NetworkService {
         address: true,
         port: true,
         serverPath: true,
+        version: true,
       },
     });
 
@@ -766,6 +822,7 @@ export class NetworkService {
       address: server.address,
       port: server.port,
       serverPath: server.serverPath,
+      version: server.version,
     }));
   }
 
@@ -793,5 +850,17 @@ export class NetworkService {
         data: { serverArgs: mergedArgs },
       });
     }
+  }
+
+  private ensureUniformBackendVersion(backendServers: ProxyBackendServer[]): string | undefined {
+    if (backendServers.length === 0) return undefined;
+    const baseVersion = backendServers[0].version;
+    const mismatch = backendServers.find(server => server.version !== baseVersion);
+    if (mismatch) {
+      throw new Error(
+        `Version mismatch in backend servers: expected ${baseVersion}, found ${mismatch.version} on server ${mismatch.name}`
+      );
+    }
+    return baseVersion;
   }
 }
