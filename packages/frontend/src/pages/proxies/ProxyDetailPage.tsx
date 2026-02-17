@@ -26,6 +26,17 @@ type ProxyConfig = {
   routes?: { hostname: string; target: string }[];
 };
 
+type PoolEntry = {
+  key: string;
+  strategy: 'round-robin' | 'random' | 'least-connections';
+  servers: string[];
+};
+
+type RouteEntry = {
+  hostname: string;
+  target: string;
+};
+
 type Network = {
   id: string;
   name: string;
@@ -89,8 +100,8 @@ export const ProxyDetailPage = () => {
   const [stopping, setStopping] = useState(false);
   const [addingServerId, setAddingServerId] = useState<string | null>(null);
   const [removingServerId, setRemovingServerId] = useState<string | null>(null);
-  const [poolText, setPoolText] = useState('{}');
-  const [routesText, setRoutesText] = useState('[]');
+  const [poolEntries, setPoolEntries] = useState<PoolEntry[]>([]);
+  const [routeEntries, setRouteEntries] = useState<RouteEntry[]>([]);
 
   const parsedConfig = useMemo<ProxyConfig>(() => {
     if (!network?.proxyConfig) return {};
@@ -103,6 +114,40 @@ export const ProxyDetailPage = () => {
     }
     return network.proxyConfig || {};
   }, [network]);
+
+  const configToForm = (config: ProxyConfig): ProxyConfig => ({
+    startOrder: config.startOrder || 'backends_first',
+    version: config.version ?? 3,
+    bindAddress: config.bindAddress || '0.0.0.0',
+    bindPort: config.bindPort || 24322,
+    publicAddress: config.publicAddress || 'play.myserver.com',
+    publicPort: config.publicPort || config.bindPort || 24322,
+    certificatePath: config.certificatePath || 'certs/server.crt',
+    privateKeyPath: config.privateKeyPath || 'certs/server.key',
+    proxySecret: config.proxySecret || '',
+    debugMode: config.debugMode ?? false,
+    autoInstallBridge: config.autoInstallBridge !== false,
+    defaultServer: config.defaultServer || '',
+    fallbackServer: config.fallbackServer || '',
+    poolEnabled: config.poolEnabled ?? false,
+    pool: config.pool || {},
+    routes: config.routes || [],
+  });
+
+  const configToPoolEntries = (config: ProxyConfig): PoolEntry[] =>
+    Object.entries(config.pool || {}).map(([key, value]) => ({
+      key,
+      strategy: value?.strategy || 'round-robin',
+      servers: Array.isArray(value?.servers) ? value.servers : [],
+    }));
+
+  const configToRouteEntries = (config: ProxyConfig): RouteEntry[] =>
+    Array.isArray(config.routes)
+      ? config.routes.map((route) => ({
+          hostname: route?.hostname || '',
+          target: route?.target || '',
+        }))
+      : [];
 
   const getStatusBadge = (value: string) => {
     switch (value) {
@@ -168,26 +213,9 @@ export const ProxyDetailPage = () => {
   useEffect(() => {
     if (!network) return;
 
-    setForm({
-      startOrder: parsedConfig.startOrder || 'backends_first',
-      version: parsedConfig.version ?? 3,
-      bindAddress: parsedConfig.bindAddress || '0.0.0.0',
-      bindPort: parsedConfig.bindPort || 24322,
-      publicAddress: parsedConfig.publicAddress || 'play.myserver.com',
-      publicPort: parsedConfig.publicPort || parsedConfig.bindPort || 24322,
-      certificatePath: parsedConfig.certificatePath || 'certs/server.crt',
-      privateKeyPath: parsedConfig.privateKeyPath || 'certs/server.key',
-      proxySecret: parsedConfig.proxySecret || '',
-      debugMode: parsedConfig.debugMode ?? false,
-      autoInstallBridge: parsedConfig.autoInstallBridge !== false,
-      defaultServer: parsedConfig.defaultServer || '',
-      fallbackServer: parsedConfig.fallbackServer || '',
-      poolEnabled: parsedConfig.poolEnabled ?? false,
-      pool: parsedConfig.pool || {},
-      routes: parsedConfig.routes || [],
-    });
-    setPoolText(JSON.stringify(parsedConfig.pool || {}, null, 2));
-    setRoutesText(JSON.stringify(parsedConfig.routes || [], null, 2));
+    setForm(configToForm(parsedConfig));
+    setPoolEntries(configToPoolEntries(parsedConfig));
+    setRouteEntries(configToRouteEntries(parsedConfig));
   }, [network, parsedConfig]);
 
   const handleChange = (field: keyof ProxyConfig, value: any) => {
@@ -198,19 +226,23 @@ export const ProxyDetailPage = () => {
     if (!id) return;
     setSaving(true);
     try {
-      let parsedPool: ProxyConfig['pool'] = {};
-      let parsedRoutes: ProxyConfig['routes'] = [];
-      try {
-        parsedPool = JSON.parse(poolText || '{}');
-      } catch {
-        throw new Error('Pool JSON is invalid');
+      const parsedPool: ProxyConfig['pool'] = {};
+      for (const entry of poolEntries) {
+        const key = entry.key.trim();
+        if (!key) continue;
+        const servers = entry.servers.map((server) => server.trim()).filter(Boolean);
+        parsedPool[key] = {
+          strategy: entry.strategy || 'round-robin',
+          servers,
+        };
       }
-      try {
-        const routesValue = JSON.parse(routesText || '[]');
-        parsedRoutes = Array.isArray(routesValue) ? routesValue : [];
-      } catch {
-        throw new Error('Routes JSON is invalid');
-      }
+
+      const parsedRoutes: ProxyConfig['routes'] = routeEntries
+        .map((route) => ({
+          hostname: route.hostname.trim(),
+          target: route.target.trim(),
+        }))
+        .filter((route) => route.hostname && route.target);
 
       await api.updateNetwork(id, {
         proxyConfig: {
@@ -473,26 +505,172 @@ export const ProxyDetailPage = () => {
               />
             </div>
             <div className="md:col-span-2 flex flex-col gap-1">
-              <label className="text-sm text-text-light-primary dark:text-text-primary font-medium">
-                Pool (JSON)
-              </label>
-              <textarea
-                className="bg-white dark:bg-primary-bg border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 min-h-[120px]"
-                value={poolText}
-                onChange={(e) => setPoolText(e.target.value)}
-                placeholder='{"lobby":{"strategy":"round-robin","servers":["lobby-1","lobby-2"]}}'
-              />
+              <div className="flex items-center justify-between">
+                <label className="text-sm text-text-light-primary dark:text-text-primary font-medium">
+                  Pools
+                </label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  icon={<Plus size={14} />}
+                  onClick={() => setPoolEntries((prev) => [...prev, { key: '', strategy: 'round-robin', servers: [] }])}
+                >
+                  Add Pool
+                </Button>
+              </div>
+              <div className="space-y-3">
+                {poolEntries.length === 0 && (
+                  <div className="text-xs text-text-light-muted dark:text-text-muted border border-dashed border-gray-600 rounded-lg p-3">
+                    No pool configured.
+                  </div>
+                )}
+                {poolEntries.map((entry, index) => (
+                  <div key={`pool-${index}`} className="border border-gray-700 rounded-lg p-3 space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <Input
+                        label="Pool Name"
+                        value={entry.key}
+                        onChange={(e) => setPoolEntries((prev) => prev.map((item, i) => (i === index ? { ...item, key: e.target.value } : item)))}
+                        placeholder="lobby"
+                      />
+                      <div className="flex flex-col gap-1">
+                        <label className="text-sm text-text-light-primary dark:text-text-primary font-medium">Strategy</label>
+                        <select
+                          className="bg-white dark:bg-primary-bg border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2"
+                          value={entry.strategy}
+                          onChange={(e) => setPoolEntries((prev) => prev.map((item, i) => (i === index ? { ...item, strategy: e.target.value as PoolEntry['strategy'] } : item)))}
+                        >
+                          <option value="round-robin">round-robin</option>
+                          <option value="random">random</option>
+                          <option value="least-connections">least-connections</option>
+                        </select>
+                      </div>
+                      <div className="flex items-end">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="danger"
+                          icon={<Minus size={14} />}
+                          onClick={() => setPoolEntries((prev) => prev.filter((_, i) => i !== index))}
+                        >
+                          Remove Pool
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-sm text-text-light-primary dark:text-text-primary font-medium">Servers</label>
+                      <div className="space-y-2">
+                        {entry.servers.map((serverName, serverIndex) => (
+                          <div key={`pool-server-${index}-${serverIndex}`} className="flex items-center gap-2">
+                            <input
+                              className="flex-1 bg-white dark:bg-primary-bg border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2"
+                              value={serverName}
+                              onChange={(e) =>
+                                setPoolEntries((prev) =>
+                                  prev.map((item, i) =>
+                                    i === index
+                                      ? {
+                                          ...item,
+                                          servers: item.servers.map((srv, si) => (si === serverIndex ? e.target.value : srv)),
+                                        }
+                                      : item
+                                  )
+                                )
+                              }
+                              placeholder="lobby-1"
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              icon={<Minus size={14} />}
+                              onClick={() =>
+                                setPoolEntries((prev) =>
+                                  prev.map((item, i) =>
+                                    i === index
+                                      ? { ...item, servers: item.servers.filter((_, si) => si !== serverIndex) }
+                                      : item
+                                  )
+                                )
+                              }
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          icon={<Plus size={14} />}
+                          onClick={() =>
+                            setPoolEntries((prev) =>
+                              prev.map((item, i) =>
+                                i === index ? { ...item, servers: [...item.servers, ''] } : item
+                              )
+                            )
+                          }
+                        >
+                          Add Server
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="md:col-span-2 flex flex-col gap-1">
-              <label className="text-sm text-text-light-primary dark:text-text-primary font-medium">
-                Routes (JSON)
-              </label>
-              <textarea
-                className="bg-white dark:bg-primary-bg border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 min-h-[120px]"
-                value={routesText}
-                onChange={(e) => setRoutesText(e.target.value)}
-                placeholder='[{"hostname":"lobby.example.com","target":"lobby"}]'
-              />
+              <div className="flex items-center justify-between">
+                <label className="text-sm text-text-light-primary dark:text-text-primary font-medium">
+                  Routes
+                </label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  icon={<Plus size={14} />}
+                  onClick={() => setRouteEntries((prev) => [...prev, { hostname: '', target: '' }])}
+                >
+                  Add Route
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {routeEntries.length === 0 && (
+                  <div className="text-xs text-text-light-muted dark:text-text-muted border border-dashed border-gray-600 rounded-lg p-3">
+                    No route configured.
+                  </div>
+                )}
+                {routeEntries.map((route, index) => (
+                  <div key={`route-${index}`} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-2 items-end">
+                    <Input
+                      label="Hostname"
+                      value={route.hostname}
+                      onChange={(e) =>
+                        setRouteEntries((prev) => prev.map((item, i) => (i === index ? { ...item, hostname: e.target.value } : item)))
+                      }
+                      placeholder="lobby.example.com"
+                    />
+                    <Input
+                      label="Target (server or pool)"
+                      value={route.target}
+                      onChange={(e) =>
+                        setRouteEntries((prev) => prev.map((item, i) => (i === index ? { ...item, target: e.target.value } : item)))
+                      }
+                      placeholder="lobby"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="danger"
+                      icon={<Minus size={14} />}
+                      onClick={() => setRouteEntries((prev) => prev.filter((_, i) => i !== index))}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="flex items-center justify-between">
               <div>
@@ -523,9 +701,9 @@ export const ProxyDetailPage = () => {
             <Button
               variant="secondary"
               onClick={() => {
-                setForm(parsedConfig);
-                setPoolText(JSON.stringify(parsedConfig.pool || {}, null, 2));
-                setRoutesText(JSON.stringify(parsedConfig.routes || [], null, 2));
+                setForm(configToForm(parsedConfig));
+                setPoolEntries(configToPoolEntries(parsedConfig));
+                setRouteEntries(configToRouteEntries(parsedConfig));
               }}
             >
               {t('servers.settings.reset')}
