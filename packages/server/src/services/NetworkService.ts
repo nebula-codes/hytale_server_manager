@@ -498,6 +498,7 @@ export class NetworkService {
       serverId: string;
       serverName: string;
       status: string;
+      version?: string;
       cpuUsage?: number;
       memoryUsage?: number;
       playerCount?: number;
@@ -524,6 +525,7 @@ export class NetworkService {
           serverId: member.serverId,
           serverName: member.server.name,
           status: status.status,
+          version: member.server.version,
           cpuUsage,
           memoryUsage,
           playerCount: status.playerCount,
@@ -533,6 +535,7 @@ export class NetworkService {
           serverId: member.serverId,
           serverName: member.server.name,
           status: 'unknown',
+          version: member.server.version,
           cpuUsage: 0,
           memoryUsage: 0,
           playerCount: 0,
@@ -545,6 +548,7 @@ export class NetworkService {
         serverId: `proxy:${networkId}`,
         serverName: `${network.name} Proxy`,
         status: this.proxyService.getStatus(networkId),
+        version: this.proxyService.getRunningProxyVersion(networkId) || undefined,
       });
     }
 
@@ -895,11 +899,11 @@ export class NetworkService {
       if (!dbServer) continue;
 
       const currentArgs = (dbServer.serverArgs || '').trim();
-      const requiredFlags = ['--accept-early-plugins', '--auth-mode', 'insecure'];
+      const requiredFlags = ['--accept-early-plugins', '--auth-mode', 'insecure', '--transport', 'QUIC'];
       const hasAllFlags = requiredFlags.every(flag => currentArgs.includes(flag));
       if (hasAllFlags) continue;
 
-      const mergedArgs = [currentArgs, '--accept-early-plugins --auth-mode insecure']
+      const mergedArgs = [currentArgs, '--accept-early-plugins --auth-mode insecure --transport QUIC']
         .filter(Boolean)
         .join(' ')
         .replace(/\s+/g, ' ')

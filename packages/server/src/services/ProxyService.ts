@@ -103,6 +103,10 @@ export class ProxyService {
     return this.statuses.get(networkId) || 'stopped';
   }
 
+  getRunningProxyVersion(networkId: string): string | null {
+    return this.runningProxyVersions.get(networkId) || null;
+  }
+
   async startProxy(
     networkId: string,
     _networkName: string,

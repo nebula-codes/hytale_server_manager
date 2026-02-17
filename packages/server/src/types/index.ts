@@ -228,6 +228,7 @@ export interface NetworkStatus {
     serverId: string;
     serverName: string;
     status: string;
+    version?: string;
     cpuUsage?: number;
     memoryUsage?: number;
     playerCount?: number;

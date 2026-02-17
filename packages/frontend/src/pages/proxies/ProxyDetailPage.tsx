@@ -81,6 +81,7 @@ type NetworkStatus = {
   memberStatuses: {
     serverId: string;
     status: string;
+    version?: string;
   }[];
 };
 
@@ -347,6 +348,7 @@ export const ProxyDetailPage = () => {
   }
 
   const isRunning = status?.status === 'running';
+  const runtimeProxyVersion = status?.memberStatuses?.find((entry) => entry.serverId === `proxy:${id}`)?.version;
 
   return (
     <div className="space-y-6 p-6">
@@ -367,6 +369,9 @@ export const ProxyDetailPage = () => {
         <div className="flex items-center gap-2">
           <Badge variant={isRunning ? 'success' : 'default'}>
             {status?.status || 'unknown'}
+          </Badge>
+          <Badge variant="info">
+            Runtime: {runtimeProxyVersion || 'unknown'}
           </Badge>
           <Link to={`/console`}>
             <Button variant="secondary" size="sm" icon={<Terminal size={16} />}>
