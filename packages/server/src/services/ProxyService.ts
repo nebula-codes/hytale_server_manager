@@ -123,42 +123,7 @@ export class ProxyService {
 
     this.statuses.set(networkId, 'starting');
 
-    const config: Required<Pick<ProxyNetworkConfig, 'javaPath' | 'bindAddress' | 'bindPort' | 'publicPort' | 'proxySecret'>> & ProxyNetworkConfig = {
-      javaPath: rawConfig.javaPath || 'java',
-      bindAddress: rawConfig.bindAddress || '0.0.0.0',
-      bindPort: rawConfig.bindPort || 24322,
-      publicPort: rawConfig.publicPort || rawConfig.bindPort || 24322,
-      proxySecret: rawConfig.proxySecret || this.generateSecret(),
-      maxConnections: rawConfig.maxConnections ?? 1000,
-      connectionTimeoutSeconds: rawConfig.connectionTimeoutSeconds ?? 30,
-      debugMode: rawConfig.debugMode ?? false,
-      passthroughMode: rawConfig.passthroughMode ?? false,
-      metricsEnabled: rawConfig.metricsEnabled ?? true,
-      metricsPort: rawConfig.metricsPort ?? 9090,
-      metricsLogIntervalSeconds: rawConfig.metricsLogIntervalSeconds ?? 60,
-      clusterEnabled: rawConfig.clusterEnabled ?? false,
-      proxyId: rawConfig.proxyId || '',
-      proxyRegion: rawConfig.proxyRegion || 'default',
-      redisHost: rawConfig.redisHost || 'localhost',
-      redisPort: rawConfig.redisPort ?? 6379,
-      redisPassword: rawConfig.redisPassword || '',
-      redisSsl: rawConfig.redisSsl ?? false,
-      redisDatabase: rawConfig.redisDatabase ?? 0,
-      fallbackEnabled: rawConfig.fallbackEnabled ?? true,
-      globalFallbackServer: rawConfig.globalFallbackServer || 'lobby',
-      ...rawConfig,
-      publicAddress: rawConfig.publicAddress || 'play.myserver.com',
-      certificatePath: rawConfig.certificatePath?.trim() || 'certs/server.crt',
-      privateKeyPath: rawConfig.privateKeyPath?.trim() || 'certs/server.key',
-      backendFallbackServers: rawConfig.backendFallbackServers || {},
-      // Keep nested defaults even when rawConfig.proxyProtocol is partially defined
-      proxyProtocol: {
-        enabled: rawConfig.proxyProtocol?.enabled ?? false,
-        required: rawConfig.proxyProtocol?.required ?? true,
-        headerTimeoutSeconds: rawConfig.proxyProtocol?.headerTimeoutSeconds ?? 5,
-        trustedProxies: rawConfig.proxyProtocol?.trustedProxies || [],
-      },
-    };
+    const config = this.buildEffectiveConfig(rawConfig);
 
     const runtimePath = await this.ensureRuntimePath(networkId);
     const backendVersion = backendServers.find(b => b.version)?.version;
@@ -319,44 +284,25 @@ export class ProxyService {
     networkId: string,
     backendServers: ProxyBackendServer[],
     rawConfig: ProxyNetworkConfig
-  ): Promise<void> {
-    const config: Required<Pick<ProxyNetworkConfig, 'bindAddress' | 'bindPort' | 'publicPort' | 'proxySecret'>> & ProxyNetworkConfig = {
-      bindAddress: rawConfig.bindAddress || '0.0.0.0',
-      bindPort: rawConfig.bindPort || 24322,
-      publicPort: rawConfig.publicPort || rawConfig.bindPort || 24322,
-      proxySecret: rawConfig.proxySecret || this.generateSecret(),
-      maxConnections: rawConfig.maxConnections ?? 1000,
-      connectionTimeoutSeconds: rawConfig.connectionTimeoutSeconds ?? 30,
-      debugMode: rawConfig.debugMode ?? false,
-      passthroughMode: rawConfig.passthroughMode ?? false,
-      metricsEnabled: rawConfig.metricsEnabled ?? true,
-      metricsPort: rawConfig.metricsPort ?? 9090,
-      metricsLogIntervalSeconds: rawConfig.metricsLogIntervalSeconds ?? 60,
-      clusterEnabled: rawConfig.clusterEnabled ?? false,
-      proxyId: rawConfig.proxyId || '',
-      proxyRegion: rawConfig.proxyRegion || 'default',
-      redisHost: rawConfig.redisHost || 'localhost',
-      redisPort: rawConfig.redisPort ?? 6379,
-      redisPassword: rawConfig.redisPassword || '',
-      redisSsl: rawConfig.redisSsl ?? false,
-      redisDatabase: rawConfig.redisDatabase ?? 0,
-      fallbackEnabled: rawConfig.fallbackEnabled ?? true,
-      globalFallbackServer: rawConfig.globalFallbackServer || 'lobby',
-      ...rawConfig,
-      publicAddress: rawConfig.publicAddress || 'play.myserver.com',
-      certificatePath: rawConfig.certificatePath?.trim() || 'certs/server.crt',
-      privateKeyPath: rawConfig.privateKeyPath?.trim() || 'certs/server.key',
-      backendFallbackServers: rawConfig.backendFallbackServers || {},
-      proxyProtocol: {
-        enabled: rawConfig.proxyProtocol?.enabled ?? false,
-        required: rawConfig.proxyProtocol?.required ?? true,
-        headerTimeoutSeconds: rawConfig.proxyProtocol?.headerTimeoutSeconds ?? 5,
-        trustedProxies: rawConfig.proxyProtocol?.trustedProxies || [],
-      },
-    };
+  ): Promise<Required<Pick<ProxyNetworkConfig, 'bindAddress' | 'bindPort' | 'publicPort' | 'proxySecret'>> & ProxyNetworkConfig> {
+    const config = this.buildEffectiveConfig(rawConfig);
 
     const runtimePath = await this.ensureRuntimePath(networkId);
     await this.writeProxyConfig(runtimePath, backendServers, config);
+    return config;
+  }
+
+  async syncBridgeForBackends(
+    backendServers: ProxyBackendServer[],
+    proxySecret: string
+  ): Promise<void> {
+    if (backendServers.length === 0) {
+      return;
+    }
+
+    const backendVersion = backendServers.find(b => b.version)?.version;
+    const assets = await this.ensureAssets(backendVersion);
+    await this.installBridgeComponents(backendServers, assets, proxySecret);
   }
 
   async cleanup(): Promise<void> {
@@ -776,6 +722,46 @@ export class ProxyService {
 
   private generateSecret(): string {
     return crypto.randomBytes(24).toString('hex');
+  }
+
+  private buildEffectiveConfig(
+    rawConfig: ProxyNetworkConfig
+  ): Required<Pick<ProxyNetworkConfig, 'bindAddress' | 'bindPort' | 'publicPort' | 'proxySecret'>> & ProxyNetworkConfig {
+    return {
+      bindAddress: rawConfig.bindAddress || '0.0.0.0',
+      bindPort: rawConfig.bindPort || 24322,
+      publicPort: rawConfig.publicPort || rawConfig.bindPort || 24322,
+      proxySecret: rawConfig.proxySecret || this.generateSecret(),
+      maxConnections: rawConfig.maxConnections ?? 1000,
+      connectionTimeoutSeconds: rawConfig.connectionTimeoutSeconds ?? 30,
+      debugMode: rawConfig.debugMode ?? false,
+      passthroughMode: rawConfig.passthroughMode ?? false,
+      metricsEnabled: rawConfig.metricsEnabled ?? true,
+      metricsPort: rawConfig.metricsPort ?? 9090,
+      metricsLogIntervalSeconds: rawConfig.metricsLogIntervalSeconds ?? 60,
+      clusterEnabled: rawConfig.clusterEnabled ?? false,
+      proxyId: rawConfig.proxyId || '',
+      proxyRegion: rawConfig.proxyRegion || 'default',
+      redisHost: rawConfig.redisHost || 'localhost',
+      redisPort: rawConfig.redisPort ?? 6379,
+      redisPassword: rawConfig.redisPassword || '',
+      redisSsl: rawConfig.redisSsl ?? false,
+      redisDatabase: rawConfig.redisDatabase ?? 0,
+      fallbackEnabled: rawConfig.fallbackEnabled ?? true,
+      globalFallbackServer: rawConfig.globalFallbackServer || 'lobby',
+      ...rawConfig,
+      publicAddress: rawConfig.publicAddress || 'play.myserver.com',
+      certificatePath: rawConfig.certificatePath?.trim() || 'certs/server.crt',
+      privateKeyPath: rawConfig.privateKeyPath?.trim() || 'certs/server.key',
+      backendFallbackServers: rawConfig.backendFallbackServers || {},
+      // Keep nested defaults even when rawConfig.proxyProtocol is partially defined
+      proxyProtocol: {
+        enabled: rawConfig.proxyProtocol?.enabled ?? false,
+        required: rawConfig.proxyProtocol?.required ?? true,
+        headerTimeoutSeconds: rawConfig.proxyProtocol?.headerTimeoutSeconds ?? 5,
+        trustedProxies: rawConfig.proxyProtocol?.trustedProxies || [],
+      },
+    };
   }
 
   private isChildProcess(proc: ChildProcess | ProxyPty): proc is ChildProcess {

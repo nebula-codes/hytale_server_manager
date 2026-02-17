@@ -66,11 +66,13 @@ export class NetworkService {
       throw new Error('A network with this name already exists');
     }
 
-    // Enforce version alignment across provided servers (including proxy)
-    if (data.serverIds?.length) {
-      await this.assertUniformVersion(data.serverIds, data.proxyServerId);
-    } else if (data.proxyServerId) {
-      await this.assertUniformVersion([data.proxyServerId], data.proxyServerId);
+    // Enforce version alignment only for proxy networks
+    if (data.networkType === 'proxy') {
+      if (data.serverIds?.length) {
+        await this.assertUniformVersion(data.serverIds, data.proxyServerId);
+      } else if (data.proxyServerId) {
+        await this.assertUniformVersion([data.proxyServerId], data.proxyServerId);
+      }
     }
 
     const network = await this.prisma.serverNetwork.create({
@@ -143,7 +145,13 @@ export class NetworkService {
     if (data.name !== undefined) updateData.name = data.name;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.proxyServerId !== undefined) {
-      await this.assertUniformVersion([], data.proxyServerId, networkId);
+      const existingNetwork = await this.prisma.serverNetwork.findUnique({
+        where: { id: networkId },
+        select: { networkType: true },
+      });
+      if (existingNetwork?.networkType === 'proxy') {
+        await this.assertUniformVersion([], data.proxyServerId, networkId);
+      }
       updateData.proxyServerId = data.proxyServerId;
     }
     if (data.proxyConfig !== undefined) updateData.proxyConfig = JSON.stringify(data.proxyConfig);
@@ -216,8 +224,18 @@ export class NetworkService {
       sortOrder = (maxSort._max.sortOrder ?? -1) + 1;
     }
 
-    // Enforce version consistency within network
-    await this.assertUniformVersion([serverId], undefined, networkId);
+    const network = await this.prisma.serverNetwork.findUnique({
+      where: { id: networkId },
+      select: { networkType: true },
+    });
+    if (!network) {
+      throw new Error(`Network ${networkId} not found`);
+    }
+
+    // Enforce version consistency only for proxy networks
+    if (network.networkType === 'proxy') {
+      await this.assertUniformVersion([serverId], undefined, networkId);
+    }
 
     await this.prisma.serverNetworkMember.create({
       data: {
@@ -903,6 +921,10 @@ export class NetworkService {
     const backendMembers = network.members.filter(member => member.role !== 'proxy');
     const backendServers = await this.loadBackendServers(backendMembers.map(member => member.serverId));
 
-    await this.proxyService.syncProxyConfig(network.id, backendServers, proxyConfig);
+    const effectiveConfig = await this.proxyService.syncProxyConfig(network.id, backendServers, proxyConfig);
+
+    if (effectiveConfig.autoInstallBridge !== false) {
+      await this.proxyService.syncBridgeForBackends(backendServers, effectiveConfig.proxySecret);
+    }
   }
 }
