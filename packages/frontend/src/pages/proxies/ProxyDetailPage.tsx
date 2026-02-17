@@ -15,9 +15,34 @@ type ProxyConfig = {
   bindPort?: number;
   publicAddress?: string;
   publicPort?: number;
+  certificatePath?: string;
+  privateKeyPath?: string;
+  maxConnections?: number;
+  connectionTimeoutSeconds?: number;
   proxySecret?: string;
+  debugMode?: boolean;
+  passthroughMode?: boolean;
+  metricsEnabled?: boolean;
   autoInstallBridge?: boolean;
   metricsPort?: number;
+  metricsLogIntervalSeconds?: number;
+  clusterEnabled?: boolean;
+  proxyId?: string;
+  proxyRegion?: string;
+  redisHost?: string;
+  redisPort?: number;
+  redisPassword?: string;
+  redisSsl?: boolean;
+  redisDatabase?: number;
+  fallbackEnabled?: boolean;
+  globalFallbackServer?: string;
+  backendFallbackServers?: Record<string, string>;
+  proxyProtocol?: {
+    enabled?: boolean;
+    required?: boolean;
+    headerTimeoutSeconds?: number;
+    trustedProxies?: string[];
+  };
 };
 
 type Network = {
@@ -151,11 +176,36 @@ export const ProxyDetailPage = () => {
       bindPort: parsedConfig.bindPort || 45585,
       publicAddress: parsedConfig.publicAddress || '',
       publicPort: parsedConfig.publicPort || parsedConfig.bindPort || 45585,
+      certificatePath: parsedConfig.certificatePath || '',
+      privateKeyPath: parsedConfig.privateKeyPath || '',
+      maxConnections: parsedConfig.maxConnections ?? 10000,
+      connectionTimeoutSeconds: parsedConfig.connectionTimeoutSeconds ?? 30,
       javaPath: parsedConfig.javaPath || 'java',
       jvmArgs: parsedConfig.jvmArgs || '',
       proxySecret: parsedConfig.proxySecret || '',
+      debugMode: parsedConfig.debugMode ?? true,
+      passthroughMode: parsedConfig.passthroughMode ?? false,
+      metricsEnabled: parsedConfig.metricsEnabled ?? true,
       autoInstallBridge: parsedConfig.autoInstallBridge !== false,
       metricsPort: parsedConfig.metricsPort ?? 0,
+      metricsLogIntervalSeconds: parsedConfig.metricsLogIntervalSeconds ?? 60,
+      clusterEnabled: parsedConfig.clusterEnabled ?? false,
+      proxyId: parsedConfig.proxyId || '',
+      proxyRegion: parsedConfig.proxyRegion || '',
+      redisHost: parsedConfig.redisHost || 'localhost',
+      redisPort: parsedConfig.redisPort ?? 6379,
+      redisPassword: parsedConfig.redisPassword || '',
+      redisSsl: parsedConfig.redisSsl ?? false,
+      redisDatabase: parsedConfig.redisDatabase ?? 0,
+      fallbackEnabled: parsedConfig.fallbackEnabled ?? false,
+      globalFallbackServer: parsedConfig.globalFallbackServer || '',
+      backendFallbackServers: parsedConfig.backendFallbackServers || {},
+      proxyProtocol: {
+        enabled: parsedConfig.proxyProtocol?.enabled ?? false,
+        required: parsedConfig.proxyProtocol?.required ?? false,
+        headerTimeoutSeconds: parsedConfig.proxyProtocol?.headerTimeoutSeconds ?? 5,
+        trustedProxies: parsedConfig.proxyProtocol?.trustedProxies || [],
+      },
     });
   }, [network, parsedConfig]);
 
@@ -167,10 +217,21 @@ export const ProxyDetailPage = () => {
     if (!id) return;
     setSaving(true);
     try {
+      const cleanedTrustedProxies = (form.proxyProtocol?.trustedProxies || [])
+        .map(proxy => proxy.trim())
+        .filter(Boolean);
+
       await api.updateNetwork(id, {
         proxyConfig: {
           ...form,
           publicPort: form.publicPort || form.bindPort,
+          backendFallbackServers: form.backendFallbackServers || {},
+          proxyProtocol: {
+            enabled: form.proxyProtocol?.enabled ?? false,
+            required: form.proxyProtocol?.required ?? false,
+            headerTimeoutSeconds: form.proxyProtocol?.headerTimeoutSeconds ?? 5,
+            trustedProxies: cleanedTrustedProxies,
+          },
         },
       });
       toast.success(t('networks.toast.proxy_saved', { defaultValue: 'Proxy settings saved' }));
@@ -179,6 +240,16 @@ export const ProxyDetailPage = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleBackendFallbackChange = (serverId: string, value: string) => {
+    setForm(prev => ({
+      ...prev,
+      backendFallbackServers: {
+        ...(prev.backendFallbackServers || {}),
+        [serverId]: value,
+      },
+    }));
   };
 
   const handleStart = async () => {
@@ -325,10 +396,40 @@ export const ProxyDetailPage = () => {
               onChange={e => handleChange('publicPort', Number(e.target.value))}
             />
             <Input
+              label="Certificate Path"
+              value={form.certificatePath || ''}
+              onChange={e => handleChange('certificatePath', e.target.value)}
+              placeholder="/path/to/cert.pem"
+            />
+            <Input
+              label="Private Key Path"
+              value={form.privateKeyPath || ''}
+              onChange={e => handleChange('privateKeyPath', e.target.value)}
+              placeholder="/path/to/key.pem"
+            />
+            <Input
+              label="Max Connections"
+              type="number"
+              value={form.maxConnections ?? 10000}
+              onChange={e => handleChange('maxConnections', Number(e.target.value))}
+            />
+            <Input
+              label="Connection Timeout (seconds)"
+              type="number"
+              value={form.connectionTimeoutSeconds ?? 30}
+              onChange={e => handleChange('connectionTimeoutSeconds', Number(e.target.value))}
+            />
+            <Input
               label="Metrics Port (0 = auto)"
               type="number"
               value={form.metricsPort ?? 0}
               onChange={e => handleChange('metricsPort', Number(e.target.value))}
+            />
+            <Input
+              label="Metrics Log Interval (seconds)"
+              type="number"
+              value={form.metricsLogIntervalSeconds ?? 60}
+              onChange={e => handleChange('metricsLogIntervalSeconds', Number(e.target.value))}
             />
             <div className="flex flex-col gap-1">
               <label className="text-sm text-text-light-primary dark:text-text-primary font-medium">
@@ -364,6 +465,70 @@ export const ProxyDetailPage = () => {
               onChange={e => handleChange('proxySecret', e.target.value)}
               placeholder="Leave blank to keep current"
             />
+            <Input
+              label="Proxy ID"
+              value={form.proxyId || ''}
+              onChange={e => handleChange('proxyId', e.target.value)}
+              placeholder="proxy-1"
+            />
+            <Input
+              label="Proxy Region"
+              value={form.proxyRegion || ''}
+              onChange={e => handleChange('proxyRegion', e.target.value)}
+              placeholder="us-east"
+            />
+            <Input
+              label="Redis Host"
+              value={form.redisHost || 'localhost'}
+              onChange={e => handleChange('redisHost', e.target.value)}
+            />
+            <Input
+              label="Redis Port"
+              type="number"
+              value={form.redisPort ?? 6379}
+              onChange={e => handleChange('redisPort', Number(e.target.value))}
+            />
+            <Input
+              label="Redis Password"
+              type="password"
+              value={form.redisPassword || ''}
+              onChange={e => handleChange('redisPassword', e.target.value)}
+            />
+            <Input
+              label="Redis Database"
+              type="number"
+              value={form.redisDatabase ?? 0}
+              onChange={e => handleChange('redisDatabase', Number(e.target.value))}
+            />
+            <Input
+              label="Global Fallback Server"
+              value={form.globalFallbackServer || ''}
+              onChange={e => handleChange('globalFallbackServer', e.target.value)}
+              placeholder="server-name"
+            />
+            <Input
+              label="Proxy Protocol Header Timeout (seconds)"
+              type="number"
+              value={form.proxyProtocol?.headerTimeoutSeconds ?? 5}
+              onChange={e => handleChange('proxyProtocol', {
+                ...(form.proxyProtocol || {}),
+                headerTimeoutSeconds: Number(e.target.value),
+              })}
+            />
+            <div className="md:col-span-2 flex flex-col gap-1">
+              <label className="text-sm text-text-light-primary dark:text-text-primary font-medium">
+                Trusted Proxies (one per line)
+              </label>
+              <textarea
+                className="bg-white dark:bg-primary-bg border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 min-h-[90px]"
+                value={(form.proxyProtocol?.trustedProxies || []).join('\n')}
+                onChange={(e) => handleChange('proxyProtocol', {
+                  ...(form.proxyProtocol || {}),
+                  trustedProxies: e.target.value.split('\n'),
+                })}
+                placeholder="127.0.0.1"
+              />
+            </div>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">Auto-install Bridge</p>
@@ -374,6 +539,104 @@ export const ProxyDetailPage = () => {
                 className="w-5 h-5"
                 checked={form.autoInstallBridge !== false}
                 onChange={(e) => handleChange('autoInstallBridge', e.target.checked)}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">Debug Mode</p>
+                <p className="text-xs text-text-light-muted dark:text-text-muted">Verbose proxy logging</p>
+              </div>
+              <input
+                type="checkbox"
+                className="w-5 h-5"
+                checked={form.debugMode ?? true}
+                onChange={(e) => handleChange('debugMode', e.target.checked)}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">Passthrough Mode</p>
+                <p className="text-xs text-text-light-muted dark:text-text-muted">Forward all unknown packets</p>
+              </div>
+              <input
+                type="checkbox"
+                className="w-5 h-5"
+                checked={form.passthroughMode ?? false}
+                onChange={(e) => handleChange('passthroughMode', e.target.checked)}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">Metrics Enabled</p>
+                <p className="text-xs text-text-light-muted dark:text-text-muted">Enable metrics server</p>
+              </div>
+              <input
+                type="checkbox"
+                className="w-5 h-5"
+                checked={form.metricsEnabled ?? true}
+                onChange={(e) => handleChange('metricsEnabled', e.target.checked)}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">Cluster Enabled</p>
+                <p className="text-xs text-text-light-muted dark:text-text-muted">Enable multi-proxy coordination</p>
+              </div>
+              <input
+                type="checkbox"
+                className="w-5 h-5"
+                checked={form.clusterEnabled ?? false}
+                onChange={(e) => handleChange('clusterEnabled', e.target.checked)}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">Redis SSL</p>
+              </div>
+              <input
+                type="checkbox"
+                className="w-5 h-5"
+                checked={form.redisSsl ?? false}
+                onChange={(e) => handleChange('redisSsl', e.target.checked)}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">Fallback Enabled</p>
+              </div>
+              <input
+                type="checkbox"
+                className="w-5 h-5"
+                checked={form.fallbackEnabled ?? false}
+                onChange={(e) => handleChange('fallbackEnabled', e.target.checked)}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">Proxy Protocol Enabled</p>
+              </div>
+              <input
+                type="checkbox"
+                className="w-5 h-5"
+                checked={form.proxyProtocol?.enabled ?? false}
+                onChange={(e) => handleChange('proxyProtocol', {
+                  ...(form.proxyProtocol || {}),
+                  enabled: e.target.checked,
+                })}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">Proxy Protocol Required</p>
+              </div>
+              <input
+                type="checkbox"
+                className="w-5 h-5"
+                checked={form.proxyProtocol?.required ?? false}
+                onChange={(e) => handleChange('proxyProtocol', {
+                  ...(form.proxyProtocol || {}),
+                  required: e.target.checked,
+                })}
               />
             </div>
           </div>
@@ -420,6 +683,16 @@ export const ProxyDetailPage = () => {
                           {getRoleBadge(member.role)}
                           {getStatusBadge(member.server.status)}
                         </div>
+                        {member.role !== 'proxy' && (
+                          <div className="mt-2">
+                            <Input
+                              label="Fallback Server (optional)"
+                              value={form.backendFallbackServers?.[member.serverId] || ''}
+                              onChange={(e) => handleBackendFallbackChange(member.serverId, e.target.value)}
+                              placeholder="server-name"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                     <Button

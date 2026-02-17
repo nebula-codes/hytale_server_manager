@@ -273,8 +273,34 @@ export interface ProxyConfig {
   bindPort?: number;
   publicAddress?: string;
   publicPort?: number;
+  certificatePath?: string;
+  privateKeyPath?: string;
+  maxConnections?: number;
+  connectionTimeoutSeconds?: number;
   proxySecret?: string;
+  debugMode?: boolean;
+  passthroughMode?: boolean;
+  metricsEnabled?: boolean;
   autoInstallBridge?: boolean;
+  metricsPort?: number;
+  metricsLogIntervalSeconds?: number;
+  clusterEnabled?: boolean;
+  proxyId?: string;
+  proxyRegion?: string;
+  redisHost?: string;
+  redisPort?: number;
+  redisPassword?: string;
+  redisSsl?: boolean;
+  redisDatabase?: number;
+  fallbackEnabled?: boolean;
+  globalFallbackServer?: string;
+  backendFallbackServers?: Record<string, string>;
+  proxyProtocol?: {
+    enabled?: boolean;
+    required?: boolean;
+    headerTimeoutSeconds?: number;
+    trustedProxies?: string[];
+  };
 }
 
 // Network WebSocket Events
