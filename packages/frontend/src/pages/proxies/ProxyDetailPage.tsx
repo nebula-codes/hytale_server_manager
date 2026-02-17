@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, Button, Badge, Input, Switch, Select, SelectOption } from '../../components/ui';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, Button, Badge, Input } from '../../components/ui';
 import { ArrowLeft, Save, Play, Square, RotateCw, Terminal } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../stores/toastStore';
 import { PERMISSIONS } from '../../types';
-import { usePermission } from '../../hooks/usePermission';
 
 type NetworkType = 'logical' | 'proxy';
 
@@ -48,17 +47,12 @@ type NetworkStatus = {
   }[];
 };
 
-const startOrderOptions: SelectOption[] = [
-  { label: 'Backends first', value: 'backends_first' },
-  { label: 'Proxy first', value: 'proxy_first' },
-];
-
 export const ProxyDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
   const toast = useToast();
   const navigate = useNavigate();
-  const canUpdate = usePermission(PERMISSIONS.SERVERS_UPDATE);
+  // Page protégée par RequirePermission; pas de hook dédié ici
 
   const [network, setNetwork] = useState<Network | null>(null);
   const [status, setStatus] = useState<NetworkStatus | null>(null);
@@ -258,12 +252,17 @@ export const ProxyDetailPage = () => {
               value={form.metricsPort ?? 0}
               onChange={e => handleChange('metricsPort', Number(e.target.value))}
             />
-            <Select
-              label="Start Order"
-              value={form.startOrder || 'backends_first'}
-              onChange={val => handleChange('startOrder', val as ProxyConfig['startOrder'])}
-              options={startOrderOptions}
-            />
+            <div className="flex flex-col gap-1">
+              <label className="text-sm text-text-light-primary dark:text-text-primary font-medium">Start Order</label>
+              <select
+                className="bg-white dark:bg-primary-bg border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2"
+                value={form.startOrder || 'backends_first'}
+                onChange={e => handleChange('startOrder', e.target.value as ProxyConfig['startOrder'])}
+              >
+                <option value="backends_first">Backends first</option>
+                <option value="proxy_first">Proxy first</option>
+              </select>
+            </div>
             <Input
               label="Java Path"
               value={form.javaPath || 'java'}
@@ -286,9 +285,11 @@ export const ProxyDetailPage = () => {
                 <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">Auto-install Bridge</p>
                 <p className="text-xs text-text-light-muted dark:text-text-muted">Copy bridge jars to backends on start</p>
               </div>
-              <Switch
+              <input
+                type="checkbox"
+                className="w-5 h-5"
                 checked={form.autoInstallBridge !== false}
-                onCheckedChange={(checked) => handleChange('autoInstallBridge', checked)}
+                onChange={(e) => handleChange('autoInstallBridge', e.target.checked)}
               />
             </div>
           </div>
