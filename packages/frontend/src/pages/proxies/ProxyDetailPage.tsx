@@ -5,8 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, Button, Badg
 import { ArrowLeft, Save, Play, Square, RotateCw, Terminal } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../stores/toastStore';
-import { PERMISSIONS } from '../../types';
-
 type NetworkType = 'logical' | 'proxy';
 
 type ProxyConfig = {
@@ -295,7 +293,7 @@ export const ProxyDetailPage = () => {
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setForm(parsedConfig)}>{t('common.reset')}</Button>
-            <Button variant="primary" icon={<Save size={16} />} onClick={handleSave} disabled={!canUpdate || saving}>
+            <Button variant="primary" icon={<Save size={16} />} onClick={handleSave} disabled={saving}>
               {saving ? t('common.saving') : t('common.save')}
             </Button>
           </div>
