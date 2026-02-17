@@ -41,6 +41,7 @@ services:
       - hsm-dev-database:/app/data/db
       # Game server files
       - hsm-dev-servers:/app/servers
+      - hsm-dev-proxies:/app/proxies
       # Backup storage
       - hsm-dev-backups:/app/data/backups
       # Application logs
@@ -61,6 +62,7 @@ services:
 volumes:
   hsm-dev-database:
   hsm-dev-servers:
+  hsm-dev-proxies:
   hsm-dev-backups:
   hsm-dev-logs:
   hsm-dev-certs:

@@ -78,6 +78,7 @@ export interface AppConfig {
   // Paths
   dataPath: string;
   serversBasePath: string;
+  proxiesBasePath: string;
   backupsBasePath: string;
   logsPath: string;
 
@@ -177,6 +178,7 @@ const defaults: AppConfig = {
   // Paths - will be resolved relative to data directory
   dataPath: './data',
   serversBasePath: './data/servers',
+  proxiesBasePath: './proxies',
   backupsBasePath: './data/backups',
   logsPath: './data/logs',
 
@@ -289,6 +291,7 @@ function loadEnvConfig(): Partial<AppConfig> {
   // Paths
   if (process.env.DATA_PATH) envConfig.dataPath = process.env.DATA_PATH;
   if (process.env.SERVERS_BASE_PATH) envConfig.serversBasePath = process.env.SERVERS_BASE_PATH;
+  if (process.env.PROXIES_BASE_PATH) envConfig.proxiesBasePath = process.env.PROXIES_BASE_PATH;
   if (process.env.BACKUPS_BASE_PATH) envConfig.backupsBasePath = process.env.BACKUPS_BASE_PATH;
   if (process.env.LOGS_PATH) envConfig.logsPath = process.env.LOGS_PATH;
 
@@ -378,6 +381,7 @@ function resolvePaths(config: AppConfig): AppConfig {
     ...config,
     dataPath: resolvePath(config.dataPath),
     serversBasePath: resolvePath(config.serversBasePath),
+    proxiesBasePath: resolvePath(config.proxiesBasePath),
     backupsBasePath: resolvePath(config.backupsBasePath),
     logsPath: resolvePath(config.logsPath),
     certsPath: resolvePath(config.certsPath),
@@ -406,6 +410,7 @@ function ensureDirectories(config: AppConfig): void {
   const dirs = [
     config.dataPath,
     config.serversBasePath,
+    config.proxiesBasePath,
     config.backupsBasePath,
     config.logsPath,
     config.certsPath,
@@ -435,6 +440,7 @@ function saveDefaultConfig(configPath: string): void {
       jwtExpiresIn: defaults.jwtExpiresIn,
       dataPath: defaults.dataPath,
       serversBasePath: defaults.serversBasePath,
+      proxiesBasePath: defaults.proxiesBasePath,
       backupsBasePath: defaults.backupsBasePath,
       logsPath: defaults.logsPath,
       metricsRetentionDays: defaults.metricsRetentionDays,

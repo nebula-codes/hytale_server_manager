@@ -177,7 +177,7 @@ export class App {
 
     // Initialize WebSocket handlers
     this.serverEvents = new ServerEvents(this.io, this.serverService, this.consoleService);
-    this.consoleEvents = new ConsoleEvents(this.io, this.serverService, this.consoleService);
+    this.consoleEvents = new ConsoleEvents(this.io, this.serverService, this.consoleService, this.proxyService);
     this.hytaleDownloaderEvents = new HytaleDownloaderEvents(this.io);
     this.serverUpdateEvents = new ServerUpdateEvents(this.io);
 
@@ -296,7 +296,9 @@ export class App {
       this.worldsService,
       this.alertsService,
       this.automationRulesService,
-      this.modProviderService
+      this.modProviderService,
+      this.networkService,
+      this.proxyService
     ));
 
     this.express.use(
@@ -425,7 +427,7 @@ export class App {
 
         // Reinitialize WebSocket event handlers
         this.serverEvents = new ServerEvents(this.io, this.serverService, this.consoleService);
-        this.consoleEvents = new ConsoleEvents(this.io, this.serverService, this.consoleService);
+        this.consoleEvents = new ConsoleEvents(this.io, this.serverService, this.consoleService, this.proxyService);
         this.hytaleDownloaderEvents = new HytaleDownloaderEvents(this.io);
         this.serverUpdateEvents = new ServerUpdateEvents(this.io);
         this.initializeWebSocket();

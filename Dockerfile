@@ -14,7 +14,11 @@ COPY packages/server/package.json ./packages/server/
 COPY packages/frontend/package.json ./packages/frontend/
 
 # Install all dependencies (including dev for building)
-RUN pnpm install --frozen-lockfile
+# Use --no-frozen-lockfile so added optional deps (e.g., node-pty) are resolved without lock updates in CI
+# node-pty needs build tooling and python -> install build-base & python3
+RUN apk add --no-cache python3 make g++ && \
+    ln -sf python3 /usr/bin/python && \
+    pnpm install --no-frozen-lockfile
 
 # Copy source code
 COPY packages/server ./packages/server
@@ -28,10 +32,10 @@ RUN pnpm build
 # ==========================================
 FROM node:20-slim AS production
 
-# Install runtime dependencies (gosu for dropping privileges with PUID/PGID)
-# Install Java 25 from Eclipse Temurin (Adoptium)
+# Install runtime deps (gosu, Java) + build toolchain for node-pty (python3, make, g++)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssl unzip gosu ca-certificates wget gnupg procps tzdata \
+    openssl unzip gosu ca-certificates wget gnupg procps tzdata python3 make g++ \
+    && ln -sf python3 /usr/bin/python \
     && mkdir -p /etc/apt/keyrings \
     && wget -qO - https://packages.adoptium.net/artifactory/api/gpg/key/public | gpg --dearmor -o /etc/apt/keyrings/adoptium.gpg \
     && echo "deb [signed-by=/etc/apt/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb $(. /etc/os-release && echo $VERSION_CODENAME) main" > /etc/apt/sources.list.d/adoptium.list \
@@ -65,7 +69,7 @@ RUN npm install --omit=dev
 RUN npx prisma generate
 
 # Create data directories
-RUN mkdir -p /app/data/db /app/data/servers /app/data/backups /app/data/logs /app/data/certs && \
+RUN mkdir -p /app/data/db /app/data/servers /app/data/backups /app/data/logs /app/data/certs /app/proxies && \
     chown -R hsm:hsm /app
 
 # Copy entrypoint script
@@ -80,6 +84,7 @@ ENV HOST=0.0.0.0
 ENV DATABASE_URL=file:/app/data/db/hytalepanel.db
 ENV DATA_PATH=/app/data
 ENV SERVERS_BASE_PATH=/app/data/servers
+ENV PROXIES_BASE_PATH=/app/proxies
 ENV BACKUPS_BASE_PATH=/app/data/backups
 ENV LOGS_PATH=/app/data/logs
 ENV CERTS_PATH=/app/data/certs

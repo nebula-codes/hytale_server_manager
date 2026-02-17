@@ -15,17 +15,18 @@ interface LogEntry {
   source?: string;
 }
 
-interface Server {
+type ConsoleTarget = {
   id: string;
   name: string;
   status: string;
-}
+  type: 'server' | 'proxy';
+};
 
 export const ConsolePage = () => {
   const { serverId } = useParams<{ serverId?: string }>();
   const { t } = useTranslation();
   const toast = useToast();
-  const [servers, setServers] = useState<Server[]>([]);
+  const [servers, setServers] = useState<ConsoleTarget[]>([]);
   const [selectedServer, setSelectedServer] = useState<string>('');
   const [command, setCommand] = useState('');
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -101,8 +102,8 @@ export const ConsolePage = () => {
 
   const fetchServers = async () => {
     try {
-      const data = await api.getServers<Server>();
-      setServers(data.map((s) => ({ id: s.id, name: s.name, status: s.status })));
+      const data = await api.getConsoleTargets<ConsoleTarget[]>();
+      setServers(data);
 
       // Select server from URL param if provided, otherwise first server
       if (data.length > 0 && !selectedServer) {
@@ -183,18 +184,25 @@ export const ConsolePage = () => {
 
       {/* Server Selector */}
       <div className="flex gap-2 flex-wrap">
-        {servers.map((server) => (
-          <button
-            key={server.id}
-            onClick={() => setSelectedServer(server.id)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedServer === server.id
+        {servers.map((server) => {
+          const baseName = server.name.replace(/\s+Proxy\s*$/i, '').trim();
+          const label =
+            server.type === 'proxy'
+              ? `${baseName} (Proxy)`
+              : `${server.name} (Server)`;
+          return (
+            <button
+              key={server.id}
+              onClick={() => setSelectedServer(server.id)}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedServer === server.id
                 ? 'bg-accent-primary text-black'
                 : 'bg-white dark:bg-gray-100 dark:bg-primary-bg-secondary text-text-light-muted dark:text-text-muted hover:text-text-light-primary dark:text-text-primary'
               }`}
-          >
-            {server.name}
-          </button>
-        ))}
+            >
+            {label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Console */}

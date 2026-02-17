@@ -37,6 +37,7 @@ services:
       - hsm-database:/app/data/db
       # Game server files
       - hsm-servers:/app/servers
+      - hsm-proxies:/app/proxies
       # Backup storage
       - hsm-backups:/app/data/backups
       # Application logs
@@ -57,6 +58,7 @@ services:
 volumes:
   hsm-database:
   hsm-servers:
+  hsm-proxies:
   hsm-backups:
   hsm-logs:
   hsm-certs:

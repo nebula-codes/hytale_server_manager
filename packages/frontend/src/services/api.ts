@@ -286,6 +286,10 @@ class ApiService {
     return this.request<T[]>('/api/servers');
   }
 
+  async getConsoleTargets<T = { id: string; name: string; status: string; type: 'server' | 'proxy' }[]>(): Promise<T> {
+    return this.request<T>('/api/servers/console/targets');
+  }
+
   async getServer<T = unknown>(id: string): Promise<T> {
     return this.request<T>(`/api/servers/${id}`);
   }

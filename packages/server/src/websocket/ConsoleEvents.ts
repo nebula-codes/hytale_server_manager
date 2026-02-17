@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import { ServerService } from '../services/ServerService';
 import { ConsoleService } from '../services/ConsoleService';
+import { ProxyService } from '../services/ProxyService';
 import logger from '../utils/logger';
 import { LogEntry } from '../types';
 
@@ -31,12 +32,14 @@ export class ConsoleEvents {
   private io: SocketServer;
   private serverService: ServerService;
   private consoleService: ConsoleService;
+  private proxyService: ProxyService;
   private logStreams: Map<string, Set<string>> = new Map(); // serverId -> Set of socket IDs
 
-  constructor(io: SocketServer, serverService: ServerService, consoleService: ConsoleService) {
+  constructor(io: SocketServer, serverService: ServerService, consoleService: ConsoleService, proxyService: ProxyService) {
     this.io = io;
     this.serverService = serverService;
     this.consoleService = consoleService;
+    this.proxyService = proxyService;
   }
 
   /**
@@ -104,7 +107,7 @@ export class ConsoleEvents {
     consoleNamespace.on('connection', (socket: AuthenticatedSocket) => {
       logger.info(`Client connected to /console: ${socket.id} (user: ${socket.user?.username})`);
 
-      // Subscribe to console logs for a server
+      // Subscribe to console logs for a server or proxy
       socket.on('subscribe', async (data: { serverId: string }) => {
         const { serverId } = data;
         logger.info(`[ConsoleEvents] Client ${socket.id} subscribing to console for server ${serverId}`);
@@ -113,54 +116,70 @@ export class ConsoleEvents {
         socket.join(`console:${serverId}`);
 
         try {
-          // Get the adapter
-          const adapter = await this.serverService.getAdapterForServer(serverId);
-          logger.info(`[ConsoleEvents] Got adapter for ${serverId}, existing stream: ${this.logStreams.has(serverId)}`);
+          const isProxy = serverId.startsWith('proxy:');
 
           // Track this subscription - always re-register the callback to ensure it's on the right adapter
           if (!this.logStreams.has(serverId)) {
             this.logStreams.set(serverId, new Set());
           }
 
-          // Always set up log streaming (in case adapter was recreated)
           const logHandler = async (log: LogEntry) => {
-            //logger.debug(`[ConsoleEvents] Emitting log to console:${serverId}`);
-            // Emit log to all subscribed clients
             consoleNamespace.to(`console:${serverId}`).emit('log', {
               serverId,
               log,
             });
 
-            // Save log to database
-            await this.consoleService.saveLog(serverId, log);
+            if (!isProxy) {
+              await this.consoleService.saveLog(serverId, log);
+            }
           };
 
-          this.consoleService.streamLogs(adapter, logHandler);
-          logger.info(`[ConsoleEvents] Registered log handler for ${serverId}`);
+          if (isProxy) {
+            const networkId = serverId.replace('proxy:', '');
+            this.proxyService.streamLogs(networkId, logHandler);
+
+            const recentLogs = await this.proxyService.getLogs(networkId, 50);
+            socket.emit('logs:history', {
+              serverId,
+              logs: recentLogs,
+            });
+          } else {
+            // Get the adapter
+            const adapter = await this.serverService.getAdapterForServer(serverId);
+            logger.info(`[ConsoleEvents] Got adapter for ${serverId}, existing stream: ${this.logStreams.has(serverId)}`);
+
+            this.consoleService.streamLogs(adapter, logHandler);
+            logger.info(`[ConsoleEvents] Registered log handler for ${serverId}`);
+
+            // Send recent historical logs
+            const recentLogs = await this.consoleService.getLogs(serverId, 50);
+            logger.info(`[ConsoleEvents] Sending ${recentLogs.length} historical logs to ${socket.id}`);
+            socket.emit('logs:history', {
+              serverId,
+              logs: recentLogs,
+            });
+          }
 
           this.logStreams.get(serverId)!.add(socket.id);
-
-          // Send recent historical logs
-          const recentLogs = await this.consoleService.getLogs(serverId, 50);
-          logger.info(`[ConsoleEvents] Sending ${recentLogs.length} historical logs to ${socket.id}`);
-          socket.emit('logs:history', {
-            serverId,
-            logs: recentLogs,
-          });
         } catch (error) {
           logger.error(`[ConsoleEvents] Error subscribing to console for server ${serverId}:`, error);
           socket.emit('error', { message: 'Failed to subscribe to console' });
         }
       });
 
-      // Send a command to the server
+      // Send a command to the server or proxy
       socket.on('command', async (data: { serverId: string; command: string }) => {
         const { serverId, command } = data;
         logger.info(`Client ${socket.id} sending command to server ${serverId}: ${command}`);
 
         try {
-          const adapter = await this.serverService.getAdapterForServer(serverId);
-          const response = await this.consoleService.sendCommand(adapter, command);
+          const isProxy = serverId.startsWith('proxy:');
+          const response = isProxy
+            ? await this.proxyService.sendCommand(serverId.replace('proxy:', ''), command)
+            : await this.consoleService.sendCommand(
+                await this.serverService.getAdapterForServer(serverId),
+                command
+              );
 
           socket.emit('commandResponse', {
             serverId,
@@ -210,8 +229,13 @@ export class ConsoleEvents {
           // If no more subscribers, stop streaming from adapter
           if (subscribers.size === 0) {
             try {
-              const adapter = await this.serverService.getAdapterForServer(serverId);
-              this.consoleService.stopStreamLogs(adapter);
+              const isProxy = serverId.startsWith('proxy:');
+              if (isProxy) {
+                this.proxyService.stopLogStream(serverId.replace('proxy:', ''));
+              } else {
+                const adapter = await this.serverService.getAdapterForServer(serverId);
+                this.consoleService.stopStreamLogs(adapter);
+              }
               this.logStreams.delete(serverId);
               logger.info(`Stopped log streaming for server ${serverId}`);
             } catch (error) {
@@ -231,8 +255,13 @@ export class ConsoleEvents {
 
             if (subscribers.size === 0) {
               try {
-                const adapter = await this.serverService.getAdapterForServer(serverId);
-                this.consoleService.stopStreamLogs(adapter);
+                const isProxy = serverId.startsWith('proxy:');
+                if (isProxy) {
+                  this.proxyService.stopLogStream(serverId.replace('proxy:', ''));
+                } else {
+                  const adapter = await this.serverService.getAdapterForServer(serverId);
+                  this.consoleService.stopStreamLogs(adapter);
+                }
                 this.logStreams.delete(serverId);
                 logger.info(`Stopped log streaming for server ${serverId}`);
               } catch (error) {

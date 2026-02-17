@@ -2,7 +2,10 @@ import { ChildProcess, spawn } from 'child_process';
 import crypto from 'crypto';
 import fs from 'fs-extra';
 import path from 'path';
-import { getBasePath_ } from '../config';
+import readline from 'readline';
+import chokidar, { FSWatcher } from 'chokidar';
+import config from '../config';
+import { LogEntry, CommandResponse } from '../types';
 import logger from '../utils/logger';
 
 export interface ProxyNetworkConfig {
@@ -42,17 +45,30 @@ interface AssetBundle {
   bridgePacketsJarPath: string | null;
 }
 
+type ProxyPty = {
+  pid: number;
+  write: (data: string) => void;
+  kill: (signal?: string) => void;
+  on: (event: 'data' | 'exit', listener: (...args: any[]) => void) => void;
+  once?: (event: 'exit', listener: (...args: any[]) => void) => void;
+};
+
 export class ProxyService {
-  private processes = new Map<string, ChildProcess>();
+  private processes = new Map<string, ChildProcess | ProxyPty>();
   private statuses = new Map<string, 'stopped' | 'starting' | 'running' | 'stopping'>();
-  private basePath: string;
+  private proxiesBasePath: string;
   private cachePath: string;
   private runtimeRootPath: string;
+  private logListeners = new Map<string, Set<(log: LogEntry) => void>>();
+  private logHistory = new Map<string, LogEntry[]>();
+  private readonly LOG_HISTORY_LIMIT = 300;
+  private logWatchers = new Map<string, FSWatcher>();
+  private logPositions = new Map<string, number>();
 
   constructor() {
-    this.basePath = getBasePath_();
-    this.cachePath = path.join(this.basePath, 'data', 'proxy-cache');
-    this.runtimeRootPath = path.join(this.basePath, 'data', 'proxy-networks');
+    this.proxiesBasePath = config.proxiesBasePath;
+    this.cachePath = path.join(this.proxiesBasePath, 'cache');
+    this.runtimeRootPath = path.join(this.proxiesBasePath, 'networks');
   }
 
   getStatus(networkId: string): 'stopped' | 'starting' | 'running' | 'stopping' {
@@ -61,15 +77,22 @@ export class ProxyService {
 
   async startProxy(
     networkId: string,
-    networkName: string,
+    _networkName: string,
     backendServers: ProxyBackendServer[],
     rawConfig: ProxyNetworkConfig
   ): Promise<void> {
     const current = this.processes.get(networkId);
-    if (current && current.exitCode === null) {
-      logger.info(`[ProxyService] Proxy already running for network ${networkId}`);
-      this.statuses.set(networkId, 'running');
-      return;
+    if (current) {
+      if (this.isChildProcess(current) && current.exitCode === null) {
+        logger.info(`[ProxyService] Proxy already running for network ${networkId}`);
+        this.statuses.set(networkId, 'running');
+        return;
+      }
+      if (!this.isChildProcess(current)) {
+        logger.info(`[ProxyService] Proxy already running for network ${networkId} (pty mode)`);
+        this.statuses.set(networkId, 'running');
+        return;
+      }
     }
 
     this.statuses.set(networkId, 'starting');
@@ -88,6 +111,7 @@ export class ProxyService {
     const assets = await this.ensureAssets(backendVersion);
 
     await this.writeProxyConfig(runtimePath, backendServers, config);
+    await this.startLogTail(networkId, path.join(runtimePath, 'logs', 'proxy.log'));
 
     if (config.autoInstallBridge !== false) {
       await this.installBridgeComponents(backendServers, assets, config.proxySecret);
@@ -101,37 +125,77 @@ export class ProxyService {
       `[ProxyService] Starting proxy for network ${networkId} with command: ${config.javaPath} ${args.join(' ')}`
     );
 
-    const childProcess: ChildProcess = spawn(config.javaPath, args, {
-      cwd: runtimePath,
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env },
-      windowsHide: true,
-    });
+    let childProcess: ChildProcess | ProxyPty;
+    let usedPty = false;
+
+    try {
+      // Lazy-require to keep optional and avoid type dependency
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const pty: any = require('node-pty');
+      childProcess = pty.spawn(config.javaPath, args, {
+        name: 'xterm-256color',
+        cols: 120,
+        rows: 30,
+        cwd: runtimePath,
+        env: { ...process.env },
+      });
+      usedPty = true;
+      logger.info('[ProxyService] node-pty detected, starting proxy with PTY for interactive console support');
+    } catch (error) {
+      logger.info('[ProxyService] node-pty unavailable, falling back to spawn (commands may be limited)');
+      childProcess = spawn(config.javaPath, args, {
+        cwd: runtimePath,
+        stdio: ['pipe', 'pipe', 'pipe'],
+        env: { ...process.env },
+        windowsHide: true,
+      });
+    }
 
     this.processes.set(networkId, childProcess);
 
-    childProcess.stdout?.on('data', (data: Buffer) => {
-      logger.info(`[Proxy ${networkName}] ${data.toString().trim()}`);
-    });
+    if (usedPty) {
+      childProcess.on('data', (data: Buffer | string) => {
+        this.emitProcessLogs(networkId, data.toString(), 'info');
+      });
+      const exitHandler = (code: number | null, signal?: number | string) => {
+        logger.info(`[ProxyService] Proxy for network ${networkId} exited (pty) code=${code} signal=${signal}`);
+        this.processes.delete(networkId);
+        this.statuses.set(networkId, 'stopped');
+      };
+      (childProcess.once ?? childProcess.on).call(childProcess, 'exit', exitHandler);
+    } else {
+      const cp = childProcess as ChildProcess;
 
-    childProcess.stderr?.on('data', (data: Buffer) => {
-      logger.warn(`[Proxy ${networkName}] ${data.toString().trim()}`);
-    });
+      cp.stdout?.on('data', (data: Buffer) => {
+        const text = data.toString();
+        this.emitProcessLogs(networkId, text, 'info');
+      });
 
-    childProcess.on('exit', (code: number | null) => {
-      logger.info(`[ProxyService] Proxy for network ${networkId} exited with code ${code}`);
-      this.processes.delete(networkId);
-      this.statuses.set(networkId, 'stopped');
-    });
+      cp.stderr?.on('data', (data: Buffer) => {
+        const text = data.toString();
+        this.emitProcessLogs(networkId, text, 'warn');
+      });
 
-    childProcess.on('error', (error: Error) => {
-      logger.error(`[ProxyService] Proxy process error for network ${networkId}:`, error);
-      this.processes.delete(networkId);
-      this.statuses.set(networkId, 'stopped');
-    });
+      cp.on('exit', (code: number | null) => {
+        logger.info(`[ProxyService] Proxy for network ${networkId} exited with code ${code}`);
+        this.processes.delete(networkId);
+        this.statuses.set(networkId, 'stopped');
+      });
 
+      cp.on('error', (error: Error) => {
+        logger.error(`[ProxyService] Proxy process error for network ${networkId}:`, error);
+        this.processes.delete(networkId);
+        this.statuses.set(networkId, 'stopped');
+      });
+    }
+
+    // Give the process a moment to crash if something is wrong
     await new Promise(resolve => setTimeout(resolve, 1500));
-    if (!this.processes.get(networkId) || childProcess.exitCode !== null) {
+    const runningProc = this.processes.get(networkId);
+    const exitCode = runningProc && this.isChildProcess(runningProc)
+      ? runningProc.exitCode
+      : null;
+    if (!runningProc || exitCode !== null) {
       this.statuses.set(networkId, 'stopped');
       throw new Error('Proxy process terminated unexpectedly during startup');
     }
@@ -143,36 +207,51 @@ export class ProxyService {
     const process = this.processes.get(networkId);
     if (!process) {
       this.statuses.set(networkId, 'stopped');
+      this.stopLogTail(networkId);
       return;
     }
 
     this.statuses.set(networkId, 'stopping');
 
     try {
-      process.stdin?.write('stop\n');
+      if ('stdin' in process && process.stdin) {
+        process.stdin.write('stop\n');
+      } else if ('write' in process) {
+        (process as ProxyPty).write('stop\r\n');
+      }
     } catch {
       // Ignore stdin failures and fallback to kill
     }
 
     await new Promise<void>((resolve) => {
       const timeout = setTimeout(resolve, 10000);
-      process.once('exit', () => {
+      const handler = () => {
         clearTimeout(timeout);
         resolve();
-      });
+      };
+      if ('once' in process && typeof (process as any).once === 'function') {
+        (process as any).once('exit', handler);
+      } else if ('on' in process) {
+        (process as any).on('exit', handler);
+      } else {
+        resolve();
+      }
     });
 
-    if (process.exitCode === null) {
+    const exitCode = (process as ChildProcess)?.exitCode ?? null;
+    if (exitCode === null) {
       process.kill('SIGTERM');
       await new Promise(resolve => setTimeout(resolve, 1500));
     }
 
-    if (process.exitCode === null) {
+    const exitCodeAfter = (process as ChildProcess)?.exitCode ?? null;
+    if (exitCodeAfter === null) {
       process.kill('SIGKILL');
     }
 
     this.processes.delete(networkId);
     this.statuses.set(networkId, 'stopped');
+    this.stopLogTail(networkId);
   }
 
   async cleanup(): Promise<void> {
@@ -299,7 +378,7 @@ export class ProxyService {
       `publicAddress: "${publicAddress}"`,
       `publicPort: ${config.publicPort}`,
       `proxySecret: "${config.proxySecret}"`,
-      'debugMode: false',
+      'debugMode: true',
       '',
       'backends:',
       backendsBlock || '  []',
@@ -375,6 +454,153 @@ export class ProxyService {
   }
 
   /**
+   * Tail proxy.log to capture messages not printed to stdout (e.g., commands).
+   */
+  private async startLogTail(networkId: string, logPath: string): Promise<void> {
+    try {
+      await fs.ensureDir(path.dirname(logPath));
+    } catch (error) {
+      logger.warn(`[ProxyService] Cannot ensure log dir for ${networkId}:`, error);
+    }
+
+    // Initialize position at end of file to avoid replaying old logs
+    let position = 0;
+    try {
+      const stats = await fs.stat(logPath);
+      position = stats.size;
+    } catch {
+      position = 0;
+    }
+    this.logPositions.set(networkId, position);
+
+    const watcher = chokidar.watch(logPath, {
+      persistent: true,
+      usePolling: true,
+      interval: 200,
+      ignoreInitial: true,
+    });
+
+    watcher.on('add', () => this.readNewLogLines(networkId, logPath));
+    watcher.on('change', () => this.readNewLogLines(networkId, logPath));
+    watcher.on('error', (err) => logger.warn(`[ProxyService] Log tail error for ${networkId}:`, err));
+
+    this.logWatchers.set(networkId, watcher);
+  }
+
+  private async readNewLogLines(networkId: string, logPath: string): Promise<void> {
+    const start = this.logPositions.get(networkId) ?? 0;
+    try {
+      const stats = await fs.stat(logPath);
+      if (stats.size <= start) {
+        this.logPositions.set(networkId, stats.size);
+        return;
+      }
+
+      const stream = fs.createReadStream(logPath, {
+        start,
+        end: stats.size,
+        encoding: 'utf8',
+      });
+      const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
+
+      for await (const line of rl) {
+        if (line.trim().length === 0) continue;
+        this.emitProcessLogs(networkId, line, 'info');
+      }
+
+      this.logPositions.set(networkId, stats.size);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        logger.warn(`[ProxyService] Failed reading proxy log for ${networkId}:`, error);
+      }
+    }
+  }
+
+  private stopLogTail(networkId: string): void {
+    const watcher = this.logWatchers.get(networkId);
+    if (watcher) {
+      watcher.close().catch(() => {});
+      this.logWatchers.delete(networkId);
+    }
+    this.logPositions.delete(networkId);
+  }
+
+  private emitProcessLogs(networkId: string, raw: string, level: LogEntry['level']): void {
+    const lines = raw.split(/\r?\n/).filter(l => l.trim().length > 0);
+    if (lines.length === 0) return;
+
+    const listeners = this.logListeners.get(networkId);
+    let history = this.logHistory.get(networkId) || [];
+
+    for (const line of lines) {
+      const log: LogEntry = {
+        timestamp: new Date(),
+        level,
+        message: line,
+        source: 'proxy',
+      };
+
+      if (listeners && listeners.size > 0) {
+        listeners.forEach(cb => cb(log));
+      }
+
+      history.push(log);
+    }
+
+    if (history.length > this.LOG_HISTORY_LIMIT) {
+      history = history.slice(history.length - this.LOG_HISTORY_LIMIT);
+    }
+    this.logHistory.set(networkId, history);
+  }
+
+  streamLogs(networkId: string, callback: (log: LogEntry) => void): void {
+    if (!this.logListeners.has(networkId)) {
+      this.logListeners.set(networkId, new Set());
+    }
+    this.logListeners.get(networkId)!.add(callback);
+  }
+
+  stopLogStream(networkId: string): void {
+    this.logListeners.delete(networkId);
+  }
+
+  async getLogs(networkId: string, limit = 100): Promise<LogEntry[]> {
+    const history = this.logHistory.get(networkId) || [];
+    if (limit >= history.length) return history;
+    return history.slice(history.length - limit);
+  }
+
+  async sendCommand(networkId: string, command: string): Promise<CommandResponse> {
+    const proc = this.processes.get(networkId);
+    const exitCode = proc && 'exitCode' in (proc as any)
+      ? (proc as ChildProcess).exitCode
+      : null;
+    if (!proc || exitCode !== null) {
+      return {
+        success: false,
+        output: 'Proxy is not running',
+        executedAt: new Date(),
+        error: 'not_running',
+      };
+    }
+
+    try {
+      // Use CRLF to better match console expectations
+      if ('stdin' in proc && proc.stdin) {
+        proc.stdin.write(`${command}\r\n`);
+        logger.info(`[ProxyService] Sent command to proxy ${networkId} via stdin`);
+      } else if ('write' in proc) {
+        (proc as ProxyPty).write(`${command}\r\n`);
+        logger.info(`[ProxyService] Sent command to proxy ${networkId} via PTY`);
+      }
+      return { success: true, output: 'Command sent to proxy', executedAt: new Date() };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Failed to send command';
+      return { success: false, output: msg, executedAt: new Date(), error: msg };
+    }
+  }
+
+  /**
    * Pick the best proxy asset for the current platform/arch.
    * Prefers arch-specific builds when available, otherwise falls back to the first generic jar.
    */
@@ -423,5 +649,9 @@ export class ProxyService {
 
   private generateSecret(): string {
     return crypto.randomBytes(24).toString('hex');
+  }
+
+  private isChildProcess(proc: ChildProcess | ProxyPty): proc is ChildProcess {
+    return (proc as ChildProcess).exitCode !== undefined;
   }
 }
