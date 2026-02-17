@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, Button, Badge, Input } from '../../components/ui';
-import { ArrowLeft, Save, Play, Square, RotateCw, Terminal, Plus, Minus, Server, Users } from 'lucide-react';
+import { ArrowLeft, Save, Play, Square, RotateCw, Terminal, Plus, Minus, Server, Users, ArrowUp, AlertTriangle } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../stores/toastStore';
 type NetworkType = 'logical' | 'proxy';
@@ -60,6 +60,20 @@ type Network = {
     sortOrder: number;
     server: { id: string; name: string; status: string };
   }[];
+  versionAlignment?: {
+    aligned: boolean;
+    updateAvailable: boolean;
+    requiresAttention: boolean;
+    proxyServerId: string | null;
+    proxyVersion: string | null;
+    backendVersions: string[];
+    highestBackendVersion: string | null;
+    canUpdateProxyToSupportServers: boolean;
+    recommendedAction: 'none' | 'update_proxy' | 'align_servers';
+    targetProxyVersion: string | null;
+    targetServerVersion: string | null;
+    reason: string | null;
+  } | null;
 };
 
 type NetworkStatus = {
@@ -381,6 +395,30 @@ export const ProxyDetailPage = () => {
       </div>
 
       <Card variant="glass">
+        {network.versionAlignment?.updateAvailable && (
+          <CardContent className="pt-6 pb-0">
+            <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm">
+              <div className="flex items-center gap-2 font-medium text-yellow-500">
+                <AlertTriangle size={16} />
+                Version alignment required
+              </div>
+              <p className="mt-2 text-text-light-primary dark:text-text-primary">
+                {network.versionAlignment.reason || 'Proxy and backend versions are not aligned.'}
+              </p>
+              {network.versionAlignment.recommendedAction === 'update_proxy' && network.versionAlignment.targetProxyVersion && (
+                <div className="mt-2 inline-flex items-center gap-2 rounded bg-accent-primary/20 px-2 py-1 text-xs text-accent-primary">
+                  <ArrowUp size={14} />
+                  Proxy update available: target {network.versionAlignment.targetProxyVersion}
+                </div>
+              )}
+              {network.versionAlignment.recommendedAction === 'align_servers' && network.versionAlignment.targetServerVersion && (
+                <div className="mt-2 inline-flex items-center gap-2 rounded bg-gray-700/60 px-2 py-1 text-xs text-text-light-primary dark:text-text-primary">
+                  Align backend servers to proxy version {network.versionAlignment.targetServerVersion}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        )}
         <CardHeader>
           <CardTitle>{t('networks.detail.proxy.config_title', { defaultValue: 'Proxy Configuration' })}</CardTitle>
           <CardDescription>{t('networks.detail.proxy.config_subtitle', { defaultValue: 'Fields are written to proxy.yml on start' })}</CardDescription>

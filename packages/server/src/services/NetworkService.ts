@@ -35,6 +35,23 @@ interface UpdateNetworkDto {
   bulkActionsEnabled?: boolean;
 }
 
+type VersionAlignmentAction = 'none' | 'update_proxy' | 'align_servers';
+
+export interface NetworkVersionAlignment {
+  aligned: boolean;
+  updateAvailable: boolean;
+  requiresAttention: boolean;
+  proxyServerId: string | null;
+  proxyVersion: string | null;
+  backendVersions: string[];
+  highestBackendVersion: string | null;
+  canUpdateProxyToSupportServers: boolean;
+  recommendedAction: VersionAlignmentAction;
+  targetProxyVersion: string | null;
+  targetServerVersion: string | null;
+  reason: string | null;
+}
+
 export class NetworkService {
   private prisma: PrismaClient;
   private serverService: ServerService;
@@ -110,7 +127,7 @@ export class NetworkService {
         members: {
           include: {
             server: {
-              select: { id: true, name: true, status: true },
+              select: { id: true, name: true, status: true, version: true },
             },
           },
           orderBy: { sortOrder: 'asc' },
@@ -118,7 +135,8 @@ export class NetworkService {
       },
     });
 
-    return network as NetworkWithMembers | null;
+    if (!network) return null;
+    return this.withVersionAlignment(network as NetworkWithMembers);
   }
 
   async getAllNetworks(): Promise<NetworkWithMembers[]> {
@@ -127,7 +145,7 @@ export class NetworkService {
         members: {
           include: {
             server: {
-              select: { id: true, name: true, status: true },
+              select: { id: true, name: true, status: true, version: true },
             },
           },
           orderBy: { sortOrder: 'asc' },
@@ -136,7 +154,10 @@ export class NetworkService {
       orderBy: { sortOrder: 'asc' },
     });
 
-    return networks as NetworkWithMembers[];
+    const enriched = await Promise.all(
+      networks.map(network => this.withVersionAlignment(network as NetworkWithMembers))
+    );
+    return enriched as NetworkWithMembers[];
   }
 
   async updateNetwork(networkId: string, data: UpdateNetworkDto): Promise<PrismaNetwork> {
@@ -920,6 +941,7 @@ export class NetworkService {
     const proxyConfig = this.parseProxyConfig(network.proxyConfig);
     const backendMembers = network.members.filter(member => member.role !== 'proxy');
     const backendServers = await this.loadBackendServers(backendMembers.map(member => member.serverId));
+    await this.reconcileProxyServerVersion(network.id, network.proxyServerId, backendServers);
 
     const effectiveConfig = await this.proxyService.syncProxyConfig(network.id, backendServers, proxyConfig);
 
@@ -937,5 +959,149 @@ export class NetworkService {
     } catch (error) {
       logger.warn(`[NetworkService] Failed to restart proxy after version change for network ${network.id}:`, error);
     }
+  }
+
+  private async withVersionAlignment(network: NetworkWithMembers): Promise<NetworkWithMembers & { versionAlignment: NetworkVersionAlignment | null }> {
+    if (network.networkType !== 'proxy') {
+      return { ...network, versionAlignment: null };
+    }
+
+    const backendMembers = network.members.filter(member => member.role !== 'proxy');
+    const backendVersions = Array.from(new Set(
+      backendMembers
+        .map(member => member.server.version)
+        .filter((version): version is string => Boolean(version))
+    ));
+
+    const highestBackendVersion = backendVersions.reduce<string | null>((current, version) => {
+      if (!current) return version;
+      return this.compareVersions(version, current) > 0 ? version : current;
+    }, null);
+
+    const proxyServerId = network.proxyServerId || null;
+    const proxyVersion = proxyServerId
+      ? (
+        await this.prisma.server.findUnique({
+          where: { id: proxyServerId },
+          select: { version: true },
+        })
+      )?.version || null
+      : null;
+
+    const hasMismatch = Boolean(
+      proxyVersion &&
+      backendVersions.length > 0 &&
+      backendVersions.some(version => version !== proxyVersion)
+    );
+
+    let canUpdateProxyToSupportServers = false;
+    if (hasMismatch && highestBackendVersion && highestBackendVersion !== proxyVersion) {
+      canUpdateProxyToSupportServers = await this.proxyService.canSupportVersion(highestBackendVersion);
+    }
+
+    let recommendedAction: VersionAlignmentAction = 'none';
+    let targetProxyVersion: string | null = null;
+    let targetServerVersion: string | null = null;
+    let reason: string | null = null;
+
+    if (hasMismatch) {
+      if (canUpdateProxyToSupportServers && highestBackendVersion) {
+        recommendedAction = 'update_proxy';
+        targetProxyVersion = highestBackendVersion;
+        reason = `Proxy version ${proxyVersion} does not match backend version ${highestBackendVersion}. A compatible proxy release exists.`;
+      } else {
+        recommendedAction = 'align_servers';
+        targetServerVersion = proxyVersion;
+        reason = `Proxy version ${proxyVersion} does not match backend versions (${backendVersions.join(', ')}). Use proxy-compatible server versions.`;
+      }
+    }
+
+    return {
+      ...network,
+      versionAlignment: {
+        aligned: !hasMismatch,
+        updateAvailable: hasMismatch,
+        requiresAttention: hasMismatch,
+        proxyServerId,
+        proxyVersion,
+        backendVersions,
+        highestBackendVersion,
+        canUpdateProxyToSupportServers,
+        recommendedAction,
+        targetProxyVersion,
+        targetServerVersion,
+        reason,
+      },
+    };
+  }
+
+  private compareVersions(a: string, b: string): number {
+    const normalize = (v: string) => v.replace(/^v/i, '');
+    const toParts = (v: string) => normalize(v)
+      .split('.')
+      .map(part => {
+        const n = Number.parseInt(part, 10);
+        return Number.isNaN(n) ? 0 : n;
+      });
+
+    const aParts = toParts(a);
+    const bParts = toParts(b);
+    const length = Math.max(aParts.length, bParts.length);
+
+    for (let i = 0; i < length; i++) {
+      const av = aParts[i] ?? 0;
+      const bv = bParts[i] ?? 0;
+      if (av > bv) return 1;
+      if (av < bv) return -1;
+    }
+    return 0;
+  }
+
+  private async reconcileProxyServerVersion(
+    networkId: string,
+    proxyServerId: string | null,
+    backendServers: ProxyBackendServer[]
+  ): Promise<void> {
+    if (!proxyServerId || backendServers.length === 0) {
+      return;
+    }
+
+    const highestBackendVersion = backendServers
+      .map(server => server.version)
+      .filter((version): version is string => Boolean(version))
+      .reduce<string | null>((current, version) => {
+        if (!current) return version;
+        return this.compareVersions(version, current) > 0 ? version : current;
+      }, null);
+
+    if (!highestBackendVersion) {
+      return;
+    }
+
+    const proxyServer = await this.prisma.server.findUnique({
+      where: { id: proxyServerId },
+      select: { id: true, version: true, name: true },
+    });
+
+    if (!proxyServer || proxyServer.version === highestBackendVersion) {
+      return;
+    }
+
+    const canUpdateProxy = await this.proxyService.canSupportVersion(highestBackendVersion);
+    if (!canUpdateProxy) {
+      logger.warn(
+        `[NetworkService] Proxy ${proxyServer.name} (${networkId}) cannot be aligned to backend version ${highestBackendVersion} (release not found).`
+      );
+      return;
+    }
+
+    await this.prisma.server.update({
+      where: { id: proxyServer.id },
+      data: { version: highestBackendVersion },
+    });
+
+    logger.info(
+      `[NetworkService] Aligned proxy server ${proxyServer.name} version from ${proxyServer.version} to ${highestBackendVersion} for network ${networkId}.`
+    );
   }
 }

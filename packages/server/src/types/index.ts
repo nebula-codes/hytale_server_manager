@@ -201,7 +201,21 @@ export interface ServerNetworkMember {
 }
 
 export interface NetworkWithMembers extends ServerNetwork {
-  members: (ServerNetworkMember & { server: { id: string; name: string; status: string } })[];
+  members: (ServerNetworkMember & { server: { id: string; name: string; status: string; version?: string } })[];
+  versionAlignment?: {
+    aligned: boolean;
+    updateAvailable: boolean;
+    requiresAttention: boolean;
+    proxyServerId: string | null;
+    proxyVersion: string | null;
+    backendVersions: string[];
+    highestBackendVersion: string | null;
+    canUpdateProxyToSupportServers: boolean;
+    recommendedAction: 'none' | 'update_proxy' | 'align_servers';
+    targetProxyVersion: string | null;
+    targetServerVersion: string | null;
+    reason: string | null;
+  } | null;
 }
 
 export interface NetworkStatus {

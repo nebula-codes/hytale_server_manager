@@ -83,6 +83,7 @@ export class ProxyService {
   private processes = new Map<string, ChildProcess | ProxyPty>();
   private statuses = new Map<string, 'stopped' | 'starting' | 'running' | 'stopping'>();
   private runningProxyVersions = new Map<string, string>();
+  private supportedVersionCache = new Map<string, { supported: boolean; checkedAt: number }>();
   private proxiesBasePath: string;
   private cachePath: string;
   private runtimeRootPath: string;
@@ -335,6 +336,28 @@ export class ProxyService {
     return true;
   }
 
+  async canSupportVersion(version?: string): Promise<boolean> {
+    if (!version || version === 'latest') {
+      return true;
+    }
+
+    const cached = this.supportedVersionCache.get(version);
+    const now = Date.now();
+    if (cached && now - cached.checkedAt < 5 * 60 * 1000) {
+      return cached.supported;
+    }
+
+    try {
+      const release = await this.getReleaseExact(version);
+      const supported = Boolean(this.pickProxyAsset(release.assets));
+      this.supportedVersionCache.set(version, { supported, checkedAt: now });
+      return supported;
+    } catch {
+      this.supportedVersionCache.set(version, { supported: false, checkedAt: now });
+      return false;
+    }
+  }
+
   async cleanup(): Promise<void> {
     const networkIds = Array.from(this.processes.keys());
     for (const networkId of networkIds) {
@@ -405,6 +428,25 @@ export class ProxyService {
       }
       const details = await response.text();
       throw new Error(`Failed to fetch Numdrassl release${version ? ` for ${version}` : ''}: HTTP ${response.status} - ${details}`);
+    }
+
+    return response.json() as Promise<ReleaseResponse>;
+  }
+
+  private async getReleaseExact(version: string): Promise<ReleaseResponse> {
+    const baseUrl = 'https://api.github.com/repos/Numdrassl/proxy/releases';
+    const url = `${baseUrl}/tags/${version.startsWith('v') ? version : `v${version}`}`;
+
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'application/vnd.github+json',
+        'User-Agent': 'HytaleServerManager/0.3',
+      },
+    });
+
+    if (!response.ok) {
+      const details = await response.text();
+      throw new Error(`Failed to fetch exact Numdrassl release for ${version}: HTTP ${response.status} - ${details}`);
     }
 
     return response.json() as Promise<ReleaseResponse>;
