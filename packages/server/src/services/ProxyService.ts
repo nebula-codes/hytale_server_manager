@@ -82,6 +82,7 @@ type ProxyPty = {
 export class ProxyService {
   private processes = new Map<string, ChildProcess | ProxyPty>();
   private statuses = new Map<string, 'stopped' | 'starting' | 'running' | 'stopping'>();
+  private runningProxyVersions = new Map<string, string>();
   private proxiesBasePath: string;
   private cachePath: string;
   private runtimeRootPath: string;
@@ -127,6 +128,7 @@ export class ProxyService {
 
     const runtimePath = await this.ensureRuntimePath(networkId);
     const backendVersion = backendServers.find(b => b.version)?.version;
+    const targetProxyVersion = this.getTargetProxyVersion(backendServers);
     const assets = await this.ensureAssets(backendVersion);
 
     await this.writeProxyConfig(runtimePath, backendServers, config);
@@ -225,6 +227,7 @@ export class ProxyService {
     }
 
     this.statuses.set(networkId, 'running');
+    this.runningProxyVersions.set(networkId, targetProxyVersion);
   }
 
   async stopProxy(networkId: string): Promise<void> {
@@ -275,6 +278,7 @@ export class ProxyService {
 
     this.processes.delete(networkId);
     this.statuses.set(networkId, 'stopped');
+    this.runningProxyVersions.delete(networkId);
     this.stopLogTail(networkId);
   }
 
@@ -304,6 +308,31 @@ export class ProxyService {
     const backendVersion = backendServers.find(b => b.version)?.version;
     const assets = await this.ensureAssets(backendVersion);
     await this.installBridgeComponents(backendServers, assets, proxySecret);
+  }
+
+  async restartIfProxyVersionChanged(
+    networkId: string,
+    networkName: string,
+    backendServers: ProxyBackendServer[],
+    rawConfig: ProxyNetworkConfig
+  ): Promise<boolean> {
+    if (this.getStatus(networkId) !== 'running') {
+      return false;
+    }
+
+    const targetVersion = this.getTargetProxyVersion(backendServers);
+    const currentVersion = this.runningProxyVersions.get(networkId);
+    if (currentVersion === targetVersion) {
+      return false;
+    }
+
+    logger.info(
+      `[ProxyService] Proxy version change detected for ${networkId}: ${currentVersion || 'unknown'} -> ${targetVersion}. Restarting proxy.`
+    );
+
+    await this.stopProxy(networkId);
+    await this.startProxy(networkId, networkName, backendServers, rawConfig);
+    return true;
   }
 
   async cleanup(): Promise<void> {
@@ -723,6 +752,10 @@ export class ProxyService {
 
   private generateSecret(): string {
     return crypto.randomBytes(24).toString('hex');
+  }
+
+  private getTargetProxyVersion(backendServers: ProxyBackendServer[]): string {
+    return backendServers.find(server => server.version)?.version || 'latest';
   }
 
   private buildEffectiveConfig(

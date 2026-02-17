@@ -182,7 +182,7 @@ export class App {
     this.serverUpdateEvents = new ServerUpdateEvents(this.io);
 
     // Initialize server update service with dependencies
-    serverUpdateService.initialize(this.serverService, this.backupService, this.discordService);
+    serverUpdateService.initialize(this.serverService, this.backupService, this.discordService, this.networkService);
 
     this.initializeMiddleware();
     this.initializeRoutes();

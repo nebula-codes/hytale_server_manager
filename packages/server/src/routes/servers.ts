@@ -187,16 +187,8 @@ export function createServerRoutes(
   router.patch('/:id', requirePermission(PERMISSIONS.SERVERS_UPDATE), async (req: Request, res: Response) => {
     try {
       const server = await serverService.updateServer(req.params.id, req.body);
-
-      // Keep proxy network config.yml in sync when backend identity/network settings change.
-      const shouldSyncProxyConfig =
-        req.body?.address !== undefined ||
-        req.body?.port !== undefined ||
-        req.body?.name !== undefined;
-
-      if (shouldSyncProxyConfig) {
-        await networkService.syncProxyConfigsForServer(req.params.id);
-      }
+      // Keep proxy network config.yml + bridge state in sync for any server update.
+      await networkService.syncProxyConfigsForServer(req.params.id);
 
       res.json(server);
     } catch (error) {

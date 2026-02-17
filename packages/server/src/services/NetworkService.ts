@@ -926,5 +926,16 @@ export class NetworkService {
     if (effectiveConfig.autoInstallBridge !== false) {
       await this.proxyService.syncBridgeForBackends(backendServers, effectiveConfig.proxySecret);
     }
+
+    try {
+      await this.proxyService.restartIfProxyVersionChanged(
+        network.id,
+        network.name,
+        backendServers,
+        effectiveConfig
+      );
+    } catch (error) {
+      logger.warn(`[NetworkService] Failed to restart proxy after version change for network ${network.id}:`, error);
+    }
   }
 }

@@ -6,6 +6,7 @@ import { hytaleDownloaderService } from './HytaleDownloaderService';
 import { BackupService } from './BackupService';
 import { ServerService } from './ServerService';
 import { DiscordNotificationService } from './DiscordNotificationService';
+import { NetworkService } from './NetworkService';
 import logger from '../utils/logger';
 
 /**
@@ -96,6 +97,7 @@ class ServerUpdateService extends EventEmitter {
   private backupService?: BackupService;
   private serverService?: ServerService;
   private discordService?: DiscordNotificationService;
+  private networkService?: NetworkService;
   private autoCheckInterval: NodeJS.Timeout | null = null;
 
   constructor() {
@@ -109,11 +111,13 @@ class ServerUpdateService extends EventEmitter {
   initialize(
     serverService: ServerService,
     backupService: BackupService,
-    discordService?: DiscordNotificationService
+    discordService?: DiscordNotificationService,
+    networkService?: NetworkService
   ): void {
     this.serverService = serverService;
     this.backupService = backupService;
     this.discordService = discordService;
+    this.networkService = networkService;
     logger.info('[ServerUpdate] Service initialized');
   }
 
@@ -429,6 +433,9 @@ class ServerUpdateService extends EventEmitter {
         },
       });
 
+      // Keep proxy config/bridge in sync with this server's new version and files.
+      await this.trySyncProxyForServer(session.serverId);
+
       // Step 8: Restart server if it was running
       if (session.wasRunning) {
         await this.updateSessionStatus(session, 'starting', 90, 'Starting server...');
@@ -730,6 +737,9 @@ class ServerUpdateService extends EventEmitter {
       });
     }
 
+    // Keep proxy config/bridge in sync after rollback.
+    await this.trySyncProxyForServer(serverId);
+
     // Restart server if it was running
     if (wasRunning && this.serverService) {
       await this.serverService.startServer(serverId);
@@ -1019,6 +1029,18 @@ class ServerUpdateService extends EventEmitter {
 
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private async trySyncProxyForServer(serverId: string): Promise<void> {
+    if (!this.networkService) {
+      return;
+    }
+
+    try {
+      await this.networkService.syncProxyConfigsForServer(serverId);
+    } catch (error) {
+      logger.warn(`[ServerUpdate] Failed to sync proxy config after server update for ${serverId}:`, error);
+    }
   }
 
   /**
