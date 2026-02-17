@@ -75,6 +75,8 @@ export function createNetworkRoutes(networkService: NetworkService): Router {
       logger.error('Error creating network:', error);
       if (message.includes('already exists')) {
         res.status(409).json({ error: message });
+      } else if (message.includes('Invalid proxy config')) {
+        res.status(400).json({ error: message });
       } else {
         res.status(500).json({ error: message });
       }
@@ -100,7 +102,11 @@ export function createNetworkRoutes(networkService: NetworkService): Router {
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       logger.error('Error updating network:', error);
-      res.status(500).json({ error: message });
+      if (message.includes('Invalid proxy config')) {
+        res.status(400).json({ error: message });
+      } else {
+        res.status(500).json({ error: message });
+      }
     }
   });
 

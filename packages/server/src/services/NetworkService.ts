@@ -92,13 +92,17 @@ export class NetworkService {
       }
     }
 
+    const normalizedProxyConfig = data.proxyConfig
+      ? this.normalizeProxyConfig(data.proxyConfig)
+      : undefined;
+
     const network = await this.prisma.serverNetwork.create({
       data: {
         name: data.name,
         description: data.description,
         networkType: data.networkType || 'logical',
         proxyServerId: data.proxyServerId,
-        proxyConfig: data.proxyConfig ? JSON.stringify(data.proxyConfig) : null,
+        proxyConfig: normalizedProxyConfig ? JSON.stringify(normalizedProxyConfig) : null,
         color: data.color,
       },
     });
@@ -175,7 +179,10 @@ export class NetworkService {
       }
       updateData.proxyServerId = data.proxyServerId;
     }
-    if (data.proxyConfig !== undefined) updateData.proxyConfig = JSON.stringify(data.proxyConfig);
+    if (data.proxyConfig !== undefined) {
+      const normalizedProxyConfig = this.normalizeProxyConfig(data.proxyConfig);
+      updateData.proxyConfig = JSON.stringify(normalizedProxyConfig);
+    }
     if (data.color !== undefined) updateData.color = data.color;
     if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder;
     if (data.bulkActionsEnabled !== undefined) updateData.bulkActionsEnabled = data.bulkActionsEnabled;
@@ -859,7 +866,7 @@ export class NetworkService {
   private parseProxyConfig(proxyConfig: string | null | undefined): ProxyNetworkConfig {
     if (!proxyConfig) return {};
     try {
-      return JSON.parse(proxyConfig) as ProxyNetworkConfig;
+      return this.normalizeProxyConfig(JSON.parse(proxyConfig) as ProxyNetworkConfig);
     } catch {
       return {};
     }
@@ -899,11 +906,11 @@ export class NetworkService {
       if (!dbServer) continue;
 
       const currentArgs = (dbServer.serverArgs || '').trim();
-      const requiredFlags = ['--accept-early-plugins', '--auth-mode', 'insecure', '--transport', 'QUIC'];
+      const requiredFlags = ['--auth-mode', 'insecure'];
       const hasAllFlags = requiredFlags.every(flag => currentArgs.includes(flag));
       if (hasAllFlags) continue;
 
-      const mergedArgs = [currentArgs, '--accept-early-plugins --auth-mode insecure --transport QUIC']
+      const mergedArgs = [currentArgs, '--auth-mode insecure']
         .filter(Boolean)
         .join(' ')
         .replace(/\s+/g, ' ')
@@ -945,9 +952,11 @@ export class NetworkService {
     const proxyConfig = this.parseProxyConfig(network.proxyConfig);
     const backendMembers = network.members.filter(member => member.role !== 'proxy');
     const backendServers = await this.loadBackendServers(backendMembers.map(member => member.serverId));
+    const backendNames = new Set(backendServers.map(server => server.name));
+    const validatedProxyConfig = this.normalizeProxyConfig(proxyConfig, backendNames);
     await this.reconcileProxyServerVersion(network.id, network.proxyServerId, backendServers);
 
-    const effectiveConfig = await this.proxyService.syncProxyConfig(network.id, backendServers, proxyConfig);
+    const effectiveConfig = await this.proxyService.syncProxyConfig(network.id, backendServers, validatedProxyConfig);
 
     if (effectiveConfig.autoInstallBridge !== false) {
       await this.proxyService.syncBridgeForBackends(backendServers, effectiveConfig.proxySecret);
@@ -1106,6 +1115,153 @@ export class NetworkService {
 
     logger.info(
       `[NetworkService] Aligned proxy server ${proxyServer.name} version from ${proxyServer.version} to ${highestBackendVersion} for network ${networkId}.`
-    );
+      );
+    }
   }
-}
+
+  private normalizeProxyConfig(
+    raw: ProxyNetworkConfig | undefined,
+    backendNames?: Set<string>
+  ): ProxyNetworkConfig {
+    if (!raw) return {};
+
+    const normalized: ProxyNetworkConfig = {};
+
+    const trimOptionalString = (value: unknown, field: string): string | undefined => {
+      if (value === undefined || value === null) return undefined;
+      if (typeof value !== 'string') {
+        throw new Error(`Invalid proxy config: ${field} must be a string`);
+      }
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    };
+
+    const optionalPort = (value: unknown, field: string): number | undefined => {
+      if (value === undefined || value === null || value === '') return undefined;
+      const parsed = typeof value === 'number' ? value : Number(value);
+      if (!Number.isInteger(parsed) || parsed < 1 || parsed > 65535) {
+        throw new Error(`Invalid proxy config: ${field} must be an integer between 1 and 65535`);
+      }
+      return parsed;
+    };
+
+    if (raw.startOrder !== undefined) {
+      if (raw.startOrder !== 'backends_first' && raw.startOrder !== 'proxy_first') {
+        throw new Error('Invalid proxy config: startOrder must be "backends_first" or "proxy_first"');
+      }
+      normalized.startOrder = raw.startOrder;
+    }
+
+    if (raw.version !== undefined) {
+      if (!Number.isInteger(raw.version) || raw.version < 1) {
+        throw new Error('Invalid proxy config: version must be a positive integer');
+      }
+      normalized.version = raw.version;
+    }
+
+    normalized.bindAddress = trimOptionalString(raw.bindAddress, 'bindAddress');
+    normalized.bindPort = optionalPort(raw.bindPort, 'bindPort');
+    normalized.publicAddress = trimOptionalString(raw.publicAddress, 'publicAddress');
+    normalized.publicPort = optionalPort(raw.publicPort, 'publicPort');
+    normalized.certificatePath = trimOptionalString(raw.certificatePath, 'certificatePath');
+    normalized.privateKeyPath = trimOptionalString(raw.privateKeyPath, 'privateKeyPath');
+    normalized.proxySecret = trimOptionalString(raw.proxySecret, 'proxySecret');
+
+    if (raw.debugMode !== undefined) {
+      if (typeof raw.debugMode !== 'boolean') {
+        throw new Error('Invalid proxy config: debugMode must be a boolean');
+      }
+      normalized.debugMode = raw.debugMode;
+    }
+
+    if (raw.autoInstallBridge !== undefined) {
+      if (typeof raw.autoInstallBridge !== 'boolean') {
+        throw new Error('Invalid proxy config: autoInstallBridge must be a boolean');
+      }
+      normalized.autoInstallBridge = raw.autoInstallBridge;
+    }
+
+    normalized.defaultServer = trimOptionalString(raw.defaultServer, 'defaultServer');
+    normalized.fallbackServer = trimOptionalString(raw.fallbackServer, 'fallbackServer');
+
+    if (raw.poolEnabled !== undefined) {
+      if (typeof raw.poolEnabled !== 'boolean') {
+        throw new Error('Invalid proxy config: poolEnabled must be a boolean');
+      }
+      normalized.poolEnabled = raw.poolEnabled;
+    }
+
+    if (raw.pool !== undefined) {
+      if (!raw.pool || typeof raw.pool !== 'object' || Array.isArray(raw.pool)) {
+        throw new Error('Invalid proxy config: pool must be an object');
+      }
+      const normalizedPool: Record<string, { strategy?: 'round-robin' | 'random' | 'least-connections'; servers: string[] }> = {};
+      for (const [poolName, poolConfig] of Object.entries(raw.pool)) {
+        const name = poolName.trim();
+        if (!name) {
+          throw new Error('Invalid proxy config: pool names must be non-empty');
+        }
+        if (!poolConfig || typeof poolConfig !== 'object' || Array.isArray(poolConfig)) {
+          throw new Error(`Invalid proxy config: pool.${name} must be an object`);
+        }
+        const strategy = (poolConfig as any).strategy;
+        if (strategy !== undefined && !['round-robin', 'random', 'least-connections'].includes(strategy)) {
+          throw new Error(`Invalid proxy config: pool.${name}.strategy is invalid`);
+        }
+        const servers = (poolConfig as any).servers;
+        if (!Array.isArray(servers) || servers.some(value => typeof value !== 'string' || value.trim().length === 0)) {
+          throw new Error(`Invalid proxy config: pool.${name}.servers must be an array of non-empty strings`);
+        }
+        normalizedPool[name] = {
+          strategy: strategy as 'round-robin' | 'random' | 'least-connections' | undefined,
+          servers: servers.map((serverName: string) => serverName.trim()),
+        };
+      }
+      normalized.pool = normalizedPool;
+    }
+
+    if (raw.routes !== undefined) {
+      if (!Array.isArray(raw.routes)) {
+        throw new Error('Invalid proxy config: routes must be an array');
+      }
+      normalized.routes = raw.routes.map((route, index) => {
+        if (!route || typeof route !== 'object') {
+          throw new Error(`Invalid proxy config: routes[${index}] must be an object`);
+        }
+        const hostname = trimOptionalString((route as any).hostname, `routes[${index}].hostname`);
+        const target = trimOptionalString((route as any).target, `routes[${index}].target`);
+        if (!hostname || !target) {
+          throw new Error(`Invalid proxy config: routes[${index}] requires hostname and target`);
+        }
+        return { hostname, target };
+      });
+    }
+
+    if (backendNames && backendNames.size > 0) {
+      if (normalized.defaultServer && !backendNames.has(normalized.defaultServer)) {
+        throw new Error(`Invalid proxy config: defaultServer "${normalized.defaultServer}" is not a backend member`);
+      }
+      if (normalized.fallbackServer && !backendNames.has(normalized.fallbackServer)) {
+        throw new Error(`Invalid proxy config: fallbackServer "${normalized.fallbackServer}" is not a backend member`);
+      }
+      if (normalized.pool) {
+        for (const [poolName, poolConfig] of Object.entries(normalized.pool)) {
+          for (const serverName of poolConfig.servers) {
+            if (!backendNames.has(serverName)) {
+              throw new Error(`Invalid proxy config: pool "${poolName}" references unknown backend "${serverName}"`);
+            }
+          }
+        }
+      }
+      if (normalized.routes) {
+        const poolNames = new Set(Object.keys(normalized.pool || {}));
+        for (const route of normalized.routes) {
+          if (!backendNames.has(route.target) && !poolNames.has(route.target)) {
+            throw new Error(`Invalid proxy config: route target "${route.target}" is neither a backend server nor a pool`);
+          }
+        }
+      }
+    }
+
+    return normalized;
+  }

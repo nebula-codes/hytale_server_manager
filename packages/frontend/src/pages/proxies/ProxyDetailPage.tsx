@@ -9,38 +9,21 @@ type NetworkType = 'logical' | 'proxy';
 
 type ProxyConfig = {
   startOrder?: 'proxy_first' | 'backends_first';
+  version?: number;
   bindAddress?: string;
   bindPort?: number;
   publicAddress?: string;
   publicPort?: number;
   certificatePath?: string;
   privateKeyPath?: string;
-  maxConnections?: number;
-  connectionTimeoutSeconds?: number;
   proxySecret?: string;
   debugMode?: boolean;
-  passthroughMode?: boolean;
-  metricsEnabled?: boolean;
   autoInstallBridge?: boolean;
-  metricsPort?: number;
-  metricsLogIntervalSeconds?: number;
-  clusterEnabled?: boolean;
-  proxyId?: string;
-  proxyRegion?: string;
-  redisHost?: string;
-  redisPort?: number;
-  redisPassword?: string;
-  redisSsl?: boolean;
-  redisDatabase?: number;
-  fallbackEnabled?: boolean;
-  globalFallbackServer?: string;
-  backendFallbackServers?: Record<string, boolean>;
-  proxyProtocol?: {
-    enabled?: boolean;
-    required?: boolean;
-    headerTimeoutSeconds?: number;
-    trustedProxies?: string[];
-  };
+  defaultServer?: string;
+  fallbackServer?: string;
+  poolEnabled?: boolean;
+  pool?: Record<string, { strategy?: 'round-robin' | 'random' | 'least-connections'; servers: string[] }>;
+  routes?: { hostname: string; target: string }[];
 };
 
 type Network = {
@@ -106,6 +89,8 @@ export const ProxyDetailPage = () => {
   const [stopping, setStopping] = useState(false);
   const [addingServerId, setAddingServerId] = useState<string | null>(null);
   const [removingServerId, setRemovingServerId] = useState<string | null>(null);
+  const [poolText, setPoolText] = useState('{}');
+  const [routesText, setRoutesText] = useState('[]');
 
   const parsedConfig = useMemo<ProxyConfig>(() => {
     if (!network?.proxyConfig) return {};
@@ -183,46 +168,26 @@ export const ProxyDetailPage = () => {
   useEffect(() => {
     if (!network) return;
 
-    const normalizedFallbacks = Object.entries(parsedConfig.backendFallbackServers || {}).reduce<Record<string, boolean>>((acc, [serverId, value]) => {
-      acc[serverId] = typeof value === 'boolean' ? value : Boolean(value);
-      return acc;
-    }, {});
-
     setForm({
       startOrder: parsedConfig.startOrder || 'backends_first',
+      version: parsedConfig.version ?? 3,
       bindAddress: parsedConfig.bindAddress || '0.0.0.0',
       bindPort: parsedConfig.bindPort || 24322,
       publicAddress: parsedConfig.publicAddress || 'play.myserver.com',
       publicPort: parsedConfig.publicPort || parsedConfig.bindPort || 24322,
       certificatePath: parsedConfig.certificatePath || 'certs/server.crt',
       privateKeyPath: parsedConfig.privateKeyPath || 'certs/server.key',
-      maxConnections: parsedConfig.maxConnections ?? 1000,
-      connectionTimeoutSeconds: parsedConfig.connectionTimeoutSeconds ?? 30,
       proxySecret: parsedConfig.proxySecret || '',
       debugMode: parsedConfig.debugMode ?? false,
-      passthroughMode: parsedConfig.passthroughMode ?? false,
-      metricsEnabled: parsedConfig.metricsEnabled ?? true,
       autoInstallBridge: parsedConfig.autoInstallBridge !== false,
-      metricsPort: parsedConfig.metricsPort ?? 9090,
-      metricsLogIntervalSeconds: parsedConfig.metricsLogIntervalSeconds ?? 60,
-      clusterEnabled: parsedConfig.clusterEnabled ?? false,
-      proxyId: parsedConfig.proxyId || '',
-      proxyRegion: parsedConfig.proxyRegion || 'default',
-      redisHost: parsedConfig.redisHost || 'localhost',
-      redisPort: parsedConfig.redisPort ?? 6379,
-      redisPassword: parsedConfig.redisPassword || '',
-      redisSsl: parsedConfig.redisSsl ?? false,
-      redisDatabase: parsedConfig.redisDatabase ?? 0,
-      fallbackEnabled: parsedConfig.fallbackEnabled ?? true,
-      globalFallbackServer: parsedConfig.globalFallbackServer || 'lobby',
-      backendFallbackServers: normalizedFallbacks,
-      proxyProtocol: {
-        enabled: parsedConfig.proxyProtocol?.enabled ?? false,
-        required: parsedConfig.proxyProtocol?.required ?? true,
-        headerTimeoutSeconds: parsedConfig.proxyProtocol?.headerTimeoutSeconds ?? 5,
-        trustedProxies: parsedConfig.proxyProtocol?.trustedProxies || [],
-      },
+      defaultServer: parsedConfig.defaultServer || '',
+      fallbackServer: parsedConfig.fallbackServer || '',
+      poolEnabled: parsedConfig.poolEnabled ?? false,
+      pool: parsedConfig.pool || {},
+      routes: parsedConfig.routes || [],
     });
+    setPoolText(JSON.stringify(parsedConfig.pool || {}, null, 2));
+    setRoutesText(JSON.stringify(parsedConfig.routes || [], null, 2));
   }, [network, parsedConfig]);
 
   const handleChange = (field: keyof ProxyConfig, value: any) => {
@@ -233,9 +198,19 @@ export const ProxyDetailPage = () => {
     if (!id) return;
     setSaving(true);
     try {
-      const cleanedTrustedProxies = (form.proxyProtocol?.trustedProxies || [])
-        .map(proxy => proxy.trim())
-        .filter(Boolean);
+      let parsedPool: ProxyConfig['pool'] = {};
+      let parsedRoutes: ProxyConfig['routes'] = [];
+      try {
+        parsedPool = JSON.parse(poolText || '{}');
+      } catch {
+        throw new Error('Pool JSON is invalid');
+      }
+      try {
+        const routesValue = JSON.parse(routesText || '[]');
+        parsedRoutes = Array.isArray(routesValue) ? routesValue : [];
+      } catch {
+        throw new Error('Routes JSON is invalid');
+      }
 
       await api.updateNetwork(id, {
         proxyConfig: {
@@ -243,21 +218,15 @@ export const ProxyDetailPage = () => {
           bindPort: form.bindPort || 24322,
           publicAddress: form.publicAddress?.trim() || 'play.myserver.com',
           publicPort: form.publicPort || form.bindPort || 24322,
-          maxConnections: form.maxConnections ?? 1000,
+          version: form.version ?? 3,
           debugMode: form.debugMode ?? false,
-          metricsPort: form.metricsPort ?? 9090,
-          proxyRegion: form.proxyRegion?.trim() || 'default',
-          fallbackEnabled: form.fallbackEnabled ?? true,
-          globalFallbackServer: form.globalFallbackServer?.trim() || 'lobby',
+          defaultServer: form.defaultServer?.trim() || '',
+          fallbackServer: form.fallbackServer?.trim() || '',
+          poolEnabled: form.poolEnabled ?? false,
+          pool: parsedPool || {},
+          routes: parsedRoutes || [],
           certificatePath: form.certificatePath?.trim() || 'certs/server.crt',
           privateKeyPath: form.privateKeyPath?.trim() || 'certs/server.key',
-          backendFallbackServers: form.backendFallbackServers || {},
-          proxyProtocol: {
-            enabled: form.proxyProtocol?.enabled ?? false,
-            required: form.proxyProtocol?.required ?? true,
-            headerTimeoutSeconds: form.proxyProtocol?.headerTimeoutSeconds ?? 5,
-            trustedProxies: cleanedTrustedProxies,
-          },
         },
       });
       toast.success(t('networks.toast.proxy_saved', { defaultValue: 'Proxy settings saved' }));
@@ -266,16 +235,6 @@ export const ProxyDetailPage = () => {
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleBackendFallbackChange = (serverId: string, value: boolean) => {
-    setForm(prev => ({
-      ...prev,
-      backendFallbackServers: {
-        ...(prev.backendFallbackServers || {}),
-        [serverId]: value,
-      },
-    }));
   };
 
   const handleStart = async () => {
@@ -462,28 +421,16 @@ export const ProxyDetailPage = () => {
               placeholder="/path/to/key.pem"
             />
             <Input
-              label="Max Connections"
-              type="number"
-              value={form.maxConnections ?? 1000}
-              onChange={e => handleChange('maxConnections', Number(e.target.value))}
+              label="Proxy Secret"
+              value={form.proxySecret || ''}
+              onChange={e => handleChange('proxySecret', e.target.value)}
+              placeholder="Leave blank to keep current"
             />
             <Input
-              label="Connection Timeout (seconds)"
+              label="Config Version"
               type="number"
-              value={form.connectionTimeoutSeconds ?? 30}
-              onChange={e => handleChange('connectionTimeoutSeconds', Number(e.target.value))}
-            />
-            <Input
-              label="Metrics Port"
-              type="number"
-              value={form.metricsPort ?? 9090}
-              onChange={e => handleChange('metricsPort', Number(e.target.value))}
-            />
-            <Input
-              label="Metrics Log Interval (seconds)"
-              type="number"
-              value={form.metricsLogIntervalSeconds ?? 60}
-              onChange={e => handleChange('metricsLogIntervalSeconds', Number(e.target.value))}
+              value={form.version ?? 3}
+              onChange={e => handleChange('version', Number(e.target.value) || 3)}
             />
             <div className="flex flex-col gap-1">
               <label className="text-sm text-text-light-primary dark:text-text-primary font-medium">
@@ -503,73 +450,48 @@ export const ProxyDetailPage = () => {
               </select>
             </div>
             <Input
-              label="Proxy Secret"
-              value={form.proxySecret || ''}
-              onChange={e => handleChange('proxySecret', e.target.value)}
-              placeholder="Leave blank to keep current"
+              label="Default Server"
+              value={form.defaultServer || ''}
+              onChange={e => handleChange('defaultServer', e.target.value)}
+              placeholder="lobby-1"
             />
             <Input
-              label="Proxy ID"
-              value={form.proxyId || ''}
-              onChange={e => handleChange('proxyId', e.target.value)}
-              placeholder="proxy-1"
-            />
-            <Input
-              label="Proxy Region"
-              value={form.proxyRegion || ''}
-              onChange={e => handleChange('proxyRegion', e.target.value)}
-              placeholder="us-east"
-            />
-            <Input
-              label="Redis Host"
-              value={form.redisHost || 'localhost'}
-              onChange={e => handleChange('redisHost', e.target.value)}
-            />
-            <Input
-              label="Redis Port"
-              type="number"
-              value={form.redisPort ?? 6379}
-              onChange={e => handleChange('redisPort', Number(e.target.value))}
-            />
-            <Input
-              label="Redis Password"
-              type="password"
-              value={form.redisPassword || ''}
-              onChange={e => handleChange('redisPassword', e.target.value)}
-            />
-            <Input
-              label="Redis Database"
-              type="number"
-              value={form.redisDatabase ?? 0}
-              onChange={e => handleChange('redisDatabase', Number(e.target.value))}
-            />
-            <Input
-              label="Global Fallback Server"
-              value={form.globalFallbackServer || ''}
-              onChange={e => handleChange('globalFallbackServer', e.target.value)}
+              label="Fallback Server"
+              value={form.fallbackServer || ''}
+              onChange={e => handleChange('fallbackServer', e.target.value)}
               placeholder="server-name"
             />
-            <Input
-              label="Proxy Protocol Header Timeout (seconds)"
-              type="number"
-              value={form.proxyProtocol?.headerTimeoutSeconds ?? 5}
-              onChange={e => handleChange('proxyProtocol', {
-                ...(form.proxyProtocol || {}),
-                headerTimeoutSeconds: Number(e.target.value),
-              })}
-            />
+            <div className="md:col-span-2 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">Pool Enabled</p>
+              </div>
+              <input
+                type="checkbox"
+                className="w-5 h-5"
+                checked={form.poolEnabled ?? false}
+                onChange={(e) => handleChange('poolEnabled', e.target.checked)}
+              />
+            </div>
             <div className="md:col-span-2 flex flex-col gap-1">
               <label className="text-sm text-text-light-primary dark:text-text-primary font-medium">
-                Trusted Proxies (one per line)
+                Pool (JSON)
               </label>
               <textarea
-                className="bg-white dark:bg-primary-bg border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 min-h-[90px]"
-                value={(form.proxyProtocol?.trustedProxies || []).join('\n')}
-                onChange={(e) => handleChange('proxyProtocol', {
-                  ...(form.proxyProtocol || {}),
-                  trustedProxies: e.target.value.split('\n'),
-                })}
-                placeholder="127.0.0.1"
+                className="bg-white dark:bg-primary-bg border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 min-h-[120px]"
+                value={poolText}
+                onChange={(e) => setPoolText(e.target.value)}
+                placeholder='{"lobby":{"strategy":"round-robin","servers":["lobby-1","lobby-2"]}}'
+              />
+            </div>
+            <div className="md:col-span-2 flex flex-col gap-1">
+              <label className="text-sm text-text-light-primary dark:text-text-primary font-medium">
+                Routes (JSON)
+              </label>
+              <textarea
+                className="bg-white dark:bg-primary-bg border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 min-h-[120px]"
+                value={routesText}
+                onChange={(e) => setRoutesText(e.target.value)}
+                placeholder='[{"hostname":"lobby.example.com","target":"lobby"}]'
               />
             </div>
             <div className="flex items-center justify-between">
@@ -596,95 +518,18 @@ export const ProxyDetailPage = () => {
                 onChange={(e) => handleChange('debugMode', e.target.checked)}
               />
             </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">Passthrough Mode</p>
-                <p className="text-xs text-text-light-muted dark:text-text-muted">Forward all unknown packets</p>
-              </div>
-              <input
-                type="checkbox"
-                className="w-5 h-5"
-                checked={form.passthroughMode ?? false}
-                onChange={(e) => handleChange('passthroughMode', e.target.checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">Metrics Enabled</p>
-                <p className="text-xs text-text-light-muted dark:text-text-muted">Enable metrics server</p>
-              </div>
-              <input
-                type="checkbox"
-                className="w-5 h-5"
-                checked={form.metricsEnabled ?? true}
-                onChange={(e) => handleChange('metricsEnabled', e.target.checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">Cluster Enabled</p>
-                <p className="text-xs text-text-light-muted dark:text-text-muted">Enable multi-proxy coordination</p>
-              </div>
-              <input
-                type="checkbox"
-                className="w-5 h-5"
-                checked={form.clusterEnabled ?? false}
-                onChange={(e) => handleChange('clusterEnabled', e.target.checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">Redis SSL</p>
-              </div>
-              <input
-                type="checkbox"
-                className="w-5 h-5"
-                checked={form.redisSsl ?? false}
-                onChange={(e) => handleChange('redisSsl', e.target.checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">Fallback Enabled</p>
-              </div>
-              <input
-                type="checkbox"
-                className="w-5 h-5"
-                checked={form.fallbackEnabled ?? true}
-                onChange={(e) => handleChange('fallbackEnabled', e.target.checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">Proxy Protocol Enabled</p>
-              </div>
-              <input
-                type="checkbox"
-                className="w-5 h-5"
-                checked={form.proxyProtocol?.enabled ?? false}
-                onChange={(e) => handleChange('proxyProtocol', {
-                  ...(form.proxyProtocol || {}),
-                  enabled: e.target.checked,
-                })}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-text-light-primary dark:text-text-primary">Proxy Protocol Required</p>
-              </div>
-              <input
-                type="checkbox"
-                className="w-5 h-5"
-                checked={form.proxyProtocol?.required ?? true}
-                onChange={(e) => handleChange('proxyProtocol', {
-                  ...(form.proxyProtocol || {}),
-                  required: e.target.checked,
-                })}
-              />
-            </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setForm(parsedConfig)}>{t('servers.settings.reset')}</Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setForm(parsedConfig);
+                setPoolText(JSON.stringify(parsedConfig.pool || {}, null, 2));
+                setRoutesText(JSON.stringify(parsedConfig.routes || [], null, 2));
+              }}
+            >
+              {t('servers.settings.reset')}
+            </Button>
             <Button variant="primary" icon={<Save size={16} />} onClick={handleSave} disabled={saving}>
               {saving ? t('common.saving') : t('common.save')}
             </Button>
@@ -726,31 +571,6 @@ export const ProxyDetailPage = () => {
                           {getRoleBadge(member.role)}
                           {getStatusBadge(member.server.status)}
                         </div>
-                        {member.role !== 'proxy' && (
-                          <div className="mt-2">
-                            <p className="text-xs text-text-light-muted dark:text-text-muted mb-1">Fallback Server</p>
-                            <div className="flex items-center gap-4">
-                              <label className="flex items-center gap-2 text-sm text-text-light-primary dark:text-text-primary">
-                                <input
-                                  type="radio"
-                                  name={`fallback-${member.serverId}`}
-                                  checked={(form.backendFallbackServers?.[member.serverId] ?? false) === true}
-                                  onChange={() => handleBackendFallbackChange(member.serverId, true)}
-                                />
-                                true
-                              </label>
-                              <label className="flex items-center gap-2 text-sm text-text-light-primary dark:text-text-primary">
-                                <input
-                                  type="radio"
-                                  name={`fallback-${member.serverId}`}
-                                  checked={(form.backendFallbackServers?.[member.serverId] ?? false) === false}
-                                  onChange={() => handleBackendFallbackChange(member.serverId, false)}
-                                />
-                                false
-                              </label>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                     <Button
