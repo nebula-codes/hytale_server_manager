@@ -148,13 +148,6 @@ export class ProxyService {
       redisDatabase: rawConfig.redisDatabase ?? 0,
       fallbackEnabled: rawConfig.fallbackEnabled ?? false,
       globalFallbackServer: rawConfig.globalFallbackServer || '',
-      backendFallbackServers: rawConfig.backendFallbackServers || {},
-      proxyProtocol: {
-        enabled: rawConfig.proxyProtocol?.enabled ?? false,
-        required: rawConfig.proxyProtocol?.required ?? false,
-        headerTimeoutSeconds: rawConfig.proxyProtocol?.headerTimeoutSeconds ?? 5,
-        trustedProxies: rawConfig.proxyProtocol?.trustedProxies || [],
-      },
       ...rawConfig,
       backendFallbackServers: rawConfig.backendFallbackServers || {},
       // Keep nested defaults even when rawConfig.proxyProtocol is partially defined
