@@ -906,15 +906,25 @@ export class NetworkService {
       if (!dbServer) continue;
 
       const currentArgs = (dbServer.serverArgs || '').trim();
-      const requiredFlags = ['--auth-mode', 'insecure'];
-      const hasAllFlags = requiredFlags.every(flag => currentArgs.includes(flag));
-      if (hasAllFlags) continue;
+      const tokens = currentArgs.length > 0 ? currentArgs.split(/\s+/).filter(Boolean) : [];
+      const normalizedTokens: string[] = [];
 
-      const mergedArgs = [currentArgs, '--auth-mode insecure']
-        .filter(Boolean)
-        .join(' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+      // Remove any existing --auth-mode value so we can enforce exactly one value.
+      for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i];
+        if (token === '--auth-mode') {
+          i += 1; // Skip existing value token as well
+          continue;
+        }
+        normalizedTokens.push(token);
+      }
+
+      normalizedTokens.push('--auth-mode', 'insecure');
+      const mergedArgs = normalizedTokens.join(' ').replace(/\s+/g, ' ').trim();
+
+      if (mergedArgs === currentArgs) {
+        continue;
+      }
 
       await this.prisma.server.update({
         where: { id: server.id },
