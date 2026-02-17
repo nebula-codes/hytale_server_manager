@@ -342,6 +342,10 @@ export const ServersPage = () => {
   };
 
   const handleManageServers = (network: NetworkWithMembers) => {
+    if (network.networkType === 'proxy') {
+      navigate(`/proxies/${network.id}`);
+      return;
+    }
     setManagingNetwork(network);
   };
 

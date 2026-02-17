@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, Button, Badge, Input } from '../../components/ui';
-import { ArrowLeft, Save, Play, Square, RotateCw, Terminal } from 'lucide-react';
+import { ArrowLeft, Save, Play, Square, RotateCw, Terminal, Plus, Minus, Server, Users } from 'lucide-react';
 import api from '../../services/api';
 import { useToast } from '../../stores/toastStore';
 type NetworkType = 'logical' | 'proxy';
@@ -45,6 +45,12 @@ type NetworkStatus = {
   }[];
 };
 
+type UngroupedServer = {
+  id: string;
+  name: string;
+  status: string;
+};
+
 export const ProxyDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
@@ -54,11 +60,14 @@ export const ProxyDetailPage = () => {
 
   const [network, setNetwork] = useState<Network | null>(null);
   const [status, setStatus] = useState<NetworkStatus | null>(null);
+  const [ungroupedServers, setUngroupedServers] = useState<UngroupedServer[]>([]);
   const [form, setForm] = useState<ProxyConfig>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [starting, setStarting] = useState(false);
   const [stopping, setStopping] = useState(false);
+  const [addingServerId, setAddingServerId] = useState<string | null>(null);
+  const [removingServerId, setRemovingServerId] = useState<string | null>(null);
 
   const parsedConfig = useMemo<ProxyConfig>(() => {
     if (!network?.proxyConfig) return {};
@@ -72,17 +81,57 @@ export const ProxyDetailPage = () => {
     return network.proxyConfig || {};
   }, [network]);
 
+  const getStatusBadge = (value: string) => {
+    switch (value) {
+      case 'running':
+        return <Badge variant="success" size="sm">{t('networks.manage.status.running')}</Badge>;
+      case 'stopped':
+        return <Badge variant="default" size="sm">{t('networks.manage.status.stopped')}</Badge>;
+      case 'starting':
+        return <Badge variant="warning" size="sm">{t('networks.manage.status.starting')}</Badge>;
+      case 'stopping':
+        return <Badge variant="warning" size="sm">{t('networks.manage.status.stopping')}</Badge>;
+      default:
+        return <Badge variant="default" size="sm">{value}</Badge>;
+    }
+  };
+
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case 'proxy':
+        return <Badge variant="info" size="sm">{t('networks.manage.role.proxy')}</Badge>;
+      case 'backend':
+        return <Badge variant="warning" size="sm">{t('networks.manage.role.backend')}</Badge>;
+      default:
+        return <Badge variant="default" size="sm">{t('networks.manage.role.member')}</Badge>;
+    }
+  };
+
+  const refreshMembersData = async (networkId: string) => {
+    const [net, netStatus, ungrouped] = await Promise.all([
+      api.getNetwork<Network>(networkId),
+      api.getNetworkStatus<NetworkStatus>(networkId),
+      api.getUngroupedServers<UngroupedServer>(),
+    ]);
+
+    setNetwork(prev => (prev ? { ...net, proxyConfig: prev.proxyConfig } : net));
+    setStatus(netStatus);
+    setUngroupedServers(ungrouped);
+  };
+
   useEffect(() => {
     if (!id) return;
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [net, netStatus] = await Promise.all([
+        const [net, netStatus, ungrouped] = await Promise.all([
           api.getNetwork<Network>(id),
           api.getNetworkStatus<NetworkStatus>(id),
+          api.getUngroupedServers<UngroupedServer>(),
         ]);
         setNetwork(net);
         setStatus(netStatus);
+        setUngroupedServers(ungrouped);
       } catch (error: any) {
         toast.error(t('networks.toast.load_failed', { defaultValue: 'Failed to load proxy' }), error?.message);
         navigate('/servers');
@@ -159,6 +208,32 @@ export const ProxyDetailPage = () => {
       toast.error(t('networks.toast.stop_failed', { defaultValue: 'Failed to stop proxy' }), error?.message);
     } finally {
       setStopping(false);
+    }
+  };
+
+  const handleAddServer = async (serverId: string) => {
+    if (!id) return;
+    setAddingServerId(serverId);
+    try {
+      await api.addServerToNetwork(id, serverId, 'backend');
+      await refreshMembersData(id);
+    } catch (error: any) {
+      toast.error(t('networks.toast.save_failed', { defaultValue: 'Failed to save proxy settings' }), error?.message);
+    } finally {
+      setAddingServerId(null);
+    }
+  };
+
+  const handleRemoveServer = async (serverId: string) => {
+    if (!id) return;
+    setRemovingServerId(serverId);
+    try {
+      await api.removeServerFromNetwork(id, serverId);
+      await refreshMembersData(id);
+    } catch (error: any) {
+      toast.error(t('networks.toast.save_failed', { defaultValue: 'Failed to save proxy settings' }), error?.message);
+    } finally {
+      setRemovingServerId(null);
     }
   };
 
@@ -307,25 +382,103 @@ export const ProxyDetailPage = () => {
 
       <Card variant="glass">
         <CardHeader>
-          <CardTitle>{t('networks.detail.proxy.backends', { defaultValue: 'Backends' })}</CardTitle>
+          <CardTitle>{t('networks.manage.title', { name: network.name })}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {network.members.filter(m => m.role !== 'proxy').map(member => (
-            <div key={member.id} className="flex items-center justify-between bg-primary-bg-secondary rounded-lg px-3 py-2">
-              <div className="flex flex-col">
-                <span className="font-medium">{member.server.name}</span>
-                <span className="text-xs text-text-light-muted dark:text-text-muted">{member.serverId}</span>
-              </div>
-              <Badge variant={member.server.status === 'running' ? 'success' : 'default'}>
-                {member.server.status}
-              </Badge>
+        <CardContent className="space-y-6">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Users size={18} className="text-accent-primary" />
+              <h3 className="font-medium text-text-light-primary dark:text-text-primary">
+                {t('networks.manage.current_members', { count: network.members.length })}
+              </h3>
             </div>
-          ))}
-          {network.members.filter(m => m.role !== 'proxy').length === 0 && (
-            <p className="text-text-light-muted dark:text-text-muted text-sm">
-              {t('networks.detail.proxy.no_backends', { defaultValue: 'No backend servers linked yet.' })}
-            </p>
-          )}
+
+            {network.members.length === 0 ? (
+              <div className="text-center py-6 text-text-muted bg-gray-800/50 rounded-lg">
+                {t('networks.manage.empty')}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {network.members.map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Server size={16} className="text-text-muted" />
+                      <div>
+                        <span className="text-text-light-primary dark:text-text-primary">
+                          {member.server.name}
+                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          {getRoleBadge(member.role)}
+                          {getStatusBadge(member.server.status)}
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<Minus size={14} />}
+                      onClick={() => handleRemoveServer(member.serverId)}
+                      disabled={removingServerId === member.serverId}
+                      className="text-danger hover:bg-danger/10"
+                    >
+                      {removingServerId === member.serverId ? t('common.deleting') : t('common.remove')}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-gray-700" />
+
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Plus size={18} className="text-success" />
+              <h3 className="font-medium text-text-light-primary dark:text-text-primary">
+                {t('networks.manage.available', { count: ungroupedServers.length })}
+              </h3>
+            </div>
+
+            {ungroupedServers.length === 0 ? (
+              <div className="text-center py-6 text-text-muted bg-gray-800/50 rounded-lg">
+                {t('networks.manage.empty_available')}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {ungroupedServers.map((server) => (
+                  <div
+                    key={server.id}
+                    className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Server size={16} className="text-text-muted" />
+                      <div>
+                        <span className="text-text-light-primary dark:text-text-primary">
+                          {server.name}
+                        </span>
+                        <div className="mt-1">
+                          {getStatusBadge(server.status)}
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<Plus size={14} />}
+                      onClick={() => handleAddServer(server.id)}
+                      disabled={addingServerId === server.id}
+                      className="text-success hover:bg-success/10"
+                    >
+                      {addingServerId === server.id ? t('common.loading') : t('common.add')}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>

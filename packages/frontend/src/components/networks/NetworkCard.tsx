@@ -12,7 +12,6 @@ import {
   Settings,
   Trash2,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { Card, Button, Badge } from '../ui';
 import { NetworkServerRow } from './NetworkServerRow';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
@@ -138,13 +137,6 @@ export const NetworkCard = ({
                 {network.networkType}
               </Badge>
               {getStatusBadge()}
-              {network.networkType === 'proxy' && (
-                <Link to={`/proxies/${network.id}`} onClick={(e) => e.stopPropagation()}>
-                  <Button variant="secondary" size="sm">
-                    Open Proxy
-                  </Button>
-                </Link>
-              )}
             </div>
               <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
                 {t('networks.card.member_count', {
