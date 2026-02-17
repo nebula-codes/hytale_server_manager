@@ -10,8 +10,6 @@ import logger from '../utils/logger';
 
 export interface ProxyNetworkConfig {
   startOrder?: 'proxy_first' | 'backends_first';
-  javaPath?: string;
-  jvmArgs?: string;
   bindAddress?: string;
   bindPort?: number;
   publicAddress?: string;
@@ -66,7 +64,7 @@ interface ReleaseResponse {
 }
 
 interface AssetBundle {
-  proxyJarPath: string;
+  proxyBinaryPath: string;
   bridgeJarPath: string | null;
   bridgePacketsJarPath: string | null;
 }
@@ -143,17 +141,14 @@ export class ProxyService {
       await this.installBridgeComponents(backendServers, assets, config.proxySecret);
     }
 
-    const javaArgs = this.parseJvmArgs(config.jvmArgs);
-    // Use absolute jar path so runtime cwd does not matter
-    const args = [...javaArgs, '-jar', assets.proxyJarPath];
-    const javaPath = config.javaPath || 'java';
+    const { command, args } = await this.buildLaunchCommand(assets.proxyBinaryPath);
     const procEnv = {
       ...process.env,
       METRICS_PORT: (config.metricsPort ?? 0).toString(), // 0 lets OS choose a free port
     };
 
     logger.info(
-      `[ProxyService] Starting proxy for network ${networkId} with command: ${javaPath} ${args.join(' ')}`
+      `[ProxyService] Starting proxy for network ${networkId} with command: ${command} ${args.join(' ')}`
     );
 
     let childProcess: ChildProcess | ProxyPty;
@@ -163,7 +158,7 @@ export class ProxyService {
       // Lazy-require to keep optional and avoid type dependency
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const pty: any = require('node-pty');
-      childProcess = pty.spawn(javaPath, args, {
+      childProcess = pty.spawn(command, args, {
         name: 'xterm-256color',
         cols: 120,
         rows: 30,
@@ -174,7 +169,7 @@ export class ProxyService {
       logger.info('[ProxyService] node-pty detected, starting proxy with PTY for interactive console support');
     } catch (error) {
       logger.info('[ProxyService] node-pty unavailable, falling back to spawn (commands may be limited)');
-      childProcess = spawn(javaPath, args, {
+      childProcess = spawn(command, args, {
         cwd: runtimePath,
         stdio: ['pipe', 'pipe', 'pipe'],
         env: procEnv,
@@ -390,10 +385,10 @@ export class ProxyService {
     const bridgePacketsAsset = release.assets.find(asset => /^bridge-packets-.*\.jar$/i.test(asset.name));
 
     if (!proxyAsset) {
-      throw new Error('Could not find proxy binary in Numdrassl release');
+      throw new Error('Could not find proxy binary in OrbisProxy release');
     }
 
-    const proxyJarPath = await this.downloadAsset(cacheRoot, proxyAsset.name, proxyAsset.browser_download_url);
+    const proxyBinaryPath = await this.downloadAsset(cacheRoot, proxyAsset.name, proxyAsset.browser_download_url);
     const bridgeJarPath = bridgeAsset
       ? await this.downloadAsset(cacheRoot, bridgeAsset.name, bridgeAsset.browser_download_url)
       : null;
@@ -406,14 +401,14 @@ export class ProxyService {
     );
 
     return {
-      proxyJarPath,
+      proxyBinaryPath,
       bridgeJarPath,
       bridgePacketsJarPath,
     };
   }
 
   private async getRelease(version?: string): Promise<ReleaseResponse> {
-    const baseUrl = 'https://api.github.com/repos/Numdrassl/proxy/releases';
+    const baseUrl = 'https://api.github.com/repos/OrbisProxy/proxy/releases';
     const url = version
       ? `${baseUrl}/tags/${version.startsWith('v') ? version : `v${version}`}`
       : `${baseUrl}/latest`;
@@ -431,14 +426,14 @@ export class ProxyService {
         return this.getRelease(undefined);
       }
       const details = await response.text();
-      throw new Error(`Failed to fetch Numdrassl release${version ? ` for ${version}` : ''}: HTTP ${response.status} - ${details}`);
+      throw new Error(`Failed to fetch OrbisProxy release${version ? ` for ${version}` : ''}: HTTP ${response.status} - ${details}`);
     }
 
     return response.json() as Promise<ReleaseResponse>;
   }
 
   private async getReleaseExact(version: string): Promise<ReleaseResponse> {
-    const baseUrl = 'https://api.github.com/repos/Numdrassl/proxy/releases';
+    const baseUrl = 'https://api.github.com/repos/OrbisProxy/proxy/releases';
     const url = `${baseUrl}/tags/${version.startsWith('v') ? version : `v${version}`}`;
 
     const response = await fetch(url, {
@@ -450,7 +445,7 @@ export class ProxyService {
 
     if (!response.ok) {
       const details = await response.text();
-      throw new Error(`Failed to fetch exact Numdrassl release for ${version}: HTTP ${response.status} - ${details}`);
+      throw new Error(`Failed to fetch exact OrbisProxy release for ${version}: HTTP ${response.status} - ${details}`);
     }
 
     return response.json() as Promise<ReleaseResponse>;
@@ -586,13 +581,6 @@ export class ProxyService {
       };
       await fs.writeJson(bridgeConfigPath, bridgeConfig, { spaces: 2 });
     }
-  }
-
-  private parseJvmArgs(jvmArgs?: string): string[] {
-    if (!jvmArgs?.trim()) {
-      return ['-Xms512M', '-Xmx1024M'];
-    }
-    return jvmArgs.split(/\s+/).filter(Boolean);
   }
 
   private resolveBackendHost(host: string): string {
@@ -751,7 +739,7 @@ export class ProxyService {
 
   /**
    * Pick the best proxy asset for the current platform/arch.
-   * Prefers arch-specific builds when available, otherwise falls back to the first generic jar.
+   * Supports native binaries (preferred) and .jar artifacts as fallback.
    */
   private pickProxyAsset(assets: ReleaseAsset[]): ReleaseAsset | undefined {
     const arch = process.arch;
@@ -781,19 +769,57 @@ export class ProxyService {
     const platformKeys = platformKeywords[platform] || [platform];
 
     const matches = (asset: ReleaseAsset, keys: string[]) => keys.some(k => asset.name.toLowerCase().includes(k));
+    const proxyAssets = assets.filter(asset => this.isProxyRuntimeAsset(asset.name));
+    const runnableAssets = proxyAssets.filter(asset => !this.isArchiveAsset(asset.name));
 
     // Prefer platform+arch specific asset
-    const exact = assets.find(
-      a => /^proxy-.*\.jar$/i.test(a.name) && matches(a, archKeys) && matches(a, platformKeys)
-    );
+    const exact = runnableAssets.find(a => matches(a, archKeys) && matches(a, platformKeys));
     if (exact) return exact;
 
     // Then arch-specific
-    const archOnly = assets.find(a => /^proxy-.*\.jar$/i.test(a.name) && matches(a, archKeys));
+    const archOnly = runnableAssets.find(a => matches(a, archKeys));
     if (archOnly) return archOnly;
 
-    // Fallback generic
-    return assets.find(a => /^proxy-.*\.jar$/i.test(a.name));
+    // Then platform-specific
+    const platformOnly = runnableAssets.find(a => matches(a, platformKeys));
+    if (platformOnly) return platformOnly;
+
+    // Fallback generic runnable asset
+    return runnableAssets[0];
+  }
+
+  private isProxyRuntimeAsset(assetName: string): boolean {
+    const lower = assetName.toLowerCase();
+    if (!lower.includes('proxy')) return false;
+    if (lower.includes('bridge')) return false;
+    if (lower.includes('source') || lower.includes('src')) return false;
+    if (lower.endsWith('.sha256') || lower.endsWith('.sig') || lower.includes('checksum')) return false;
+    return true;
+  }
+
+  private isArchiveAsset(assetName: string): boolean {
+    const lower = assetName.toLowerCase();
+    return lower.endsWith('.zip') || lower.endsWith('.tar') || lower.endsWith('.tar.gz') || lower.endsWith('.tgz');
+  }
+
+  private async buildLaunchCommand(
+    proxyBinaryPath: string
+  ): Promise<{ command: string; args: string[] }> {
+    if (/\.jar$/i.test(proxyBinaryPath)) {
+      return {
+        command: 'java',
+        args: ['-Xms512M', '-Xmx1024M', '-jar', proxyBinaryPath],
+      };
+    }
+
+    if (process.platform !== 'win32') {
+      await fs.chmod(proxyBinaryPath, 0o755);
+    }
+
+    return {
+      command: proxyBinaryPath,
+      args: [],
+    };
   }
 
   private generateSecret(): string {

@@ -285,7 +285,7 @@ export const CreateNetworkModal = ({
                 size="sm"
                 onClick={() => setNetworkType('proxy')}
               >
-                {t('networks.create.network_type_proxy', { defaultValue: 'Proxy (Numdrassl)' })}
+                {t('networks.create.network_type_proxy', { defaultValue: 'Proxy (OrbisProxy)' })}
               </Button>
             </div>
           </div>

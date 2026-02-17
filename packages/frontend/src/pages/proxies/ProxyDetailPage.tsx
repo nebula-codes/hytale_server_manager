@@ -9,8 +9,6 @@ type NetworkType = 'logical' | 'proxy';
 
 type ProxyConfig = {
   startOrder?: 'proxy_first' | 'backends_first';
-  javaPath?: string;
-  jvmArgs?: string;
   bindAddress?: string;
   bindPort?: number;
   publicAddress?: string;
@@ -200,8 +198,6 @@ export const ProxyDetailPage = () => {
       privateKeyPath: parsedConfig.privateKeyPath || 'certs/server.key',
       maxConnections: parsedConfig.maxConnections ?? 1000,
       connectionTimeoutSeconds: parsedConfig.connectionTimeoutSeconds ?? 30,
-      javaPath: parsedConfig.javaPath || 'java',
-      jvmArgs: parsedConfig.jvmArgs || '',
       proxySecret: parsedConfig.proxySecret || '',
       debugMode: parsedConfig.debugMode ?? false,
       passthroughMode: parsedConfig.passthroughMode ?? false,
@@ -506,17 +502,6 @@ export const ProxyDetailPage = () => {
                 </option>
               </select>
             </div>
-            <Input
-              label="Java Path"
-              value={form.javaPath || 'java'}
-              onChange={e => handleChange('javaPath', e.target.value)}
-            />
-            <Input
-              label="JVM Args"
-              value={form.jvmArgs || ''}
-              onChange={e => handleChange('jvmArgs', e.target.value)}
-              placeholder="-Xms512M -Xmx1024M"
-            />
             <Input
               label="Proxy Secret"
               value={form.proxySecret || ''}

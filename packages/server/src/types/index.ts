@@ -282,8 +282,6 @@ export interface NetworkBackup {
 
 export interface ProxyConfig {
   startOrder?: 'proxy_first' | 'backends_first';
-  javaPath?: string;
-  jvmArgs?: string;
   bindAddress?: string;
   bindPort?: number;
   publicAddress?: string;

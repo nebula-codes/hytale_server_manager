@@ -1077,8 +1077,6 @@ class ApiService {
     proxyServerId?: string;
     proxyConfig?: {
       startOrder?: 'proxy_first' | 'backends_first';
-      javaPath?: string;
-      jvmArgs?: string;
       bindAddress?: string;
       bindPort?: number;
       publicAddress?: string;
@@ -1127,8 +1125,6 @@ class ApiService {
     proxyServerId?: string;
     proxyConfig?: {
       startOrder?: 'proxy_first' | 'backends_first';
-      javaPath?: string;
-      jvmArgs?: string;
       bindAddress?: string;
       bindPort?: number;
       publicAddress?: string;
