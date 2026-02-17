@@ -1115,8 +1115,7 @@ export class NetworkService {
 
     logger.info(
       `[NetworkService] Aligned proxy server ${proxyServer.name} version from ${proxyServer.version} to ${highestBackendVersion} for network ${networkId}.`
-      );
-    }
+    );
   }
 
   private normalizeProxyConfig(
@@ -1265,3 +1264,4 @@ export class NetworkService {
 
     return normalized;
   }
+}
