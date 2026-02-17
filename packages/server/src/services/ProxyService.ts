@@ -264,7 +264,7 @@ export class ProxyService {
   }
 
   /**
-   * Rewrite proxy.yml for a network without starting/stopping the proxy process.
+   * Rewrite proxy config for a network without starting/stopping the proxy process.
    */
   async syncProxyConfig(
     networkId: string,
@@ -460,7 +460,8 @@ export class ProxyService {
     backendServers: ProxyBackendServer[],
     config: Required<Pick<ProxyNetworkConfig, 'bindAddress' | 'bindPort' | 'proxySecret' | 'publicPort'>> & ProxyNetworkConfig
   ): Promise<void> {
-    const configPath = path.join(runtimePath, 'config', 'proxy.yml');
+    const configPath = path.join(runtimePath, 'config.yml');
+    const legacyConfigPath = path.join(runtimePath, 'config', 'proxy.yml');
     const publicAddress = config.publicAddress || config.bindAddress;
     const defaultServer = config.defaultServer || backendServers[0]?.name || '';
     const fallbackServer = config.fallbackServer || backendServers[1]?.name || defaultServer;
@@ -529,6 +530,11 @@ export class ProxyService {
     ].join('\n');
 
     await fs.writeFile(configPath, payload, 'utf8');
+
+    // Cleanup legacy path from previous implementation to avoid two diverging config files.
+    if (await fs.pathExists(legacyConfigPath)) {
+      await fs.remove(legacyConfigPath);
+    }
   }
 
   private async installBridgeComponents(
