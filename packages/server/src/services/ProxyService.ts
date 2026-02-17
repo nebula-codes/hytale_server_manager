@@ -418,13 +418,11 @@ export class ProxyService {
     const backendsBlock = backendServers
       .map((server, index) => {
         const host = this.resolveBackendHost(server.address);
-        const fallbackServer = config.backendFallbackServers?.[server.id] ?? false;
         return [
           '  - name: "' + server.name + '"',
           '    host: "' + host + '"',
           `    port: ${server.port}`,
           `    defaultServer: ${index === 0 ? 'true' : 'false'}`,
-          `    fallbackServer: ${fallbackServer}`,
         ].join('\n');
       })
       .join('\n\n');
@@ -447,25 +445,19 @@ export class ProxyService {
       `debugMode: ${config.debugMode ?? true}`,
       `passthroughMode: ${config.passthroughMode ?? false}`,
       '',
-      'metrics:',
-      `  enabled: ${config.metricsEnabled ?? true}`,
-      `  port: ${config.metricsPort ?? 0}`,
-      `  logIntervalSeconds: ${config.metricsLogIntervalSeconds ?? 60}`,
+      `metricsEnabled: ${config.metricsEnabled ?? true}`,
+      `metricsPort: ${config.metricsPort ?? 0}`,
+      `metricsLogIntervalSeconds: ${config.metricsLogIntervalSeconds ?? 60}`,
       '',
-      'cluster:',
-      `  enabled: ${config.clusterEnabled ?? false}`,
-      `  proxyId: "${config.proxyId || ''}"`,
-      `  region: "${config.proxyRegion || ''}"`,
-      '  redis:',
-      `    host: "${config.redisHost || 'localhost'}"`,
-      `    port: ${config.redisPort ?? 6379}`,
-      `    password: "${config.redisPassword || ''}"`,
-      `    ssl: ${config.redisSsl ?? false}`,
-      `    database: ${config.redisDatabase ?? 0}`,
+      `clusterEnabled: ${config.clusterEnabled ?? false}`,
+      `proxyId: ${config.proxyId ? `"${config.proxyId}"` : 'null'}`,
+      `proxyRegion: "${config.proxyRegion || 'default'}"`,
       '',
-      'fallback:',
-      `  enabled: ${config.fallbackEnabled ?? false}`,
-      `  globalFallbackServer: ${config.globalFallbackServer ? `"${config.globalFallbackServer}"` : 'null'}`,
+      `redisHost: "${config.redisHost || 'localhost'}"`,
+      `redisPort: ${config.redisPort ?? 6379}`,
+      `redisPassword: ${config.redisPassword ? `"${config.redisPassword}"` : 'null'}`,
+      `redisSsl: ${config.redisSsl ?? false}`,
+      `redisDatabase: ${config.redisDatabase ?? 0}`,
       '',
       'proxyProtocol:',
       `  enabled: ${config.proxyProtocol?.enabled ?? false}`,
