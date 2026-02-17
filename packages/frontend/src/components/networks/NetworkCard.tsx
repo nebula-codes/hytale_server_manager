@@ -12,6 +12,7 @@ import {
   Settings,
   Trash2,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Card, Button, Badge } from '../ui';
 import { NetworkServerRow } from './NetworkServerRow';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
@@ -129,15 +130,22 @@ export const NetworkCard = ({
 
             {/* Network Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-heading font-bold text-text-light-primary dark:text-text-primary truncate">
-                  {network.name}
-                </h3>
-                <Badge variant={network.networkType === 'proxy' ? 'info' : 'default'} size="sm">
-                  {network.networkType}
-                </Badge>
-                {getStatusBadge()}
-              </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-heading font-bold text-text-light-primary dark:text-text-primary truncate">
+                {network.name}
+              </h3>
+              <Badge variant={network.networkType === 'proxy' ? 'info' : 'default'} size="sm">
+                {network.networkType}
+              </Badge>
+              {getStatusBadge()}
+              {network.networkType === 'proxy' && (
+                <Link to={`/proxies/${network.id}`} onClick={(e) => e.stopPropagation()}>
+                  <Button variant="secondary" size="xs">
+                    Open Proxy
+                  </Button>
+                </Link>
+              )}
+            </div>
               <p className="text-sm text-text-light-muted dark:text-text-muted mt-1">
                 {t('networks.card.member_count', {
                   count: network.members.length
