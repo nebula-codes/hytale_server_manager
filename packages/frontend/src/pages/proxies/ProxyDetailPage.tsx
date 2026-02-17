@@ -280,7 +280,7 @@ export const ProxyDetailPage = () => {
             onClick={isRunning ? handleStop : handleStart}
             disabled={starting || stopping}
           >
-            {isRunning ? t('common.stop') : t('common.start')}
+            {isRunning ? t('servers.actions.stop') : t('servers.actions.start')}
           </Button>
           <Button
             variant="secondary"
@@ -289,7 +289,7 @@ export const ProxyDetailPage = () => {
             onClick={() => api.restartNetwork(id!)}
             disabled={starting || stopping}
           >
-            {t('common.restart')}
+            {t('servers.actions.restart')}
           </Button>
         </div>
       </div>
@@ -331,14 +331,20 @@ export const ProxyDetailPage = () => {
               onChange={e => handleChange('metricsPort', Number(e.target.value))}
             />
             <div className="flex flex-col gap-1">
-              <label className="text-sm text-text-light-primary dark:text-text-primary font-medium">Start Order</label>
+              <label className="text-sm text-text-light-primary dark:text-text-primary font-medium">
+                {t('networks.create.proxy_start_order', { defaultValue: 'Start Order' })}
+              </label>
               <select
                 className="bg-white dark:bg-primary-bg border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2"
                 value={form.startOrder || 'backends_first'}
                 onChange={e => handleChange('startOrder', e.target.value as ProxyConfig['startOrder'])}
               >
-                <option value="backends_first">Backends first</option>
-                <option value="proxy_first">Proxy first</option>
+                <option value="backends_first">
+                  {t('networks.create.proxy_start_order_backends', { defaultValue: 'Backends first' })}
+                </option>
+                <option value="proxy_first">
+                  {t('networks.create.proxy_start_order_proxy', { defaultValue: 'Proxy first' })}
+                </option>
               </select>
             </div>
             <Input
@@ -372,7 +378,7 @@ export const ProxyDetailPage = () => {
             </div>
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setForm(parsedConfig)}>{t('common.reset')}</Button>
+            <Button variant="secondary" onClick={() => setForm(parsedConfig)}>{t('servers.settings.reset')}</Button>
             <Button variant="primary" icon={<Save size={16} />} onClick={handleSave} disabled={saving}>
               {saving ? t('common.saving') : t('common.save')}
             </Button>
