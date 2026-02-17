@@ -83,27 +83,32 @@ export const ProxyDetailPage = () => {
         ]);
         setNetwork(net);
         setStatus(netStatus);
-        setForm({
-          startOrder: parsedConfig.startOrder || 'backends_first',
-          bindAddress: parsedConfig.bindAddress || '0.0.0.0',
-          bindPort: parsedConfig.bindPort || 45585,
-          publicAddress: parsedConfig.publicAddress || '',
-          publicPort: parsedConfig.publicPort || parsedConfig.bindPort || 45585,
-          javaPath: parsedConfig.javaPath || 'java',
-          jvmArgs: parsedConfig.jvmArgs || '',
-          proxySecret: parsedConfig.proxySecret || '',
-          autoInstallBridge: parsedConfig.autoInstallBridge !== false,
-          metricsPort: parsedConfig.metricsPort ?? 0,
-        });
       } catch (error: any) {
         toast.error(t('networks.toast.load_failed', { defaultValue: 'Failed to load proxy' }), error?.message);
-        navigate('/networks');
+        navigate('/servers');
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [id, navigate, t, toast, parsedConfig]);
+  }, [id, navigate, t, toast]);
+
+  useEffect(() => {
+    if (!network) return;
+
+    setForm({
+      startOrder: parsedConfig.startOrder || 'backends_first',
+      bindAddress: parsedConfig.bindAddress || '0.0.0.0',
+      bindPort: parsedConfig.bindPort || 45585,
+      publicAddress: parsedConfig.publicAddress || '',
+      publicPort: parsedConfig.publicPort || parsedConfig.bindPort || 45585,
+      javaPath: parsedConfig.javaPath || 'java',
+      jvmArgs: parsedConfig.jvmArgs || '',
+      proxySecret: parsedConfig.proxySecret || '',
+      autoInstallBridge: parsedConfig.autoInstallBridge !== false,
+      metricsPort: parsedConfig.metricsPort ?? 0,
+    });
+  }, [network, parsedConfig]);
 
   const handleChange = (field: keyof ProxyConfig, value: any) => {
     setForm(prev => ({ ...prev, [field]: value }));
