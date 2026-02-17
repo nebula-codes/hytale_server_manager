@@ -139,13 +139,14 @@ export class ProxyService {
     const javaArgs = this.parseJvmArgs(config.jvmArgs);
     // Use absolute jar path so runtime cwd does not matter
     const args = [...javaArgs, '-jar', assets.proxyJarPath];
+    const javaPath = config.javaPath || 'java';
     const procEnv = {
       ...process.env,
       METRICS_PORT: (config.metricsPort ?? 0).toString(), // 0 lets OS choose a free port
     };
 
     logger.info(
-      `[ProxyService] Starting proxy for network ${networkId} with command: ${config.javaPath} ${args.join(' ')}`
+      `[ProxyService] Starting proxy for network ${networkId} with command: ${javaPath} ${args.join(' ')}`
     );
 
     let childProcess: ChildProcess | ProxyPty;
@@ -155,7 +156,7 @@ export class ProxyService {
       // Lazy-require to keep optional and avoid type dependency
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const pty: any = require('node-pty');
-      childProcess = pty.spawn(config.javaPath, args, {
+      childProcess = pty.spawn(javaPath, args, {
         name: 'xterm-256color',
         cols: 120,
         rows: 30,
@@ -166,7 +167,7 @@ export class ProxyService {
       logger.info('[ProxyService] node-pty detected, starting proxy with PTY for interactive console support');
     } catch (error) {
       logger.info('[ProxyService] node-pty unavailable, falling back to spawn (commands may be limited)');
-      childProcess = spawn(config.javaPath, args, {
+      childProcess = spawn(javaPath, args, {
         cwd: runtimePath,
         stdio: ['pipe', 'pipe', 'pipe'],
         env: procEnv,
