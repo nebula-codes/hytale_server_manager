@@ -596,6 +596,7 @@ export interface NetworkStatus {
     serverName: string;
     status: string;
     version?: string;
+    bridgeStatus?: 'ok' | 'pending_restart';
     cpuUsage?: number;
     memoryUsage?: number;
     playerCount?: number;

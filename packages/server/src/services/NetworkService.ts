@@ -1,4 +1,6 @@
 import { PrismaClient, ServerNetwork as PrismaNetwork } from '@prisma/client';
+import fs from 'fs-extra';
+import path from 'path';
 import { ServerService } from './ServerService';
 import { BackupService } from './BackupService';
 import { ProxyService, ProxyNetworkConfig, ProxyBackendServer } from './ProxyService';
@@ -358,6 +360,9 @@ export class NetworkService {
       this.ensureUniformBackendVersion(backendServers);
 
       await this.ensureBackendServerArgs(backendServers);
+      if (proxyConfig.autoInstallBridge !== false) {
+        await this.bootstrapBackendBridgeConfigs(backendServers);
+      }
 
       if (startOrder === 'backends_first') {
         // Start backends first
@@ -506,16 +511,39 @@ export class NetworkService {
       serverName: string;
       status: string;
       version?: string;
+      bridgeStatus?: 'ok' | 'pending_restart';
       cpuUsage?: number;
       memoryUsage?: number;
       playerCount?: number;
     }[] = [];
+    const proxyConfig = network.networkType === 'proxy' ? this.parseProxyConfig(network.proxyConfig) : {};
+    const expectedProxySecret = proxyConfig.proxySecret?.trim();
+    const memberRuntimeConfigs = network.networkType === 'proxy'
+      ? await this.prisma.server.findMany({
+          where: { id: { in: network.members.map(member => member.serverId) } },
+          select: {
+            id: true,
+            serverPath: true,
+            serverArgs: true,
+          },
+        })
+      : [];
+    const runtimeConfigByServerId = new Map(
+      memberRuntimeConfigs.map((entry) => [entry.id, entry])
+    );
 
     for (const member of network.members) {
       try {
         const status = await this.serverService.getServerStatus(member.serverId);
         let cpuUsage = 0;
         let memoryUsage = 0;
+        const bridgeStatus = network.networkType === 'proxy' && member.role !== 'proxy'
+          ? await this.evaluateBackendBridgeStatus(
+              runtimeConfigByServerId.get(member.serverId),
+              status.status,
+              expectedProxySecret
+            )
+          : undefined;
 
         // Get metrics if server is running
         if (status.status === 'running') {
@@ -533,6 +561,7 @@ export class NetworkService {
           serverName: member.server.name,
           status: status.status,
           version: member.server.version,
+          bridgeStatus,
           cpuUsage,
           memoryUsage,
           playerCount: status.playerCount,
@@ -543,6 +572,7 @@ export class NetworkService {
           serverName: member.server.name,
           status: 'unknown',
           version: member.server.version,
+          bridgeStatus: network.networkType === 'proxy' && member.role !== 'proxy' ? 'pending_restart' : undefined,
           cpuUsage: 0,
           memoryUsage: 0,
           playerCount: 0,
@@ -589,6 +619,60 @@ export class NetworkService {
       stoppedServers: stoppedCount,
       memberStatuses,
     };
+  }
+
+  private hasInsecureAuthMode(serverArgs: string | null | undefined): boolean {
+    const tokens = (serverArgs || '').split(/\s+/).filter(Boolean);
+    for (let i = 0; i < tokens.length; i++) {
+      if (tokens[i] !== '--auth-mode') {
+        continue;
+      }
+      return tokens[i + 1] === 'insecure';
+    }
+    return false;
+  }
+
+  private async evaluateBackendBridgeStatus(
+    runtimeConfig: { id: string; serverPath: string; serverArgs: string | null } | undefined,
+    runtimeStatus: string,
+    expectedProxySecret?: string
+  ): Promise<'ok' | 'pending_restart'> {
+    if (!runtimeConfig) {
+      return 'pending_restart';
+    }
+
+    const modsPath = path.join(runtimeConfig.serverPath, 'mods');
+    const bridgeConfigPath = path.join(modsPath, 'OrbisProxy_OrbisProxy', 'config.json');
+    const hasAuthArg = this.hasInsecureAuthMode(runtimeConfig.serverArgs);
+
+    let hasBackendMod = false;
+    try {
+      const mods = await fs.readdir(modsPath);
+      hasBackendMod = mods.some((fileName) =>
+        /\.jar$/i.test(fileName) &&
+        (/orbisproxy/i.test(fileName) || /^bridge-/i.test(fileName))
+      );
+    } catch {
+      hasBackendMod = false;
+    }
+
+    let hasMatchingSecret = false;
+    if (await fs.pathExists(bridgeConfigPath)) {
+      try {
+        const bridgeConfig = await fs.readJson(bridgeConfigPath) as { SecretKey?: unknown };
+        const secret = typeof bridgeConfig?.SecretKey === 'string' ? bridgeConfig.SecretKey.trim() : '';
+        hasMatchingSecret = expectedProxySecret ? secret === expectedProxySecret : secret.length > 0;
+      } catch {
+        hasMatchingSecret = false;
+      }
+    }
+
+    const ready = hasAuthArg && hasBackendMod && hasMatchingSecret;
+    if (ready) {
+      return 'ok';
+    }
+
+    return runtimeStatus === 'running' ? 'pending_restart' : 'pending_restart';
   }
 
   async getNetworkMetrics(networkId: string): Promise<AggregatedMetrics> {
@@ -931,6 +1015,69 @@ export class NetworkService {
         data: { serverArgs: mergedArgs },
       });
     }
+  }
+
+  private async bootstrapBackendBridgeConfigs(backendServers: ProxyBackendServer[]): Promise<void> {
+    for (const server of backendServers) {
+      const bridgeConfigPath = path.join(server.serverPath, 'mods', 'OrbisProxy_OrbisProxy', 'config.json');
+      if (await fs.pathExists(bridgeConfigPath)) {
+        continue;
+      }
+
+      const dbServer = await this.prisma.server.findUnique({
+        where: { id: server.id },
+        select: { status: true, name: true },
+      });
+
+      if (!dbServer) {
+        continue;
+      }
+
+      if (dbServer.status !== 'stopped') {
+        logger.warn(
+          `[NetworkService] Bridge bootstrap skipped for backend ${dbServer.name}: server is ${dbServer.status} and ${bridgeConfigPath} does not exist yet.`
+        );
+        continue;
+      }
+
+      logger.info(
+        `[NetworkService] Bootstrapping backend mod files for ${dbServer.name} (start once / stop once).`
+      );
+
+      let started = false;
+      try {
+        await this.serverService.startServer(server.id);
+        started = true;
+        await this.waitForFile(bridgeConfigPath, 15000, 500);
+      } catch (error) {
+        logger.warn(
+          `[NetworkService] Backend bootstrap failed for ${dbServer.name}; continuing with managed bridge config write.`,
+          error
+        );
+      } finally {
+        if (started) {
+          try {
+            await this.serverService.stopServer(server.id);
+          } catch (stopError) {
+            logger.warn(
+              `[NetworkService] Failed to stop backend ${dbServer.name} after bridge bootstrap.`,
+              stopError
+            );
+          }
+        }
+      }
+    }
+  }
+
+  private async waitForFile(filePath: string, timeoutMs: number, intervalMs: number): Promise<boolean> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      if (await fs.pathExists(filePath)) {
+        return true;
+      }
+      await new Promise(resolve => setTimeout(resolve, intervalMs));
+    }
+    return false;
   }
 
   private ensureUniformBackendVersion(backendServers: ProxyBackendServer[]): string | undefined {

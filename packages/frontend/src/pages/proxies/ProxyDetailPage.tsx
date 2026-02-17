@@ -74,6 +74,7 @@ type NetworkStatus = {
     serverId: string;
     status: string;
     version?: string;
+    bridgeStatus?: 'ok' | 'pending_restart';
   }[];
 };
 
@@ -734,35 +735,45 @@ export const ProxyDetailPage = () => {
               </div>
             ) : (
               <div className="space-y-2">
-                {network.members.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Server size={16} className="text-text-muted" />
-                      <div>
-                        <span className="text-text-light-primary dark:text-text-primary">
-                          {member.server.name}
-                        </span>
-                        <div className="flex items-center gap-2 mt-1">
-                          {getRoleBadge(member.role)}
-                          {getStatusBadge(member.server.status)}
+                {network.members.map((member) => {
+                  const memberStatus = status?.memberStatuses?.find((entry) => entry.serverId === member.serverId);
+                  const bridgeStatus = memberStatus?.bridgeStatus;
+                  return (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Server size={16} className="text-text-muted" />
+                        <div>
+                          <span className="text-text-light-primary dark:text-text-primary">
+                            {member.server.name}
+                          </span>
+                          <div className="flex items-center gap-2 mt-1">
+                            {getRoleBadge(member.role)}
+                            {getStatusBadge(memberStatus?.status || member.server.status)}
+                            {member.role !== 'proxy' && bridgeStatus === 'ok' && (
+                              <Badge variant="success" size="sm">Bridge: OK</Badge>
+                            )}
+                            {member.role !== 'proxy' && bridgeStatus === 'pending_restart' && (
+                              <Badge variant="warning" size="sm">Bridge: restart required</Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={<Minus size={14} />}
+                        onClick={() => handleRemoveServer(member.serverId)}
+                        disabled={removingServerId === member.serverId}
+                        className="text-danger hover:bg-danger/10"
+                      >
+                        {removingServerId === member.serverId ? t('common.deleting') : t('common.remove')}
+                      </Button>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={<Minus size={14} />}
-                      onClick={() => handleRemoveServer(member.serverId)}
-                      disabled={removingServerId === member.serverId}
-                      className="text-danger hover:bg-danger/10"
-                    >
-                      {removingServerId === member.serverId ? t('common.deleting') : t('common.remove')}
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
