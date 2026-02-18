@@ -363,6 +363,7 @@ export class ProxyService {
     const release = await this.getRelease(version);
     const proxyAsset = this.pickProxyAsset(release.assets);
     const bridgeAsset = this.pickBackendModAsset(release.assets);
+    const cachedBridgeJarPath = bridgeAsset ? null : await this.getCachedBackendModPath();
     const bridgePacketsAsset = release.assets.find(asset => /^bridge-packets-.*\.jar$/i.test(asset.name));
 
     if (!proxyAsset) {
@@ -372,7 +373,10 @@ export class ProxyService {
     const proxyBinaryPath = await this.downloadAsset(cacheRoot, proxyAsset.name, proxyAsset.browser_download_url);
     const bridgeJarPath = bridgeAsset
       ? await this.downloadAsset(cacheRoot, bridgeAsset.name, bridgeAsset.browser_download_url)
-      : null;
+      : (cachedBridgeJarPath || null);
+    if (!bridgeAsset && bridgeJarPath) {
+      logger.info(`[ProxyService] Using cached backend mod asset: ${bridgeJarPath}`);
+    }
     // Keep download support for bridge-packets for compatibility, but Orbis backend setup does not require it.
     if (bridgePacketsAsset) {
       await this.downloadAsset(cacheRoot, bridgePacketsAsset.name, bridgePacketsAsset.browser_download_url);
@@ -544,7 +548,10 @@ export class ProxyService {
   ): Promise<void> {
     const hasBridge = Boolean(assets.bridgeJarPath);
     if (!hasBridge) {
-      throw new Error('OrbisProxy backend mod asset not found in release; cannot auto-install backend mod');
+      throw new Error(
+        'OrbisProxy backend mod asset not found (release/cache); cannot auto-install backend mod. ' +
+        'Install backend mod manually in each backend mods/ folder.'
+      );
     }
 
     for (const server of backendServers) {
@@ -591,6 +598,33 @@ export class ProxyService {
     if (fallbackMatch) return fallbackMatch;
 
     return undefined;
+  }
+
+  private async getCachedBackendModPath(): Promise<string | undefined> {
+    const candidateNames: string[] = [];
+    try {
+      const files = await fs.readdir(this.cachePath);
+      for (const name of files) {
+        const lower = name.toLowerCase();
+        if (!lower.endsWith('.jar')) continue;
+        if (lower.includes('bridge-packets')) continue;
+        if (this.isProxyRuntimeAsset(lower)) continue;
+        if (lower.includes('bridge') || lower.includes('orbisproxy') || lower.includes('backend') || lower.includes('mod')) {
+          candidateNames.push(name);
+        }
+      }
+    } catch {
+      return undefined;
+    }
+
+    if (candidateNames.length === 0) {
+      return undefined;
+    }
+
+    candidateNames.sort((a, b) => b.localeCompare(a));
+    const best = candidateNames[0];
+    const fullPath = path.join(this.cachePath, best);
+    return (await fs.pathExists(fullPath)) ? fullPath : undefined;
   }
 
   private resolveBackendHost(host: string): string {
