@@ -821,12 +821,19 @@ export class ProxyService {
   private buildEffectiveConfig(
     rawConfig: ProxyNetworkConfig
   ): Required<Pick<ProxyNetworkConfig, 'bindAddress' | 'bindPort' | 'publicPort' | 'proxySecret'>> & ProxyNetworkConfig {
+    const sanitizedSecret = typeof rawConfig.proxySecret === 'string'
+      ? rawConfig.proxySecret.trim()
+      : '';
+    const proxySecret = sanitizedSecret && sanitizedSecret !== 'undefined' && sanitizedSecret !== 'null'
+      ? sanitizedSecret
+      : this.generateSecret();
+
     return {
       version: rawConfig.version ?? 3,
       bindAddress: rawConfig.bindAddress || '0.0.0.0',
       bindPort: rawConfig.bindPort || 24322,
       publicPort: rawConfig.publicPort || rawConfig.bindPort || 24322,
-      proxySecret: rawConfig.proxySecret || this.generateSecret(),
+      proxySecret,
       debugMode: rawConfig.debugMode ?? false,
       defaultServer: rawConfig.defaultServer || '',
       fallbackServer: rawConfig.fallbackServer || '',

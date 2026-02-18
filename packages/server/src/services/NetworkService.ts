@@ -1289,6 +1289,9 @@ export class NetworkService {
         throw new Error(`Invalid proxy config: ${field} must be a string`);
       }
       const trimmed = value.trim();
+      if (trimmed === 'undefined' || trimmed === 'null') {
+        return undefined;
+      }
       return trimmed.length > 0 ? trimmed : undefined;
     };
 
