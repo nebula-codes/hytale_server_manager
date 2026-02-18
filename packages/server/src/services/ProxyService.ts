@@ -362,7 +362,7 @@ export class ProxyService {
 
     const release = await this.getRelease(version);
     const proxyAsset = this.pickProxyAsset(release.assets);
-    const bridgeAsset = release.assets.find(asset => /^bridge-(?!packets).*\.jar$/i.test(asset.name));
+    const bridgeAsset = this.pickBackendModAsset(release.assets);
     const bridgePacketsAsset = release.assets.find(asset => /^bridge-packets-.*\.jar$/i.test(asset.name));
 
     if (!proxyAsset) {
@@ -544,9 +544,7 @@ export class ProxyService {
   ): Promise<void> {
     const hasBridge = Boolean(assets.bridgeJarPath);
     if (!hasBridge) {
-      logger.warn(
-        `[ProxyService] Bridge asset missing: bridge=${hasBridge}. Backends will not get OrbisProxy backend mod.`
-      );
+      throw new Error('OrbisProxy backend mod asset not found in release; cannot auto-install backend mod');
     }
 
     for (const server of backendServers) {
@@ -569,6 +567,30 @@ export class ProxyService {
       };
       await fs.writeJson(bridgeConfigPath, bridgeConfig, { spaces: 2 });
     }
+  }
+
+  private pickBackendModAsset(assets: ReleaseAsset[]): ReleaseAsset | undefined {
+    const jarAssets = assets.filter(asset => asset.name.toLowerCase().endsWith('.jar'));
+    if (jarAssets.length === 0) {
+      return undefined;
+    }
+
+    const strongMatch = jarAssets.find(asset => {
+      const lower = asset.name.toLowerCase();
+      if (lower.includes('bridge-packets')) return false;
+      return lower.includes('bridge') && !this.isProxyRuntimeAsset(lower);
+    });
+    if (strongMatch) return strongMatch;
+
+    const fallbackMatch = jarAssets.find(asset => {
+      const lower = asset.name.toLowerCase();
+      if (lower.includes('bridge-packets')) return false;
+      if (this.isProxyRuntimeAsset(lower)) return false;
+      return lower.includes('orbisproxy') || lower.includes('backend') || lower.includes('mod');
+    });
+    if (fallbackMatch) return fallbackMatch;
+
+    return undefined;
   }
 
   private resolveBackendHost(host: string): string {
