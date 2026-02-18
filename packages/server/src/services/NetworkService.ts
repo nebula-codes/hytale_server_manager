@@ -366,6 +366,7 @@ export class NetworkService {
       await this.ensureBackendServerArgs(backendServers);
       if (effectiveProxyConfig.autoInstallBridge !== false) {
         await this.proxyService.syncBridgeForBackends(backendServers, effectiveProxyConfig.proxySecret);
+        await this.verifyBackendSecretConfiguration(backendServers, effectiveProxyConfig.proxySecret);
         await this.bootstrapBackendBridgeConfigs(backendServers);
       }
 
@@ -646,7 +647,7 @@ export class NetworkService {
       return 'pending_restart';
     }
 
-    const modsPath = path.join(runtimeConfig.serverPath, 'mods');
+    const modsPath = await this.resolveBackendModsPath(runtimeConfig.serverPath);
     const bridgeConfigPath = path.join(modsPath, 'OrbisProxy_OrbisProxy', 'config.json');
     const hasAuthArg = this.hasInsecureAuthMode(runtimeConfig.serverArgs);
 
@@ -678,6 +679,21 @@ export class NetworkService {
     }
 
     return runtimeStatus === 'running' ? 'pending_restart' : 'pending_restart';
+  }
+
+  private async resolveBackendModsPath(serverPath: string): Promise<string> {
+    const root = path.resolve(serverPath);
+    const directJarPath = path.join(root, 'HytaleServer.jar');
+    if (await fs.pathExists(directJarPath)) {
+      return path.join(root, 'mods');
+    }
+
+    const nestedServerRoot = path.join(root, 'Server');
+    const nestedJarPath = path.join(nestedServerRoot, 'HytaleServer.jar');
+    if (await fs.pathExists(nestedJarPath) || await fs.pathExists(nestedServerRoot)) {
+      return path.join(nestedServerRoot, 'mods');
+    }
+    return path.join(root, 'mods');
   }
 
   async getNetworkMetrics(networkId: string): Promise<AggregatedMetrics> {
@@ -1024,7 +1040,8 @@ export class NetworkService {
 
   private async bootstrapBackendBridgeConfigs(backendServers: ProxyBackendServer[]): Promise<void> {
     for (const server of backendServers) {
-      const bridgeConfigPath = path.join(server.serverPath, 'mods', 'OrbisProxy_OrbisProxy', 'config.json');
+      const modsPath = await this.resolveBackendModsPath(server.serverPath);
+      const bridgeConfigPath = path.join(modsPath, 'OrbisProxy_OrbisProxy', 'config.json');
       if (await fs.pathExists(bridgeConfigPath)) {
         continue;
       }
@@ -1085,6 +1102,34 @@ export class NetworkService {
     return false;
   }
 
+  private async verifyBackendSecretConfiguration(
+    backendServers: ProxyBackendServer[],
+    expectedSecret: string
+  ): Promise<void> {
+    for (const server of backendServers) {
+      const modsPath = await this.resolveBackendModsPath(server.serverPath);
+      const bridgeConfigPath = path.join(modsPath, 'OrbisProxy_OrbisProxy', 'config.json');
+
+      if (!(await fs.pathExists(bridgeConfigPath))) {
+        throw new Error(`Backend ${server.name} is missing OrbisProxy config at ${bridgeConfigPath}`);
+      }
+
+      let bridgeConfig: { SecretKey?: unknown };
+      try {
+        bridgeConfig = await fs.readJson(bridgeConfigPath) as { SecretKey?: unknown };
+      } catch {
+        throw new Error(`Backend ${server.name} has an invalid OrbisProxy config file: ${bridgeConfigPath}`);
+      }
+
+      const actualSecret = typeof bridgeConfig.SecretKey === 'string'
+        ? bridgeConfig.SecretKey.trim()
+        : '';
+      if (actualSecret !== expectedSecret) {
+        throw new Error(`Backend ${server.name} SecretKey mismatch in ${bridgeConfigPath}`);
+      }
+    }
+  }
+
   private ensureUniformBackendVersion(backendServers: ProxyBackendServer[]): string | undefined {
     if (backendServers.length === 0) return undefined;
     const baseVersion = backendServers[0].version;
@@ -1123,6 +1168,7 @@ export class NetworkService {
 
     if (effectiveConfig.autoInstallBridge !== false) {
       await this.proxyService.syncBridgeForBackends(backendServers, effectiveConfig.proxySecret);
+      await this.verifyBackendSecretConfiguration(backendServers, effectiveConfig.proxySecret);
     }
 
     try {

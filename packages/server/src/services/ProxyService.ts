@@ -556,7 +556,7 @@ export class ProxyService {
 
     for (const server of backendServers) {
       const serverRoot = path.resolve(server.serverPath);
-      const modsPath = path.join(serverRoot, 'mods');
+      const modsPath = await this.resolveBackendModsPath(serverRoot);
       const modConfigDir = path.join(modsPath, 'OrbisProxy_OrbisProxy');
       await fs.ensureDir(modsPath);
       await fs.ensureDir(modConfigDir);
@@ -573,7 +573,27 @@ export class ProxyService {
         SecretKey: proxySecret,
       };
       await fs.writeJson(bridgeConfigPath, bridgeConfig, { spaces: 2 });
+      const savedConfig = await fs.readJson(bridgeConfigPath) as { SecretKey?: unknown };
+      const savedSecret = typeof savedConfig.SecretKey === 'string' ? savedConfig.SecretKey.trim() : '';
+      if (savedSecret !== proxySecret) {
+        throw new Error(`Failed to persist matching OrbisProxy SecretKey for backend ${server.name}`);
+      }
     }
+  }
+
+  private async resolveBackendModsPath(serverRoot: string): Promise<string> {
+    const directJarPath = path.join(serverRoot, 'HytaleServer.jar');
+    if (await fs.pathExists(directJarPath)) {
+      return path.join(serverRoot, 'mods');
+    }
+
+    const nestedServerRoot = path.join(serverRoot, 'Server');
+    const nestedJarPath = path.join(nestedServerRoot, 'HytaleServer.jar');
+    if (await fs.pathExists(nestedJarPath) || await fs.pathExists(nestedServerRoot)) {
+      return path.join(nestedServerRoot, 'mods');
+    }
+
+    return path.join(serverRoot, 'mods');
   }
 
   private pickBackendModAsset(assets: ReleaseAsset[]): ReleaseAsset | undefined {
