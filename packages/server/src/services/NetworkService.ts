@@ -365,9 +365,9 @@ export class NetworkService {
 
       await this.ensureBackendServerArgs(backendServers);
       if (effectiveProxyConfig.autoInstallBridge !== false) {
+        await this.bootstrapBackendBridgeConfigs(backendServers);
         await this.proxyService.syncBridgeForBackends(backendServers, effectiveProxyConfig.proxySecret);
         await this.verifyBackendSecretConfiguration(backendServers, effectiveProxyConfig.proxySecret);
-        await this.bootstrapBackendBridgeConfigs(backendServers);
       }
 
       if (startOrder === 'backends_first') {
@@ -665,8 +665,10 @@ export class NetworkService {
     let hasMatchingSecret = false;
     if (await fs.pathExists(bridgeConfigPath)) {
       try {
-        const bridgeConfig = await fs.readJson(bridgeConfigPath) as { SecretKey?: unknown };
-        const secret = typeof bridgeConfig?.SecretKey === 'string' ? bridgeConfig.SecretKey.trim() : '';
+        const bridgeConfig = await fs.readJson(bridgeConfigPath) as { SecretKey?: unknown; Secret?: unknown };
+        const secretKeyValue = typeof bridgeConfig?.SecretKey === 'string' ? bridgeConfig.SecretKey.trim() : '';
+        const secretValue = typeof bridgeConfig?.Secret === 'string' ? bridgeConfig.Secret.trim() : '';
+        const secret = secretKeyValue || secretValue;
         hasMatchingSecret = expectedProxySecret ? secret === expectedProxySecret : secret.length > 0;
       } catch {
         hasMatchingSecret = false;
@@ -683,17 +685,14 @@ export class NetworkService {
 
   private async resolveBackendModsPath(serverPath: string): Promise<string> {
     const root = path.resolve(serverPath);
-    const directJarPath = path.join(root, 'HytaleServer.jar');
-    if (await fs.pathExists(directJarPath)) {
-      return path.join(root, 'mods');
-    }
-
     const nestedServerRoot = path.join(root, 'Server');
-    const nestedJarPath = path.join(nestedServerRoot, 'HytaleServer.jar');
-    if (await fs.pathExists(nestedJarPath) || await fs.pathExists(nestedServerRoot)) {
-      return path.join(nestedServerRoot, 'mods');
+    if (!(await fs.pathExists(nestedServerRoot))) {
+      throw new Error(
+        `Expected backend runtime folder "${nestedServerRoot}" was not found. ` +
+        'Backends must use servers/<name>/Server layout.'
+      );
     }
-    return path.join(root, 'mods');
+    return path.join(nestedServerRoot, 'mods');
   }
 
   async getNetworkMetrics(networkId: string): Promise<AggregatedMetrics> {
@@ -1109,23 +1108,22 @@ export class NetworkService {
     for (const server of backendServers) {
       const modsPath = await this.resolveBackendModsPath(server.serverPath);
       const bridgeConfigPath = path.join(modsPath, 'OrbisProxy_OrbisProxy', 'config.json');
-
       if (!(await fs.pathExists(bridgeConfigPath))) {
         throw new Error(`Backend ${server.name} is missing OrbisProxy config at ${bridgeConfigPath}`);
       }
 
-      let bridgeConfig: { SecretKey?: unknown };
+      let bridgeConfig: { SecretKey?: unknown; Secret?: unknown };
       try {
-        bridgeConfig = await fs.readJson(bridgeConfigPath) as { SecretKey?: unknown };
+        bridgeConfig = await fs.readJson(bridgeConfigPath) as { SecretKey?: unknown; Secret?: unknown };
       } catch {
         throw new Error(`Backend ${server.name} has an invalid OrbisProxy config file: ${bridgeConfigPath}`);
       }
 
-      const actualSecret = typeof bridgeConfig.SecretKey === 'string'
-        ? bridgeConfig.SecretKey.trim()
-        : '';
+      const secretKeyValue = typeof bridgeConfig.SecretKey === 'string' ? bridgeConfig.SecretKey.trim() : '';
+      const secretValue = typeof bridgeConfig.Secret === 'string' ? bridgeConfig.Secret.trim() : '';
+      const actualSecret = secretKeyValue || secretValue;
       if (actualSecret !== expectedSecret) {
-        throw new Error(`Backend ${server.name} SecretKey mismatch in ${bridgeConfigPath}`);
+        throw new Error(`Backend ${server.name} Secret mismatch in ${bridgeConfigPath}`);
       }
     }
   }

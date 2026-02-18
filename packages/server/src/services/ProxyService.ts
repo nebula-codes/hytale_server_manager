@@ -570,30 +570,29 @@ export class ProxyService {
 
       const bridgeConfigPath = path.join(modConfigDir, 'config.json');
       const bridgeConfig = {
+        Secret: proxySecret,
         SecretKey: proxySecret,
       };
       await fs.writeJson(bridgeConfigPath, bridgeConfig, { spaces: 2 });
-      const savedConfig = await fs.readJson(bridgeConfigPath) as { SecretKey?: unknown };
-      const savedSecret = typeof savedConfig.SecretKey === 'string' ? savedConfig.SecretKey.trim() : '';
-      if (savedSecret !== proxySecret) {
+      const savedConfig = await fs.readJson(bridgeConfigPath) as { SecretKey?: unknown; Secret?: unknown };
+      const savedSecretKey = typeof savedConfig.SecretKey === 'string' ? savedConfig.SecretKey.trim() : '';
+      const savedSecret = typeof savedConfig.Secret === 'string' ? savedConfig.Secret.trim() : '';
+      const effectiveSavedSecret = savedSecret || savedSecretKey;
+      if (effectiveSavedSecret !== proxySecret) {
         throw new Error(`Failed to persist matching OrbisProxy SecretKey for backend ${server.name}`);
       }
     }
   }
 
   private async resolveBackendModsPath(serverRoot: string): Promise<string> {
-    const directJarPath = path.join(serverRoot, 'HytaleServer.jar');
-    if (await fs.pathExists(directJarPath)) {
-      return path.join(serverRoot, 'mods');
-    }
-
     const nestedServerRoot = path.join(serverRoot, 'Server');
-    const nestedJarPath = path.join(nestedServerRoot, 'HytaleServer.jar');
-    if (await fs.pathExists(nestedJarPath) || await fs.pathExists(nestedServerRoot)) {
-      return path.join(nestedServerRoot, 'mods');
+    if (!(await fs.pathExists(nestedServerRoot))) {
+      throw new Error(
+        `Expected backend runtime folder "${nestedServerRoot}" was not found. ` +
+        'Backends must use servers/<name>/Server layout.'
+      );
     }
-
-    return path.join(serverRoot, 'mods');
+    return path.join(nestedServerRoot, 'mods');
   }
 
   private pickBackendModAsset(assets: ReleaseAsset[]): ReleaseAsset | undefined {
