@@ -829,6 +829,7 @@ export class ProxyService {
       : this.generateSecret();
 
     return {
+      ...rawConfig,
       version: rawConfig.version ?? 3,
       bindAddress: rawConfig.bindAddress || '0.0.0.0',
       bindPort: rawConfig.bindPort || 24322,
@@ -840,7 +841,6 @@ export class ProxyService {
       poolEnabled: rawConfig.poolEnabled ?? false,
       pool: rawConfig.pool || {},
       routes: rawConfig.routes || [],
-      ...rawConfig,
       publicAddress: rawConfig.publicAddress || 'play.myserver.com',
       certificatePath: rawConfig.certificatePath?.trim() || 'certs/server.crt',
       privateKeyPath: rawConfig.privateKeyPath?.trim() || 'certs/server.key',

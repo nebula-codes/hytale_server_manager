@@ -353,14 +353,19 @@ export class NetworkService {
     const results: ServerOperationResult[] = [];
 
     if (network.networkType === 'proxy') {
-      const proxyConfig = this.parseProxyConfig(network.proxyConfig);
-      const startOrder = proxyConfig.startOrder || 'backends_first';
       const backendMembers = network.members.filter(m => m.role !== 'proxy');
       const backendServers = await this.loadBackendServers(backendMembers.map(member => member.serverId));
       this.ensureUniformBackendVersion(backendServers);
+      const backendNames = new Set(backendServers.map(server => server.name));
+      const parsedProxyConfig = this.parseProxyConfig(network.proxyConfig);
+      const validatedProxyConfig = this.normalizeProxyConfig(parsedProxyConfig, backendNames);
+      const effectiveProxyConfig = await this.proxyService.syncProxyConfig(network.id, backendServers, validatedProxyConfig);
+      await this.persistProxyConfig(network.id, effectiveProxyConfig);
+      const startOrder = effectiveProxyConfig.startOrder || 'backends_first';
 
       await this.ensureBackendServerArgs(backendServers);
-      if (proxyConfig.autoInstallBridge !== false) {
+      if (effectiveProxyConfig.autoInstallBridge !== false) {
+        await this.proxyService.syncBridgeForBackends(backendServers, effectiveProxyConfig.proxySecret);
         await this.bootstrapBackendBridgeConfigs(backendServers);
       }
 
@@ -370,10 +375,10 @@ export class NetworkService {
           results.push(await this.startServerSafe(member.serverId, member.server.name));
         }
         // Then start proxy process
-        results.push(await this.startProxySafe(network.id, network.name, backendServers, proxyConfig));
+        results.push(await this.startProxySafe(network.id, network.name, backendServers, effectiveProxyConfig));
       } else {
         // Start proxy first
-        results.push(await this.startProxySafe(network.id, network.name, backendServers, proxyConfig));
+        results.push(await this.startProxySafe(network.id, network.name, backendServers, effectiveProxyConfig));
         // Then start backends
         for (const member of backendMembers) {
           results.push(await this.startServerSafe(member.serverId, member.server.name));
@@ -1114,6 +1119,7 @@ export class NetworkService {
     await this.reconcileProxyServerVersion(network.id, network.proxyServerId, backendServers);
 
     const effectiveConfig = await this.proxyService.syncProxyConfig(network.id, backendServers, validatedProxyConfig);
+    await this.persistProxyConfig(network.id, effectiveConfig);
 
     if (effectiveConfig.autoInstallBridge !== false) {
       await this.proxyService.syncBridgeForBackends(backendServers, effectiveConfig.proxySecret);
@@ -1129,6 +1135,13 @@ export class NetworkService {
     } catch (error) {
       logger.warn(`[NetworkService] Failed to restart proxy after version change for network ${network.id}:`, error);
     }
+  }
+
+  private async persistProxyConfig(networkId: string, config: ProxyNetworkConfig): Promise<void> {
+    await this.prisma.serverNetwork.update({
+      where: { id: networkId },
+      data: { proxyConfig: JSON.stringify(config) },
+    });
   }
 
   private async withVersionAlignment(network: NetworkWithMembers): Promise<NetworkWithMembers & { versionAlignment: NetworkVersionAlignment | null }> {
