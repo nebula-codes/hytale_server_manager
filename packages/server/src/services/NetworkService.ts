@@ -358,7 +358,8 @@ export class NetworkService {
       this.ensureUniformBackendVersion(backendServers);
       const backendNames = new Set(backendServers.map(server => server.name));
       const parsedProxyConfig = this.parseProxyConfig(network.proxyConfig);
-      const validatedProxyConfig = this.normalizeProxyConfig(parsedProxyConfig, backendNames);
+      const prunedProxyConfig = this.pruneProxyConfigForBackends(parsedProxyConfig, backendNames);
+      const validatedProxyConfig = this.normalizeProxyConfig(prunedProxyConfig, backendNames);
       const effectiveProxyConfig = await this.proxyService.syncProxyConfig(network.id, backendServers, validatedProxyConfig);
       await this.persistProxyConfig(network.id, effectiveProxyConfig);
       const startOrder = effectiveProxyConfig.startOrder || 'backends_first';
@@ -1157,8 +1158,10 @@ export class NetworkService {
     const proxyConfig = this.parseProxyConfig(network.proxyConfig);
     const backendMembers = network.members.filter(member => member.role !== 'proxy');
     const backendServers = await this.loadBackendServers(backendMembers.map(member => member.serverId));
+    await this.ensureBackendServerArgs(backendServers);
     const backendNames = new Set(backendServers.map(server => server.name));
-    const validatedProxyConfig = this.normalizeProxyConfig(proxyConfig, backendNames);
+    const prunedProxyConfig = this.pruneProxyConfigForBackends(proxyConfig, backendNames);
+    const validatedProxyConfig = this.normalizeProxyConfig(prunedProxyConfig, backendNames);
     await this.reconcileProxyServerVersion(network.id, network.proxyServerId, backendServers);
 
     const effectiveConfig = await this.proxyService.syncProxyConfig(network.id, backendServers, validatedProxyConfig);
@@ -1186,6 +1189,40 @@ export class NetworkService {
       where: { id: networkId },
       data: { proxyConfig: JSON.stringify(config) },
     });
+  }
+
+  private pruneProxyConfigForBackends(
+    config: ProxyNetworkConfig,
+    backendNames: Set<string>
+  ): ProxyNetworkConfig {
+    const next: ProxyNetworkConfig = { ...config };
+
+    if (next.defaultServer && !backendNames.has(next.defaultServer)) {
+      next.defaultServer = undefined;
+    }
+    if (next.fallbackServer && !backendNames.has(next.fallbackServer)) {
+      next.fallbackServer = undefined;
+    }
+
+    const nextPool: NonNullable<ProxyNetworkConfig['pool']> = {};
+    for (const [poolName, poolConfig] of Object.entries(next.pool || {})) {
+      const servers = (poolConfig?.servers || []).filter(server => backendNames.has(server));
+      if (servers.length === 0) {
+        continue;
+      }
+      nextPool[poolName] = {
+        strategy: poolConfig?.strategy,
+        servers,
+      };
+    }
+    next.pool = nextPool;
+
+    const poolNames = new Set(Object.keys(nextPool));
+    next.routes = (next.routes || []).filter(route =>
+      backendNames.has(route.target) || poolNames.has(route.target)
+    );
+
+    return next;
   }
 
   private async withVersionAlignment(network: NetworkWithMembers): Promise<NetworkWithMembers & { versionAlignment: NetworkVersionAlignment | null }> {

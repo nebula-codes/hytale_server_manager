@@ -309,6 +309,7 @@ export class ServerService {
     const server = await this.getServer(serverId);
     if (!server) throw new Error(`Server ${serverId} not found`);
 
+    await this.ensureProxyAuthModeIfNeeded(serverId);
     const adapter = await this.getAdapter(serverId);
 
     await this.prisma.server.update({
@@ -480,6 +481,58 @@ export class ServerService {
   async getServerConfig(serverId: string): Promise<ServerConfig> {
     const adapter = await this.getAdapter(serverId);
     return adapter.getConfig();
+  }
+
+  private async ensureProxyAuthModeIfNeeded(serverId: string): Promise<void> {
+    const memberships = await this.prisma.serverNetworkMember.findMany({
+      where: { serverId },
+      include: {
+        network: {
+          select: { networkType: true },
+        },
+      },
+    });
+
+    const isProxyBackend = memberships.some(
+      (membership) => membership.role !== 'proxy' && membership.network.networkType === 'proxy'
+    );
+    if (!isProxyBackend) {
+      return;
+    }
+
+    const dbServer = await this.prisma.server.findUnique({
+      where: { id: serverId },
+      select: { serverArgs: true },
+    });
+    if (!dbServer) {
+      return;
+    }
+
+    const currentArgs = (dbServer.serverArgs || '').trim();
+    const tokens = currentArgs.length > 0 ? currentArgs.split(/\s+/).filter(Boolean) : [];
+    const normalizedTokens: string[] = [];
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+      if (token === '--auth-mode') {
+        i += 1;
+        continue;
+      }
+      normalizedTokens.push(token);
+    }
+    normalizedTokens.push('--auth-mode', 'insecure');
+    const mergedArgs = normalizedTokens.join(' ').replace(/\s+/g, ' ').trim();
+
+    if (mergedArgs === currentArgs) {
+      return;
+    }
+
+    await this.prisma.server.update({
+      where: { id: serverId },
+      data: { serverArgs: mergedArgs },
+    });
+
+    // Ensure adapter reloads fresh args right before start.
+    this.adapters.delete(serverId);
   }
 
   /**
