@@ -6,7 +6,7 @@
 [![issues - hytale_server_manager](https://img.shields.io/github/issues/nebula-codes/hytale_server_manager)](https://github.com/nebula-codes/hytale_server_manager/issues)
 
 [![View site - GH Pages](https://img.shields.io/badge/View_site-GH_Pages-2ea44f?style=for-the-badge)](https://nebula-codes.github.io/hytale_server_manager/)
-[![view - Documentation](https://img.shields.io/badge/view-Documentation-blue?style=for-the-badge)](https://nebula-codes.github.io/hytale_server_manager/docs/)
+[![view - Documentation](https://img.shields.io/badge/view-Documentation-blue?style=for-the-badge)](https://nebula-codes.github.io/hytale_server_manager/docs)
 
 [![Discord](https://discord.com/api/guilds/1463336126805709005/widget.png?style=shield)](https://discord.gg/uANHaJbeBF)
 <!-- Enable server widget in your server settings to enable the Discord shield-->
