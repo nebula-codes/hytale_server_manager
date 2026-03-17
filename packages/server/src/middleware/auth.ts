@@ -1,11 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import logger from '../utils/logger';
 import { PermissionCode } from '../permissions/definitions';
 import type { PermissionService } from '../services/PermissionService';
 
-const prisma = new PrismaClient();
 
 // JWT secret - must be set via environment variable (validated in auth routes on startup)
 const JWT_SECRET = process.env.JWT_SECRET || '';

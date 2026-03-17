@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import fs from 'fs-extra';
 import path from 'path';
 import { hytaleDownloaderService } from './HytaleDownloaderService';
@@ -100,7 +101,7 @@ class ServerUpdateService extends EventEmitter {
 
   constructor() {
     super();
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
   }
 
   /**

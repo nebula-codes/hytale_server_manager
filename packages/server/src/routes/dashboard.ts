@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import os from 'os';
 import { AuthenticatedRequest, requirePermission } from '../middleware/auth';
 import { MetricsService } from '../services/MetricsService';
@@ -7,7 +7,6 @@ import { AlertsService } from '../services/AlertsService';
 import { PERMISSIONS } from '../permissions/definitions';
 import logger from '../utils/logger';
 
-const prisma = new PrismaClient();
 
 // Store previous CPU measurement for delta calculation
 let previousCpuTimes: { idle: number; total: number } | null = null;

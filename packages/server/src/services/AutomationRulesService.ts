@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import cron from 'node-cron';
 import logger from '../utils/logger';
 import { ServerService } from './ServerService';
@@ -6,7 +6,6 @@ import { BackupService } from './BackupService';
 import { ActivityLogService } from './ActivityLogService';
 import { ACTIVITY_ACTIONS, RESOURCE_TYPES } from '../constants/ActivityLogActions';
 
-const prisma = new PrismaClient();
 
 export type TriggerType = 'scheduled' | 'event' | 'condition';
 export type EventType = 'server_start' | 'server_stop' | 'player_join' | 'player_leave' | 'high_cpu' | 'high_memory';

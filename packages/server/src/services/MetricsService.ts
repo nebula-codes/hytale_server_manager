@@ -1,10 +1,9 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import os from 'os';
 import fs from 'fs-extra';
 import path from 'path';
 import logger from '../utils/logger';
 
-const prisma = new PrismaClient();
 
 export interface MetricData {
   timestamp: Date;

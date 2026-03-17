@@ -1,11 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import fs from 'fs-extra';
 import path from 'path';
 import archiver from 'archiver';
 import unzipper from 'unzipper';
 import logger from '../utils/logger';
 
-const prisma = new PrismaClient();
 
 /**
  * Hytale World Config.json structure

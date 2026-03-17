@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import logger from '../utils/logger';
@@ -8,7 +8,6 @@ import { ACTIVITY_ACTIONS, RESOURCE_TYPES } from '../constants/ActivityLogAction
 import { getActivityContext } from '../middleware/activityLogger';
 import { strictLimiter } from '../middleware/rateLimiter';
 
-const prisma = new PrismaClient();
 
 // JWT configuration - REQUIRE secrets from environment
 function getRequiredEnvVar(name: string): string {
@@ -33,16 +32,23 @@ const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
 // Cookie settings
-// secure: true in production by default (requires HTTPS)
-// Set INSECURE_COOKIES=true to allow HTTP (not recommended, only for local network testing)
+// secure: true only when the actual request arrived over HTTPS.
+// This prevents the UnRAID/HTTP loop where the browser silently drops Secure cookies
+// served over plain HTTP, causing every API call to fail with 401.
 const isProduction = process.env.NODE_ENV === 'production';
 const allowInsecureCookies = process.env.INSECURE_COOKIES === 'true';
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: isProduction && !allowInsecureCookies,
-  sameSite: 'lax' as const,
-  path: '/',
-};
+
+function getCookieOptions(req: Request) {
+  // req.secure is true for direct HTTPS; x-forwarded-proto covers reverse-proxy setups.
+  const isSecureConnection = (req as any).secure ||
+    (req as any).headers?.['x-forwarded-proto'] === 'https';
+  return {
+    httpOnly: true,
+    secure: isProduction && !allowInsecureCookies && isSecureConnection,
+    sameSite: 'lax' as const,
+    path: '/',
+  };
+}
 
 const ACCESS_TOKEN_COOKIE = 'access_token';
 const REFRESH_TOKEN_COOKIE = 'refresh_token';
@@ -446,11 +452,11 @@ export function createAuthRoutes(): Router {
 
       // Set httpOnly cookies
       res.cookie(ACCESS_TOKEN_COOKIE, accessToken, {
-        ...COOKIE_OPTIONS,
+        ...getCookieOptions(req),
         maxAge: expiresIn * 1000,
       });
       res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, {
-        ...COOKIE_OPTIONS,
+        ...getCookieOptions(req),
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
@@ -531,11 +537,11 @@ export function createAuthRoutes(): Router {
       // Set new cookies
       const expiresIn = 60 * 60; // 1 hour
       res.cookie(ACCESS_TOKEN_COOKIE, newAccessToken, {
-        ...COOKIE_OPTIONS,
+        ...getCookieOptions(req),
         maxAge: expiresIn * 1000,
       });
       res.cookie(REFRESH_TOKEN_COOKIE, newRefreshToken, {
-        ...COOKIE_OPTIONS,
+        ...getCookieOptions(req),
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 

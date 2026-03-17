@@ -1,10 +1,9 @@
 import { Server as SocketServer, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import { serverUpdateService } from '../services/ServerUpdateService';
 import logger from '../utils/logger';
 
-const prisma = new PrismaClient();
 
 // Read JWT_SECRET lazily to ensure dotenv has loaded
 function getJwtSecret(): string {

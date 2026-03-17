@@ -1,8 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import logger from '../utils/logger';
 import { DiscordNotificationService } from './DiscordNotificationService';
 
-const prisma = new PrismaClient();
 
 export type AlertType = 'server_down' | 'high_cpu' | 'high_memory' | 'high_disk' | 'player_join' | 'player_leave' | 'custom';
 export type AlertSeverity = 'info' | 'warning' | 'critical';

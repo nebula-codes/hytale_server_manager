@@ -5,6 +5,7 @@ import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { PrismaClient } from '@prisma/client';
+import sharedPrisma from './lib/prisma';
 import { Server as HTTPServer, createServer as createHTTPServer } from 'http';
 import { Server as HTTPSServer, createServer as createHTTPSServer } from 'https';
 import { Server as SocketServer } from 'socket.io';
@@ -118,7 +119,7 @@ export class App {
       pingTimeout: config.wsPingTimeout,
     });
 
-    this.prisma = new PrismaClient();
+    this.prisma = sharedPrisma;
 
     // Initialize permission and settings services
     this.permissionService = new PermissionService(this.prisma);

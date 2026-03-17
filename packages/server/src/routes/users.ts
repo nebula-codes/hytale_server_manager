@@ -1,10 +1,9 @@
 import { Router, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import bcrypt from 'bcryptjs';
 import logger from '../utils/logger';
 import { AuthenticatedRequest, authorize } from '../middleware/auth';
 
-const prisma = new PrismaClient();
 
 /**
  * Create user management routes

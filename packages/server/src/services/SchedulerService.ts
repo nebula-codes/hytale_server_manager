@@ -1,11 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import cron from 'node-cron';
 import { ServerService } from './ServerService';
 import { BackupService } from './BackupService';
 import { ConsoleService } from './ConsoleService';
 import logger from '../utils/logger';
 
-const prisma = new PrismaClient();
 
 export class SchedulerService {
   private tasks: Map<string, cron.ScheduledTask> = new Map();
